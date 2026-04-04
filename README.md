@@ -39,9 +39,29 @@ These are the capabilities the product is designed around; implementation will g
 
 This repository is the home for the Synodos project. Application code, stack choices, and deployment instructions will be added as the build progresses.
 
+## Repository layout
+
+| Path | Purpose |
+|------|---------|
+| [`index.html`](index.html) | Landing page entry (open locally or serve from repo root). |
+| [`login.html`](login.html) | Sign-in screen (posts to the Node API when it is running). |
+| [`css/`](css/) | Stylesheets (`style.css`). |
+| [`js/`](js/) | Client-side scripts (`main.js` is loaded by the landing page). |
+| [`assets/`](assets/) | Images, icons, or other static files (optional). |
+| [`server/`](server/) | **Node.js (Express)** REST API — see [`server/README.md`](server/README.md). |
+| [`NEXT.md`](NEXT.md) | Roadmap and dev-loop checklist. |
+
 ## Getting started
 
-*(To be filled in once the tech stack is chosen—for example: prerequisites, environment variables, `npm` / `pnpm` / Docker commands, and how to run the app locally.)*
+**Backend (Node.js):** Install [Node.js LTS](https://nodejs.org/). In the `server` folder run `npm install` then `npm start`. The API serves at `http://localhost:8080` (`GET /api/health`, `POST /api/auth/login`).
+
+**Frontend:** Open `index.html` or `login.html` through a local web server (for example Live Server) so the login page can reach the API. With the server stopped, sign-in shows a short alert explaining how to start it.
+
+**Verify API (optional):** With `npm start` running in another terminal, from `server/` run `npm run verify` — it checks `GET /api/health`.
+
+## What to do next
+
+See **[`NEXT.md`](NEXT.md)** for the dev loop checklist (Live Server + login) and a **feature roadmap** (real auth, sign-up, projects, deploy). Align priorities with your course requirements.
 
 ## Contributing
 
