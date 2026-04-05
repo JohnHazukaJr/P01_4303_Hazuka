@@ -44,16 +44,18 @@ This repository is the home for the Synodos project. Application code, stack cho
 | Path | Purpose |
 |------|---------|
 | [`index.html`](index.html) | Landing page entry (open locally or serve from repo root). |
-| [`login.html`](login.html) | Sign-in screen (posts to the Node API when it is running). |
+| [`login.html`](login.html) | Sign-in — JWT stored for `dashboard.html`. |
+| [`register.html`](register.html) | Create account (`POST /api/auth/register`). |
+| [`dashboard.html`](dashboard.html) | After login — `GET /api/me`. |
 | [`css/`](css/) | Stylesheets (`style.css`). |
-| [`js/`](js/) | Client-side scripts (`main.js` is loaded by the landing page). |
+| [`js/`](js/) | Client scripts: `auth.js` (token), `main.js` (login), `register.js`, `dashboard.js`. |
 | [`assets/`](assets/) | Images, icons, or other static files (optional). |
 | [`server/`](server/) | **Node.js (Express)** REST API — see [`server/README.md`](server/README.md). |
 | [`NEXT.md`](NEXT.md) | Roadmap and dev-loop checklist. |
 
 ## Getting started
 
-**Backend (Node.js):** Install [Node.js LTS](https://nodejs.org/). In the `server` folder run `npm install` then `npm start`. The API serves at `http://localhost:8080` (`GET /api/health`, `POST /api/auth/login`).
+**Backend (Node.js):** Use **Node.js 22.5+** (needed for built-in SQLite). In the `server` folder run `npm install` then `npm start`. The API serves at `http://localhost:8080` (`GET /api/health`, auth routes in [`server/README.md`](server/README.md)).
 
 **Frontend:** Open `index.html` or `login.html` through a local web server (for example Live Server) so the login page can reach the API. With the server stopped, sign-in shows a short alert explaining how to start it.
 

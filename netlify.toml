@@ -1,0 +1,11 @@
+# Static site at repo root (HTML/CSS/JS). Connect this repo in Netlify and deploy;
+# no install or build step required.
+[build]
+  command = "echo Static site — no build step"
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"

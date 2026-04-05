@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sign in to Synodos — connect with collaborators and projects.">
-  <title>Sign in — Synodos</title>
+  <meta name="description" content="Create a Synodos account.">
+  <title>Register — Synodos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -21,20 +21,20 @@
   <main class="auth-main">
     <div class="wrap auth-wrap">
       <div class="auth-card">
-        <p class="auth-eyebrow">Welcome back</p>
-        <h1 class="auth-title">Sign in</h1>
+        <p class="auth-eyebrow">Join Synodos</p>
+        <h1 class="auth-title">Create an account</h1>
         <p class="auth-lead">
-          Sign in with your Synodos account. The server stores passwords securely (SQLite + bcrypt) and issues a session token.
+          Use a real-looking email and a password of at least 8 characters. Data is stored locally in <code>server/data/</code>.
         </p>
 
-        <form class="auth-form" id="login-form" action="#" method="post" novalidate>
+        <form class="auth-form" id="register-form" action="#" method="post" novalidate>
           <div class="field">
             <label for="email">Email</label>
             <input
               id="email"
               name="email"
               type="email"
-              autocomplete="username"
+              autocomplete="email"
               required
               placeholder="you@example.edu"
             >
@@ -45,27 +45,18 @@
               id="password"
               name="password"
               type="password"
-              autocomplete="current-password"
+              autocomplete="new-password"
               required
               placeholder="••••••••"
               minlength="8"
             >
           </div>
-          <div class="field-row">
-            <label class="checkbox">
-              <input type="checkbox" name="remember" value="1">
-              <span>Keep me signed in</span>
-            </label>
-            <a class="auth-link" href="#">Forgot password?</a>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+          <button type="submit" class="btn btn-primary btn-block">Create account</button>
         </form>
 
         <p class="auth-footer">
-          New to Synodos?
-          <a href="register.html">Create an account</a>
-          ·
-          <a href="index.html#join">Waitlist</a>
+          Already have an account?
+          <a href="login.html">Sign in</a>
         </p>
       </div>
     </div>
@@ -84,6 +75,6 @@
   </footer>
 
   <script src="js/auth.js" defer></script>
-  <script src="js/main.js" defer></script>
+  <script src="js/register.js" defer></script>
 </body>
 </html>
