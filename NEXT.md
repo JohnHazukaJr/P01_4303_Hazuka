@@ -1,23 +1,24 @@
 # What to build next (Synodos)
 
-Use this as a roadmap. Pick items that match **your course syllabus** and assignment rubric.
+## Done recently
+
+- SQLite user store, bcrypt, JWT, register/login/dashboard.
+- **Projects & open roles:** tables `projects` and `project_roles`, REST under `/api/projects`, dashboard UI to create projects and manage roles.
 
 ## Suggested order
 
 | Priority | Work |
 |----------|------|
-| **Real accounts** | Replace the stub in `server/index.js` with password hashing (e.g. bcrypt), users in SQLite or Postgres, and sessions or JWTs instead of `demo-…` tokens. |
-| **Sign up** | New page + `POST /api/auth/register` + validation. |
-| **Core data** | Models for **projects** and **roles** (see `README.md`), CRUD routes, then connect UI. |
-| **Deploy** | Host API (Render, Railway, Fly.io) and static site (GitHub Pages, Netlify) when required. |
+| **Deploy** | Host API (Render, Railway, Fly.io) and static site; set `JWT_SECRET`, `SYNODOS_API_BASE` on pages, tighten CORS. |
+| **Polish** | Join requests, messaging, or richer discovery — as your syllabus allows. |
 
 ## Dev loop checklist
 
 1. Terminal: `cd server` → `npm start` (API at `http://localhost:8080`).
-2. Cursor: **Open with Live Server** on `index.html` (browser on `http://127.0.0.1:5500` or similar).
-3. Open `login.html` from Live Server, submit the form — should succeed if the API is running.
-4. Optional: with the server running, `cd server` → `npm run verify` checks `GET /api/health`.
+2. **Live Server** on `index.html`.
+3. Register or log in → **dashboard.html** — create a project, add open roles.
+4. Optional: `cd server` → `npm run verify` for `/api/health`.
 
 ## Course alignment
 
-When your instructor assigns milestones (auth, DB, deployment), tick them here or in issues so the repo matches expectations.
+Match milestones to your syllabus (auth, DB, deployment) and update this file or issues as you go.

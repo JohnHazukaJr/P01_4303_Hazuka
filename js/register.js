@@ -1,20 +1,20 @@
 /**
- * Synodos — login page.
+ * Synodos — registration page.
  */
 (function () {
   var API_BASE = window.synodosAuth.apiBase;
 
-  var loginForm = document.getElementById("login-form");
-  if (!loginForm) return;
+  var form = document.getElementById("register-form");
+  if (!form) return;
 
-  loginForm.addEventListener("submit", async function (e) {
+  form.addEventListener("submit", async function (e) {
     e.preventDefault();
-    var fd = new FormData(loginForm);
+    var fd = new FormData(form);
     var email = (fd.get("email") || "").toString().trim();
     var password = (fd.get("password") || "").toString();
 
     try {
-      var res = await fetch(API_BASE + "/api/auth/login", {
+      var res = await fetch(API_BASE + "/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, password: password }),
@@ -23,7 +23,7 @@
         return {};
       });
       if (!res.ok) {
-        window.alert(data.error || res.statusText || "Sign-in failed");
+        window.alert(data.error || res.statusText || "Registration failed");
         return;
       }
       if (data.token) {

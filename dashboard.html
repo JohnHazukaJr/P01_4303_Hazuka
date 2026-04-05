@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Synodos — your space">
+  <title>Dashboard — Synodos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="logo" href="index.html">Synodos</a>
+      <div class="top-actions">
+        <a class="btn btn-ghost" href="index.html">Home</a>
+        <button type="button" class="btn btn-ghost" id="dashboard-sign-out">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <div class="wrap dashboard-wrap">
+      <p id="dashboard-msg" class="dashboard-msg" hidden></p>
+
+      <div class="auth-card dashboard-intro">
+        <p class="auth-eyebrow">Signed in</p>
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-lead" style="margin-bottom: 0;">
+          Signed in as <strong id="dashboard-email">…</strong>. Post a project and list open roles so peers can discover how to join.
+        </p>
+      </div>
+
+      <section class="dashboard-section" aria-labelledby="new-project-title">
+        <h2 id="new-project-title" class="dashboard-heading">Start a project</h2>
+        <p class="dashboard-lead">Create a hub for something you are building. You can add open roles after it appears in the list.</p>
+        <form class="project-form" id="form-new-project" action="#" method="post" novalidate>
+          <div class="field">
+            <label for="np-title">Title</label>
+            <input id="np-title" name="title" type="text" required maxlength="200" placeholder="Course app, hackathon team, …">
+          </div>
+          <div class="field">
+            <label for="np-desc">Description</label>
+            <textarea id="np-desc" name="description" class="field-textarea" rows="3" maxlength="8000" placeholder="What you are shipping, stack, time commitment…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Publish project</button>
+        </form>
+      </section>
+
+      <section class="dashboard-section" aria-labelledby="projects-list-title">
+        <h2 id="projects-list-title" class="dashboard-heading">Open projects</h2>
+        <p class="dashboard-lead">Everyone signed in can browse; only owners can delete a project or edit its open roles.</p>
+        <div id="projects-root" class="projects-grid"></div>
+        <p id="projects-empty" class="dashboard-empty" hidden>No projects yet — create one above.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="auth-footer-note">
+    <div class="wrap">
+      <nav class="footer-nav" aria-label="Site pages">
+        <a href="index.html">Home</a>
+        <a href="login.html">Log in</a>
+        <a href="register.html">Register</a>
+        <a href="dashboard.html">Dashboard</a>
+      </nav>
+      <p>Synodos · P01_4303_Hazuka</p>
+    </div>
+  </footer>
+
+  <script src="js/auth.js" defer></script>
+  <script src="js/dashboard.js" defer></script>
+</body>
+</html>
