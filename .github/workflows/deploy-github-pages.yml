@@ -1,10 +1,16 @@
-# Enable in the repo: Settings → Pages → Build and deployment → Source: GitHub Actions.
-# Pushes to these branches publish the static site at the Pages URL shown in Settings → Pages.
+# ── One-time GitHub setup (otherwise "configure-pages" fails with Not Found) ──
+# 1. Repo → Settings → Pages
+# 2. Under "Build and deployment" → Source: choose "GitHub Actions" (not "Deploy from a branch").
+# 3. Save, then push again or use Actions → this workflow → "Run workflow".
+#
+# Docs: https://docs.github.com/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
+#
 name: Deploy static site to GitHub Pages
 
 on:
   push:
     branches: [main, master, hazuka]
+  workflow_dispatch:
 
 permissions:
   contents: read

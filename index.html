@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script>
+    (function(){try{var k='synodos_theme';var s=localStorage.getItem(k);var d=s==='dark'||(s!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){}})();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Synodos is social media for peers who build together—find collaborators, open roles, and projects that need your skills.">
   <title>Synodos — Social for people who ship together</title>
@@ -15,6 +18,10 @@
     <div class="wrap top-inner">
       <a class="logo" href="index.html">Synodos</a>
       <div class="top-actions">
+        <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
+          <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
         <a class="btn btn-ghost" href="#about">About</a>
         <a class="btn btn-ghost" href="login.html">Log in</a>
         <a class="btn btn-ghost" href="register.html">Register</a>
@@ -139,6 +146,7 @@
       <p>Synodos · P01_4303_Hazuka</p>
     </div>
   </footer>
+  <script src="js/theme.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>
 </html>
