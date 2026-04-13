@@ -11,6 +11,9 @@
 
   var API_BASE = window.synodosAuth.apiBase;
   var emailEl = document.getElementById("dashboard-email");
+  var displayNameEl = document.getElementById("dashboard-display-name");
+  var dashAvatarImg = document.getElementById("dashboard-avatar-img");
+  var dashAvatarPh = document.getElementById("dashboard-avatar-placeholder");
   var outBtn = document.getElementById("dashboard-sign-out");
   var projectsRoot = document.getElementById("projects-root");
   var projectsEmpty = document.getElementById("projects-empty");
@@ -19,6 +22,39 @@
 
   var token = null;
   var userId = null;
+
+  function setDashboardAvatar(user) {
+    if (!dashAvatarImg || !dashAvatarPh) return;
+    var url = user && user.avatar_url ? String(user.avatar_url) : "";
+    if (url.length > 0) {
+      dashAvatarImg.alt = user.display_name
+        ? "Avatar for " + String(user.display_name).trim()
+        : "Profile photo";
+      function revealDashAvatar() {
+        dashAvatarImg.hidden = false;
+        dashAvatarPh.hidden = true;
+      }
+      dashAvatarImg.onload = function () {
+        revealDashAvatar();
+      };
+      dashAvatarImg.onerror = function () {
+        dashAvatarImg.hidden = true;
+        dashAvatarPh.hidden = false;
+      };
+      dashAvatarImg.src = window.synodosAuth.assetUrl(url);
+      /* Cached images may skip `load`; reveal when pixels are ready (`decode` or sync dimensions). */
+      if (dashAvatarImg.complete && dashAvatarImg.naturalWidth > 0) {
+        revealDashAvatar();
+      } else if (typeof dashAvatarImg.decode === "function") {
+        dashAvatarImg.decode().then(revealDashAvatar).catch(function () {});
+      }
+    } else {
+      dashAvatarImg.hidden = true;
+      dashAvatarImg.removeAttribute("src");
+      dashAvatarImg.alt = "";
+      dashAvatarPh.hidden = false;
+    }
+  }
 
   function showMsg(text, isError) {
     if (!msgEl) return;
@@ -51,15 +87,28 @@
       return false;
     }
     var data = await res.json();
+    if (data.user && !data.user.profile_complete) {
+      window.location.href = "profile-setup.html";
+      return false;
+    }
     userId = data.user && data.user.id;
     if (emailEl && data.user && data.user.email) {
       emailEl.textContent = data.user.email;
+    }
+    if (displayNameEl && data.user) {
+      var dn = String(data.user.display_name || "").trim();
+      displayNameEl.textContent = dn || "Welcome back";
+    }
+    if (data.user) {
+      setDashboardAvatar(data.user);
     }
     return true;
   }
 
   async function fetchProjects() {
-    var res = await fetch(API_BASE + "/api/projects");
+    var res = await fetch(API_BASE + "/api/projects", {
+      headers: token ? { Authorization: "Bearer " + token } : {},
+    });
     if (!res.ok) {
       throw new Error("Could not load projects");
     }
@@ -97,6 +146,21 @@
     meta.className = "project-card__meta";
     meta.textContent =
       "Owner: " + (project.owner_email || "?");
+    var feedN = Number(project.feed_match_count);
+    if (token && Number.isFinite(feedN) && feedN > 0) {
+      var feedBadge = document.createElement("span");
+      feedBadge.className = "project-card__feed-match";
+      feedBadge.setAttribute(
+        "title",
+        "Overlaps with your field/subfield tags — ranked higher in your feed"
+      );
+      feedBadge.textContent =
+        feedN === 1
+          ? "1 match with your fields"
+          : feedN + " matches with your fields";
+      meta.appendChild(document.createTextNode(" · "));
+      meta.appendChild(feedBadge);
+    }
 
     var desc = document.createElement("p");
     desc.className = "project-card__desc";

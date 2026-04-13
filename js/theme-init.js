@@ -13,4 +13,5 @@
   } catch (e) {
     /* ignore */
   }
+  document.documentElement.classList.add("js");
 })();

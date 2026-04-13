@@ -27,12 +27,50 @@ function loadRoles(db, projectId) {
     .all(projectId);
 }
 
-/** @param {{ db: object, requireAuth: function }} deps */
+function workTagKey(field, sub) {
+  return String(field).trim() + "\0" + String(sub).trim();
+}
+
+/** Sets of "field\0subfield" for overlap scoring when signed in. */
+function loadUserTagSet(db, userId) {
+  const rows = db
+    .prepare(
+      "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = ?"
+    )
+    .all(userId);
+  const set = new Set();
+  for (let i = 0; i < rows.length; i++) {
+    set.add(workTagKey(rows[i].work_field, rows[i].work_subfield));
+  }
+  if (set.size === 0) {
+    const u = db
+      .prepare("SELECT work_field, work_subfield FROM users WHERE id = ?")
+      .get(userId);
+    if (
+      u &&
+      String(u.work_field || "").trim() &&
+      String(u.work_subfield || "").trim()
+    ) {
+      set.add(workTagKey(u.work_field, u.work_subfield));
+    }
+  }
+  return set;
+}
+
+function feedMatchCount(viewerSet, ownerSet) {
+  let n = 0;
+  viewerSet.forEach((k) => {
+    if (ownerSet.has(k)) n++;
+  });
+  return n;
+}
+
+/** @param {{ db: object, requireAuth: function, optionalAuth: function }} deps */
 function createProjectsRouter(deps) {
-  const { db, requireAuth } = deps;
+  const { db, requireAuth, optionalAuth } = deps;
   const router = express.Router();
 
-  router.get("/", (_req, res) => {
+  router.get("/", optionalAuth, (req, res) => {
     try {
       const projects = db
         .prepare(
@@ -44,10 +82,37 @@ function createProjectsRouter(deps) {
            ORDER BY datetime(p.created_at) DESC`
         )
         .all();
+
+      const viewerSet =
+        req.user && req.user.id != null
+          ? loadUserTagSet(db, req.user.id)
+          : null;
+      const personalize =
+        viewerSet != null && viewerSet.size > 0;
+
       for (let i = 0; i < projects.length; i++) {
         const p = projects[i];
         p.roles = loadRoles(db, p.id);
+        if (personalize) {
+          const ownerSet = loadUserTagSet(db, p.owner_user_id);
+          p.feed_match_count = feedMatchCount(viewerSet, ownerSet);
+        } else {
+          p.feed_match_count = 0;
+        }
       }
+
+      if (personalize) {
+        projects.sort((a, b) => {
+          if (b.feed_match_count !== a.feed_match_count) {
+            return b.feed_match_count - a.feed_match_count;
+          }
+          return (
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime()
+          );
+        });
+      }
+
       res.json({ projects });
     } catch (e) {
       console.error(e);

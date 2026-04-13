@@ -16,13 +16,17 @@
   <header class="top">
     <div class="wrap top-inner">
       <a class="logo" href="index.html">Synodos</a>
-      <nav class="top-nav" aria-label="Primary">
+      <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
+        <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <nav id="site-nav" class="top-nav" aria-label="Primary">
         <div class="top-actions">
           <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
             <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
           </button>
           <a class="btn btn-ghost" href="index.html">Home</a>
+          <a class="btn btn-ghost" href="profile.html">Your space</a>
           <button type="button" class="btn btn-ghost" id="dashboard-sign-out">Sign out</button>
         </div>
       </nav>
@@ -35,10 +39,29 @@
 
       <div class="auth-card dashboard-intro">
         <p class="auth-eyebrow">Signed in</p>
-        <h1 class="auth-title">Welcome back</h1>
-        <p class="auth-lead" style="margin-bottom: 0;">
-          Signed in as <strong id="dashboard-email">…</strong>. Post a project and list open roles so peers can discover how to join.
-        </p>
+        <div class="dashboard-user-strip">
+          <div class="profile-avatar-preview profile-avatar-preview--sm" id="dashboard-avatar-wrap">
+            <img class="profile-avatar-img" id="dashboard-avatar-img" alt="" width="64" height="64" hidden>
+            <span class="profile-avatar-placeholder" id="dashboard-avatar-placeholder" aria-hidden="true">
+              <svg class="profile-avatar-default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 30c10-18 42-18 52 0" />
+                <path d="M18 28c8-12 36-12 44 0" />
+                <path d="M16 26l-6-8M24 21l-3-9M40 20v-9M56 21l3-9M64 26l6-8" />
+                <circle cx="28" cy="26" r="2.8" fill="currentColor" stroke="none" />
+                <circle cx="40" cy="22" r="2.8" fill="currentColor" stroke="none" />
+                <circle cx="52" cy="26" r="2.8" fill="currentColor" stroke="none" />
+                <ellipse cx="40" cy="48" rx="15" ry="17" />
+                <path d="M22 62c2 12 36 12 38 0" />
+              </svg>
+            </span>
+          </div>
+          <div class="dashboard-user-strip__text">
+            <h1 class="auth-title dashboard-user-strip__title" id="dashboard-display-name">Welcome back</h1>
+            <p class="auth-lead dashboard-user-strip__lead" style="margin-bottom: 0;">
+              Signed in as <strong id="dashboard-email">…</strong>. Post a project and list open roles so peers can discover how to join.
+            </p>
+          </div>
+        </div>
       </div>
 
       <section class="dashboard-section" aria-labelledby="new-project-title">
@@ -80,6 +103,7 @@
 
   <script src="js/auth.js" defer></script>
   <script src="js/theme.js" defer></script>
+  <script src="js/site-nav.js" defer></script>
   <script src="js/dashboard.js" defer></script>
 </body>
 </html>

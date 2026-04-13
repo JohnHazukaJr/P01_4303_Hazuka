@@ -16,7 +16,10 @@
   <header class="top auth-top">
     <div class="wrap top-inner">
       <a class="logo" href="index.html">Synodos</a>
-      <nav class="top-nav" aria-label="Primary">
+      <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
+        <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <nav id="site-nav" class="top-nav" aria-label="Primary">
         <div class="top-actions">
           <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
             <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -34,10 +37,23 @@
         <p class="auth-eyebrow">Join Synodos</p>
         <h1 class="auth-title">Create an account</h1>
         <p class="auth-lead">
-          Use a real-looking email and a password of at least 8 characters. Data is stored locally in <code>server/data/</code>.
+          Choose a username, use a real-looking email, and a password of at least 8 characters. Data is stored locally in <code>server/data/</code>.
         </p>
 
         <form class="auth-form" id="register-form" action="#" method="post" novalidate>
+          <div class="field">
+            <label for="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              required
+              minlength="5"
+              maxlength="32"
+              placeholder="Username"
+            >
+          </div>
           <div class="field">
             <label for="email">Email</label>
             <input
@@ -51,15 +67,35 @@
           </div>
           <div class="field">
             <label for="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autocomplete="new-password"
-              required
-              placeholder="••••••••"
-              minlength="8"
-            >
+            <div class="field-password-wrap">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                required
+                placeholder="••••••••"
+                minlength="8"
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                data-password-toggle
+                aria-label="Show password"
+                aria-pressed="false"
+              >
+                <svg class="password-toggle__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <g class="password-toggle__glyph password-toggle__glyph--closed">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </g>
+                  <g class="password-toggle__glyph password-toggle__glyph--open">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </g>
+                </svg>
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary btn-block">Create account</button>
         </form>
@@ -85,7 +121,10 @@
   </footer>
 
   <script src="js/auth.js" defer></script>
+  <script src="js/auth-feedback.js" defer></script>
   <script src="js/theme.js" defer></script>
+  <script src="js/site-nav.js" defer></script>
+  <script src="js/password-toggle.js" defer></script>
   <script src="js/register.js" defer></script>
 </body>
 </html>

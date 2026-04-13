@@ -20,4 +20,22 @@ function createRequireAuth(db, jwtSecret) {
   };
 }
 
-module.exports = { createRequireAuth };
+function createOptionalAuth(db, jwtSecret) {
+  return function optionalAuth(req, res, next) {
+    req.user = null;
+    const h = req.headers.authorization;
+    if (!h || !h.startsWith("Bearer ")) {
+      return next();
+    }
+    try {
+      const payload = jwt.verify(h.slice(7), jwtSecret);
+      const row = db.prepare("SELECT id, email FROM users WHERE id = ?").get(payload.sub);
+      if (row) req.user = row;
+    } catch {
+      /* invalid token — treat as anonymous */
+    }
+    next();
+  };
+}
+
+module.exports = { createRequireAuth, createOptionalAuth };
