@@ -1,10 +1,5 @@
-# ── One-time GitHub setup (otherwise "configure-pages" fails with Not Found) ──
-# 1. Repo → Settings → Pages
-# 2. Under "Build and deployment" → Source: choose "GitHub Actions" (not "Deploy from a branch").
-# 3. Save, then push again or use Actions → this workflow → "Run workflow".
-#
-# Docs: https://docs.github.com/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
-#
+# Repo → Settings → Pages → Source: GitHub Actions (required once).
+# https://docs.github.com/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
 name: Deploy static site to GitHub Pages
 
 on:
