@@ -252,6 +252,14 @@ a:focus-visible {
   transition: var(--transition-theme);
 }
 
+/* Full-width header row: avoid the content column max-width so logo + nav align to the viewport edges on large displays. */
+.top .wrap {
+  max-width: none;
+  width: 100%;
+  padding-left: max(clamp(1.25rem, 5vw, 4rem), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(1.25rem, 5vw, 4rem), env(safe-area-inset-right, 0px));
+}
+
 .top-inner {
   display: flex;
   flex-direction: column;
@@ -657,6 +665,7 @@ footer {
 .footer-nav {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.75rem 1.25rem;
   margin-bottom: 1rem;
   font-size: 0.95rem;
@@ -677,6 +686,8 @@ footer {
 }
 
 .footer-motif {
+  display: flex;
+  justify-content: center;
   color: var(--color-gold);
   margin-bottom: 1rem;
   opacity: 0.85;
@@ -838,10 +849,6 @@ footer {
   padding-block: 1.25rem;
   border-top: 1px solid var(--color-marble-border);
   background: var(--color-marble);
-}
-
-.auth-footer-note .footer-nav {
-  justify-content: center;
 }
 
 .auth-footer-note p {

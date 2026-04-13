@@ -1,7 +1,14 @@
-/**
- * Synodos — login page.
- */
+/** Sign-in form. Requires auth.js before this script. */
 (function () {
+  if (!window.synodosAuth) {
+    if (typeof console !== "undefined" && console.error) {
+      console.error(
+        "synodosAuth not found. Load js/auth.js before js/login.js."
+      );
+    }
+    return;
+  }
+
   var API_BASE = window.synodosAuth.apiBase;
 
   var loginForm = document.getElementById("login-form");

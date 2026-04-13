@@ -1,7 +1,14 @@
-/**
- * Synodos — registration page.
- */
+/** Registration form. Requires auth.js before this script. */
 (function () {
+  if (!window.synodosAuth) {
+    if (typeof console !== "undefined" && console.error) {
+      console.error(
+        "synodosAuth not found. Load js/auth.js before js/register.js."
+      );
+    }
+    return;
+  }
+
   var API_BASE = window.synodosAuth.apiBase;
 
   var form = document.getElementById("register-form");

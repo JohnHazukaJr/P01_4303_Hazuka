@@ -48,7 +48,7 @@ This repository is the home for the Synodos project. Application code, stack cho
 | [`register.html`](register.html) | Create account (`POST /api/auth/register`). |
 | [`dashboard.html`](dashboard.html) | After login — `GET /api/me`. |
 | [`css/`](css/) | Stylesheets (`style.css`). |
-| [`js/`](js/) | Client scripts: `auth.js` (token), `main.js` (login), `register.js`, `dashboard.js`. |
+| [`js/`](js/) | `auth.js` (JWT + API base), `theme-init.js` + `theme.js` (appearance), `login.js`, `register.js`, `dashboard.js`. |
 | [`assets/`](assets/) | Images, icons, or other static files (optional). |
 | [`server/`](server/) | **Node.js (Express)** REST API — see [`server/README.md`](server/README.md). |
 | [`NEXT.md`](NEXT.md) | Roadmap and dev-loop checklist. |

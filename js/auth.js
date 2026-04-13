@@ -1,6 +1,4 @@
-/**
- * Shared client auth: JWT in localStorage + API base URL.
- */
+/** JWT in localStorage and API base URL (`synodosAuth`). */
 (function (global) {
   var TOKEN_KEY = "synodos_token";
   var win = typeof window !== "undefined" ? window : null;
@@ -10,8 +8,7 @@
     String(win.SYNODOS_API_BASE).trim();
 
   global.synodosAuth = {
-    /** Set window.SYNODOS_API_BASE before loading this script when the API is not on localhost:8080. */
-    apiBase: apiFromWindow || "http://localhost:8080",
+    apiBase: apiFromWindow || "http://localhost:8080", // set window.SYNODOS_API_BASE if API is not localhost:8080
     getToken: function () {
       try {
         return localStorage.getItem(TOKEN_KEY);

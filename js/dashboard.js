@@ -1,7 +1,14 @@
-/**
- * Synodos — dashboard: projects + open roles.
- */
+/** Projects and open roles UI. Requires auth.js before this script. */
 (function () {
+  if (!window.synodosAuth) {
+    if (typeof console !== "undefined" && console.error) {
+      console.error(
+        "synodosAuth not found. Load js/auth.js before js/dashboard.js."
+      );
+    }
+    return;
+  }
+
   var API_BASE = window.synodosAuth.apiBase;
   var emailEl = document.getElementById("dashboard-email");
   var outBtn = document.getElementById("dashboard-sign-out");

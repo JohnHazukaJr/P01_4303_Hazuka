@@ -1,6 +1,4 @@
-/**
- * Light / dark theme: prefers stored choice, else system. Cobalt + gold palette unchanged for primary UI.
- */
+/** Theme toggle, persistence, system preference, skip-link focus. Requires theme-init.js in <head>. */
 (function () {
   var KEY = "synodos_theme";
 
@@ -68,11 +66,11 @@
 
 (function () {
   var skip = document.querySelector(".skip-link");
-  var main = document.getElementById("main-content");
-  if (!skip || !main) return;
+  var mainEl = document.getElementById("main-content");
+  if (!skip || !mainEl) return;
   skip.addEventListener("click", function () {
     window.setTimeout(function () {
-      main.focus();
+      mainEl.focus();
     }, 0);
   });
 })();
