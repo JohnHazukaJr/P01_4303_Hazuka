@@ -44,11 +44,13 @@ This repository is the home for the Synodos project. Application code, stack cho
 | Path | Purpose |
 |------|---------|
 | [`index.html`](index.html) | Landing page entry (open locally or serve from repo root). |
-| [`login.html`](login.html) | Sign-in — JWT stored for `dashboard.html`. |
-| [`register.html`](register.html) | Create account (`POST /api/auth/register`). |
-| [`dashboard.html`](dashboard.html) | After login — `GET /api/me`. |
+| [`login.html`](login.html) | Sign-in with email or username — JWT stored for `dashboard.html`. |
+| [`register.html`](register.html) | Create account with username, email, and password (`POST /api/auth/register`). |
+| [`profile-setup.html`](profile-setup.html) | First-time profile (after register) — full profile + live preview (`PATCH /api/me`). |
+| [`profile.html`](profile.html) | Edit your Synodos space anytime (same fields + preview). |
+| [`dashboard.html`](dashboard.html) | After login and completed profile — projects and `GET /api/me`. |
 | [`css/`](css/) | Stylesheets (`style.css`). |
-| [`js/`](js/) | `auth.js` (JWT + API base), `theme-init.js` + `theme.js` (appearance), `login.js`, `register.js`, `dashboard.js`. |
+| [`js/`](js/) | `auth.js`, `theme-init.js`, `theme.js`, `site-nav.js`, `login.js`, `register.js`, `profile-form.js`, `dashboard.js`, etc. |
 | [`assets/`](assets/) | Images, icons, or other static files (optional). |
 | [`server/`](server/) | **Node.js (Express)** REST API — see [`server/README.md`](server/README.md). |
 | [`NEXT.md`](NEXT.md) | Roadmap and dev-loop checklist. |

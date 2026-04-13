@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="js/theme-init.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Set up your Synodos profile.">
+  <title>Set up your profile — Synodos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page profile-page-body">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="top auth-top">
+    <div class="wrap top-inner">
+      <a class="logo" href="index.html">Synodos</a>
+      <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
+        <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <nav id="site-nav" class="top-nav" aria-label="Primary">
+        <div class="top-actions">
+          <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
+            <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          </button>
+          <a class="btn btn-ghost" href="index.html">Home</a>
+          <a class="btn btn-ghost" href="dashboard.html">Dashboard</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-main profile-main" id="main-content" tabindex="-1">
+    <div class="wrap profile-wrap">
+      <header class="profile-page-header">
+        <p class="auth-eyebrow">First-time setup</p>
+        <h1 class="auth-title profile-page-header__title">Build your Synodos space</h1>
+        <p class="auth-lead profile-page-header__lead">
+          A short, focused profile helps collaborators recognize you and match projects to your strengths. You can change everything later in <strong>Your space</strong>.
+        </p>
+        <ul class="profile-value-list">
+          <li><strong>Clear identity</strong> — display name and optional photo</li>
+          <li><strong>How you work</strong> — field and subfield for discovery</li>
+          <li><strong>Your story</strong> — bio is optional but helps teams click</li>
+        </ul>
+      </header>
+
+      <div class="profile-layout">
+        <div class="profile-layout__form">
+          <form class="profile-space-form" id="synodos-profile-form" data-flow="setup" action="#" method="post" novalidate>
+            <p id="profile-save-status" class="profile-save-status" role="status" aria-live="polite" hidden></p>
+
+            <section class="profile-section" aria-labelledby="sec-identity">
+              <div class="profile-section__head">
+                <span class="profile-section__step" aria-hidden="true">1</span>
+                <h2 id="sec-identity" class="profile-section__title">How you appear</h2>
+              </div>
+              <p class="profile-section__help" id="display-name-desc">This is the name peers see on projects and messages.</p>
+              <div class="field">
+                <label for="display_name">Display name</label>
+                <input
+                  id="display_name"
+                  name="display_name"
+                  type="text"
+                  required
+                  minlength="2"
+                  maxlength="100"
+                  autocomplete="nickname"
+                  placeholder="e.g. Jordan Lee"
+                  aria-describedby="display-name-desc"
+                >
+              </div>
+            </section>
+
+            <section class="profile-section" aria-labelledby="sec-photo">
+              <div class="profile-section__head">
+                <span class="profile-section__step" aria-hidden="true">2</span>
+                <h2 id="sec-photo" class="profile-section__title">Photo</h2>
+              </div>
+              <p class="profile-section__help">Optional. Add a photo or keep the default classical avatar (olive wreath).</p>
+              <fieldset class="profile-avatar-fieldset">
+                <legend class="visually-hidden">Profile photo</legend>
+                <div class="profile-avatar-row">
+                  <div class="profile-avatar-preview" id="profile-avatar-preview-wrap" aria-live="polite">
+                    <img class="profile-avatar-img" id="profile-avatar-img" alt="" width="96" height="96" hidden>
+                    <span class="profile-avatar-placeholder" id="profile-avatar-placeholder" aria-hidden="true">
+                      <svg class="profile-avatar-default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M14 30c10-18 42-18 52 0" />
+                        <path d="M18 28c8-12 36-12 44 0" />
+                        <path d="M16 26l-6-8M24 21l-3-9M40 20v-9M56 21l3-9M64 26l6-8" />
+                        <circle cx="28" cy="26" r="2.8" fill="currentColor" stroke="none" />
+                        <circle cx="40" cy="22" r="2.8" fill="currentColor" stroke="none" />
+                        <circle cx="52" cy="26" r="2.8" fill="currentColor" stroke="none" />
+                        <ellipse cx="40" cy="48" rx="15" ry="17" />
+                        <path d="M22 62c2 12 36 12 38 0" />
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="profile-avatar-actions">
+                    <input type="file" id="avatar_file" class="visually-hidden" accept="image/jpeg,image/png,image/gif,image/webp" tabindex="-1" aria-label="Choose profile photo file">
+                    <button type="button" class="btn btn-secondary" id="avatar_choose">Upload a photo</button>
+                    <button type="button" class="btn btn-ghost" id="avatar_default">Use default avatar</button>
+                  </div>
+                </div>
+                <p class="profile-avatar-hint">JPEG, PNG, GIF, or WebP · max 512 KB</p>
+              </fieldset>
+            </section>
+
+            <section class="profile-section" aria-labelledby="sec-work">
+              <div class="profile-section__head">
+                <span class="profile-section__step" aria-hidden="true">3</span>
+                <h2 id="sec-work" class="profile-section__title">How you work</h2>
+              </div>
+              <p class="profile-section__help">Add one or more area + focus pairs. We store them on your profile and use overlaps to rank projects in your feed.</p>
+              <div class="work-tags-block field">
+                <label id="work-tags-label">Fields &amp; subfields</label>
+                <p id="work-field-hint" class="field-hint">At least one pair is required. Use “Add another area” if you span multiple disciplines.</p>
+                <div id="work_tags_root" class="work-tags-editor" role="group" aria-labelledby="work-tags-label"></div>
+                <button type="button" class="btn btn-ghost work-tags-add" id="work_tags_add">+ Add another area</button>
+              </div>
+            </section>
+
+            <section class="profile-section profile-section--last" aria-labelledby="sec-bio">
+              <div class="profile-section__head">
+                <span class="profile-section__step" aria-hidden="true">4</span>
+                <h2 id="sec-bio" class="profile-section__title">About you</h2>
+              </div>
+              <p class="profile-section__help">Optional. Skills, what you are building, collaboration style.</p>
+              <div class="field">
+                <label for="bio">Bio</label>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  class="field-textarea"
+                  rows="5"
+                  maxlength="2000"
+                  placeholder="What should collaborators know?"
+                  aria-describedby="bio-count"
+                ></textarea>
+                <p id="bio-count" class="field-hint">Up to 2,000 characters</p>
+              </div>
+            </section>
+
+            <div class="profile-form-actions">
+              <button type="submit" class="btn btn-primary btn-block">Save and go to dashboard</button>
+            </div>
+          </form>
+        </div>
+
+        <aside class="profile-layout__preview" aria-label="Live preview">
+          <div class="synodos-space-card" id="profile-live-preview">
+            <div class="synodos-space-card__accent" aria-hidden="true"></div>
+            <p class="synodos-space-card__eyebrow">Preview</p>
+            <p class="synodos-space-card__hint">Updates as you type — this is how others roughly see your card.</p>
+            <div class="synodos-space-card__hero">
+              <div class="profile-avatar-preview profile-avatar-preview--lg" aria-hidden="true">
+                <img class="profile-avatar-img" id="preview-avatar-img" alt="" width="120" height="120" hidden>
+                <span class="profile-avatar-placeholder" id="preview-avatar-placeholder" aria-hidden="true">
+                  <svg class="profile-avatar-default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 30c10-18 42-18 52 0" />
+                    <path d="M18 28c8-12 36-12 44 0" />
+                    <path d="M16 26l-6-8M24 21l-3-9M40 20v-9M56 21l3-9M64 26l6-8" />
+                    <circle cx="28" cy="26" r="2.8" fill="currentColor" stroke="none" />
+                    <circle cx="40" cy="22" r="2.8" fill="currentColor" stroke="none" />
+                    <circle cx="52" cy="26" r="2.8" fill="currentColor" stroke="none" />
+                    <ellipse cx="40" cy="48" rx="15" ry="17" />
+                    <path d="M22 62c2 12 36 12 38 0" />
+                  </svg>
+                </span>
+              </div>
+              <h3 class="synodos-space-card__name" id="preview-display-name">Your name</h3>
+              <ul class="synodos-space-card__tags synodos-space-card__tags--list" id="preview-tags-list" aria-label="Your fields"></ul>
+            </div>
+            <div class="synodos-space-card__about">
+              <h4 class="synodos-space-card__about-title">About</h4>
+              <p id="preview-bio" class="synodos-space-card__bio profile-preview__bio--empty">Tell collaborators what you care about, skills, and how you like to work…</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer class="auth-footer-note">
+    <div class="wrap">
+      <nav class="footer-nav" aria-label="Site pages">
+        <a href="index.html">Home</a>
+        <a href="login.html">Log in</a>
+        <a href="register.html">Register</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="profile.html">Your space</a>
+      </nav>
+      <p>Synodos · P01_4303_Hazuka</p>
+    </div>
+  </footer>
+
+  <script src="js/auth.js" defer></script>
+  <script src="js/theme.js" defer></script>
+  <script src="js/site-nav.js" defer></script>
+  <script src="js/profile-form.js" defer></script>
+</body>
+</html>

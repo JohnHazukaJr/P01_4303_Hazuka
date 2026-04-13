@@ -16,7 +16,10 @@
   <header class="top">
     <div class="wrap top-inner">
       <a class="logo" href="index.html">Synodos</a>
-      <nav class="top-nav" aria-label="Primary">
+      <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
+        <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <nav id="site-nav" class="top-nav" aria-label="Primary">
         <div class="top-actions">
           <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
             <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -148,5 +151,6 @@
     </div>
   </footer>
   <script src="js/theme.js" defer></script>
+  <script src="js/site-nav.js" defer></script>
 </body>
 </html>

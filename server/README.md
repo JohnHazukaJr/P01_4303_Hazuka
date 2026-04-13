@@ -47,10 +47,12 @@ Copy the full error message. Try `npm install --verbose`.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/health` | Health check |
-| `POST` | `/api/auth/register` | Create account — JSON `{ "email", "password" }` (password min 8 chars) |
-| `POST` | `/api/auth/login` | Sign in — JSON `{ "email", "password" }` — returns `{ token, message }` |
-| `GET` | `/api/me` | Current user — header `Authorization: Bearer <jwt>` — returns `{ user: { id, email } }` |
-| `GET` | `/api/projects` | List projects (each includes `roles[]` and `role_count`) |
+| `POST` | `/api/auth/register` | Create account — JSON `{ "username", "email", "password" }` (username 3–32 chars; password min 8) |
+| `POST` | `/api/auth/login` | Sign in — JSON `{ "identifier", "password" }` or legacy `{ "email", "password" }` — `identifier` is email **or** username — returns `{ token, message }` |
+| `GET` | `/api/profile-fields` | Work taxonomy — JSON `{ fields: { tech, art, blue_collar: { label, subfields[] } } }` (no auth) |
+| `GET` | `/api/me` | Current user — `Authorization: Bearer <jwt>` — includes `work_tags[]` (labels + ids), legacy `work_field` / `work_subfield` (first tag), `avatar_url`, `profile_complete`, etc. |
+| `PATCH` | `/api/me` | Update profile — **auth** — `work_tags`: 1–12 × `{ work_field, work_subfield }`, or legacy single pair; plus `display_name`, `bio?`, optional `avatar_data`, `avatar_reset` |
+| `GET` | `/api/projects` | List projects (`roles[]`, `role_count`). With `Authorization: Bearer <jwt>`, each project has `feed_match_count` (how many of your field/subfield tags match the owner’s); results sorted by match count then recency |
 | `POST` | `/api/projects` | Create project — JSON `{ "title", "description?" }` — **auth** |
 | `GET` | `/api/projects/:id` | Project detail + roles |
 | `DELETE` | `/api/projects/:id` | Delete project — **owner, auth** |
@@ -59,7 +61,7 @@ Copy the full error message. Try `npm install --verbose`.
 
 ## Frontend
 
-Use **Live Server** on `index.html`. Flow: **register.html** or **login.html** → JWT in `localStorage` → **dashboard.html** (`/api/me`, projects & roles).
+Use **Live Server** on `index.html`. Flow: **register.html** → **profile-setup.html** → **dashboard.html**; or **login.html** → **dashboard.html** (or **profile-setup.html** / **profile.html** if profile is incomplete). Edit anytime via **profile.html** (“Your space”). JWT in `localStorage`.
 
 ## Notes
 

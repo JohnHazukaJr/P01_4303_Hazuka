@@ -17,14 +17,17 @@
   loginForm.addEventListener("submit", async function (e) {
     e.preventDefault();
     var fd = new FormData(loginForm);
-    var email = (fd.get("email") || "").toString().trim();
+    var identifier = (fd.get("identifier") || "").toString().trim();
     var password = (fd.get("password") || "").toString();
 
     try {
       var res = await fetch(API_BASE + "/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, password: password }),
+        body: JSON.stringify({
+          identifier: identifier,
+          password: password,
+        }),
       });
       var data = await res.json().catch(function () {
         return {};
@@ -35,6 +38,12 @@
       }
       if (data.token) {
         window.synodosAuth.setToken(data.token);
+      }
+      if (typeof window.synodosShowAuthSuccess === "function") {
+        await window.synodosShowAuthSuccess("Signed in — welcome back.", {
+          holdMs: 1450,
+          fadeMs: 320,
+        });
       }
       window.location.href = "dashboard.html";
     } catch (err) {
