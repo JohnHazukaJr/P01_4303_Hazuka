@@ -65,3 +65,14 @@
     });
   });
 })();
+
+(function () {
+  var skip = document.querySelector(".skip-link");
+  var main = document.getElementById("main-content");
+  if (!skip || !main) return;
+  skip.addEventListener("click", function () {
+    window.setTimeout(function () {
+      main.focus();
+    }, 0);
+  });
+})();
