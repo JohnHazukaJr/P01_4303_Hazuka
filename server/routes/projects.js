@@ -5,15 +5,41 @@ function parseId(param) {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
+function ownerPublicDisplay(username, displayName, preference) {
+  const pref = String(preference || "username").toLowerCase();
+  const un = username != null ? String(username).trim() : "";
+  const dn = displayName != null ? String(displayName).trim() : "";
+  if (pref === "full_name" && dn.length >= 2) return dn;
+  if (un) return un;
+  if (dn.length >= 2) return dn;
+  return un || "Member";
+}
+
 function loadProject(db, id) {
-  return db
+  const row = db
     .prepare(
-      `SELECT p.id, p.owner_user_id, p.title, p.description, p.created_at, u.email AS owner_email
+      `SELECT p.id, p.owner_user_id, p.title, p.description, p.created_at,
+              u.username AS owner_username,
+              u.display_name AS owner_display_name,
+              u.public_display_as AS owner_public_display_as
        FROM projects p
        JOIN users u ON u.id = p.owner_user_id
        WHERE p.id = ?`
     )
     .get(id);
+  if (!row) return null;
+  return {
+    id: row.id,
+    owner_user_id: row.owner_user_id,
+    title: row.title,
+    description: row.description,
+    created_at: row.created_at,
+    owner_display: ownerPublicDisplay(
+      row.owner_username,
+      row.owner_display_name,
+      row.owner_public_display_as
+    ),
+  };
 }
 
 function loadRoles(db, projectId) {
@@ -75,7 +101,10 @@ function createProjectsRouter(deps) {
       const projects = db
         .prepare(
           `SELECT p.id, p.title, p.description, p.created_at,
-                  p.owner_user_id, u.email AS owner_email,
+                  p.owner_user_id,
+                  u.username AS owner_username,
+                  u.display_name AS owner_display_name,
+                  u.public_display_as AS owner_public_display_as,
                   (SELECT COUNT(*) FROM project_roles r WHERE r.project_id = p.id) AS role_count
            FROM projects p
            JOIN users u ON u.id = p.owner_user_id
@@ -92,6 +121,14 @@ function createProjectsRouter(deps) {
 
       for (let i = 0; i < projects.length; i++) {
         const p = projects[i];
+        p.owner_display = ownerPublicDisplay(
+          p.owner_username,
+          p.owner_display_name,
+          p.owner_public_display_as
+        );
+        delete p.owner_username;
+        delete p.owner_display_name;
+        delete p.owner_public_display_as;
         p.roles = loadRoles(db, p.id);
         if (personalize) {
           const ownerSet = loadUserTagSet(db, p.owner_user_id);
