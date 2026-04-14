@@ -54,6 +54,17 @@ function loadUserWorkTags(userId) {
   return out;
 }
 
+/** Label shown on project cards and elsewhere — never includes email. */
+function publicDisplayLabel(row) {
+  var pref = String(row.public_display_as || "username").toLowerCase();
+  var un = row.username != null ? String(row.username).trim() : "";
+  var dn = row.display_name != null ? String(row.display_name).trim() : "";
+  if (pref === "full_name" && dn.length >= 2) return dn;
+  if (un) return un;
+  if (dn.length >= 2) return dn;
+  return un || "Member";
+}
+
 function signUserToken(userId, email) {
   return jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: "7d" });
 }
@@ -85,7 +96,7 @@ app.get("/", (_req, res) => {
     <li><code>POST /api/auth/login</code> — sign in (JSON: <code>identifier</code> or <code>email</code> + <code>password</code>; identifier = email or username)</li>
     <li><code>GET /api/me</code> — current user + profile (<code>Authorization: Bearer …</code>)</li>
     <li><code>GET /api/profile-fields</code> — work field / subfield options (JSON)</li>
-    <li><code>PATCH /api/me</code> — update profile (JSON, auth): <code>work_tags</code> (array of <code>{ work_field, work_subfield }</code>, 1–12), or legacy <code>work_field</code>+<code>work_subfield</code>; plus <code>display_name</code>, <code>bio</code>, optional <code>avatar_data</code>, <code>avatar_reset</code></li>
+    <li><code>PATCH /api/me</code> — update profile (JSON, auth): <code>work_tags</code> (array of <code>{ work_field, work_subfield }</code>, 1–12), or legacy <code>work_field</code>+<code>work_subfield</code>; plus <code>display_name</code>, <code>public_display_as</code> (<code>full_name</code> or <code>username</code>), <code>bio</code>, optional <code>avatar_data</code>, <code>avatar_reset</code></li>
     <li><code>GET /api/projects</code> — list projects + open roles; with <code>Authorization: Bearer …</code>, each project includes <code>feed_match_count</code> (tag overlap with you) and list is sorted by match then date</li>
     <li><code>POST /api/projects</code> — create project (JSON, auth)</li>
     <li><code>GET /api/projects/:id</code> — project detail</li>
@@ -280,9 +291,13 @@ function userPayload(row, tags) {
   var primary = tags[0];
   return {
     id: row.id,
-    email: row.email,
     username: row.username != null ? String(row.username) : null,
     display_name: displayName,
+    public_display_as:
+      row.public_display_as != null
+        ? String(row.public_display_as)
+        : "username",
+    public_display_label: publicDisplayLabel(row),
     bio: bio,
     avatar_url: row.avatar_url != null ? String(row.avatar_url) : "",
     work_field: primary
@@ -307,7 +322,7 @@ app.get("/api/profile-fields", (_req, res) => {
 app.get("/api/me", requireAuth, (req, res) => {
   var row = db
     .prepare(
-      "SELECT id, email, username, display_name, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
+      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
     )
     .get(req.user.id);
   if (!row) {
@@ -326,6 +341,7 @@ app.patch("/api/me", requireAuth, (req, res) => {
   var workTagsIn = body.work_tags;
   var avatarReset = body.avatar_reset === true;
   var avatarData = body.avatar_data;
+  var publicDisplayAsIn = body.public_display_as;
 
   if (displayNameIn !== undefined && displayNameIn !== null) {
     var dn = String(displayNameIn).trim();
@@ -411,9 +427,20 @@ app.patch("/api/me", requireAuth, (req, res) => {
     });
   }
 
+  var nextPublicDisplayAs = null;
+  if (publicDisplayAsIn !== undefined && publicDisplayAsIn !== null) {
+    var pda = String(publicDisplayAsIn).toLowerCase();
+    if (pda !== "full_name" && pda !== "username") {
+      return res.status(400).json({
+        error: 'public_display_as must be "full_name" or "username"',
+      });
+    }
+    nextPublicDisplayAs = pda;
+  }
+
   var row = db
     .prepare(
-      "SELECT id, email, username, display_name, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
+      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
     )
     .get(req.user.id);
   if (!row) {
@@ -426,6 +453,11 @@ app.patch("/api/me", requireAuth, (req, res) => {
       : String(row.display_name || "").trim();
   var nextBio =
     bioStr !== undefined ? bioStr : String(row.bio || "");
+
+  var nextPda =
+    nextPublicDisplayAs != null
+      ? nextPublicDisplayAs
+      : String(row.public_display_as || "username").toLowerCase();
 
   var nextWf = String(row.work_field || "").trim();
   var nextWs = String(row.work_subfield || "").trim();
@@ -464,12 +496,20 @@ app.patch("/api/me", requireAuth, (req, res) => {
   }
 
   db.prepare(
-    "UPDATE users SET display_name = ?, bio = ?, avatar_url = ?, work_field = ?, work_subfield = ? WHERE id = ?"
-  ).run(nextDisplay, nextBio, nextAvatarUrl, nextWf, nextWs, req.user.id);
+    "UPDATE users SET display_name = ?, bio = ?, avatar_url = ?, work_field = ?, work_subfield = ?, public_display_as = ? WHERE id = ?"
+  ).run(
+    nextDisplay,
+    nextBio,
+    nextAvatarUrl,
+    nextWf,
+    nextWs,
+    nextPda,
+    req.user.id
+  );
 
   var updated = db
     .prepare(
-      "SELECT id, email, username, display_name, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
+      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
     )
     .get(req.user.id);
   var outTags = loadUserWorkTags(req.user.id);

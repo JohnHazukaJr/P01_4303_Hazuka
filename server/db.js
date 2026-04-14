@@ -126,6 +126,22 @@ function migrateUserWorkTagsTable() {
 
 migrateUserWorkTagsTable();
 
+/** full_name = peers see display_name; username = peers see login handle. Email is never public. */
+function migratePublicDisplayAsColumn() {
+  const rows = db.prepare("PRAGMA table_info(users)").all();
+  var names = {};
+  for (var i = 0; i < rows.length; i++) {
+    names[rows[i].name] = true;
+  }
+  if (!names.public_display_as) {
+    db.exec(
+      "ALTER TABLE users ADD COLUMN public_display_as TEXT NOT NULL DEFAULT 'username'"
+    );
+  }
+}
+
+migratePublicDisplayAsColumn();
+
 function normalizeEmail(email) {
   return String(email || "")
     .trim()

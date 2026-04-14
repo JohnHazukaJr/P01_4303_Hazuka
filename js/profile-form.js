@@ -202,7 +202,7 @@
     }
 
     function addWorkTagRow(fieldVal, subVal) {
-      if (!workTagsRoot || !fieldsCatalog) return;
+      if (!workTagsRoot || !fieldsCatalog || !fieldsCatalog.fields) return;
       tagRowCounter++;
       var row = document.createElement("div");
       row.className = "work-tag-row";
@@ -268,7 +268,14 @@
     }
 
     if (workTagsAddBtn && workTagsRoot) {
+      workTagsAddBtn.disabled = true;
       workTagsAddBtn.addEventListener("click", function () {
+        if (!fieldsCatalog || !fieldsCatalog.fields) {
+          window.alert(
+            "Work areas are still loading. Check your connection and that the API is running (server: npm start)."
+          );
+          return;
+        }
         if (workTagsRoot.querySelectorAll(".work-tag-row").length >= WORK_TAGS_MAX) {
           return;
         }
@@ -358,8 +365,27 @@
           window.alert("Could not load profile options from the server.");
           return;
         }
-        var meData = await resMe.json();
-        fieldsCatalog = await resFields.json();
+        var meData;
+        var fieldsPayload;
+        try {
+          var parsed = await Promise.all([resMe.json(), resFields.json()]);
+          meData = parsed[0];
+          fieldsPayload = parsed[1];
+        } catch (parseErr) {
+          window.alert("Invalid response from the server. Is the API URL correct (see SYNODOS_API_BASE)?");
+          return;
+        }
+        if (
+          !fieldsPayload ||
+          typeof fieldsPayload.fields !== "object" ||
+          fieldsPayload.fields === null
+        ) {
+          window.alert(
+            "Profile options from the server were incomplete. Try again or update the app."
+          );
+          return;
+        }
+        fieldsCatalog = fieldsPayload;
 
         if (flow === "setup" && meData.user && meData.user.profile_complete) {
           window.location.href = "dashboard.html";
@@ -400,6 +426,8 @@
 
         updateLivePreview();
         hideSaveStatus();
+        if (workTagsAddBtn) workTagsAddBtn.disabled = false;
+        updateAddButtonState();
       } catch (err) {
         if (typeof console !== "undefined" && console.warn) {
           console.warn("Could not load profile.", err);
@@ -407,6 +435,7 @@
         window.alert(
           "Could not reach the server. In the server folder run: npm install && npm start"
         );
+        if (workTagsAddBtn) workTagsAddBtn.disabled = true;
       }
     }
 

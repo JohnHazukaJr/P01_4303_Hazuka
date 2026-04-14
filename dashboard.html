@@ -83,6 +83,16 @@
       <section class="dashboard-section" aria-labelledby="projects-list-title">
         <h2 id="projects-list-title" class="dashboard-heading">Open projects</h2>
         <p class="dashboard-lead">Everyone signed in can browse; only owners can delete a project or edit its open roles.</p>
+        <div class="projects-toolbar" role="search">
+          <label class="projects-toolbar__search">
+            <span class="visually-hidden">Filter projects by title, description, or owner email</span>
+            <input type="search" id="projects-filter" class="projects-filter-input" placeholder="Filter by title, description, owner…" autocomplete="off" enterkeyhint="search">
+          </label>
+          <label class="projects-toolbar__mine">
+            <input type="checkbox" id="projects-filter-mine">
+            My projects only
+          </label>
+        </div>
         <div id="projects-root" class="projects-grid"></div>
         <p id="projects-empty" class="dashboard-empty" hidden>No projects yet — create one above.</p>
       </section>

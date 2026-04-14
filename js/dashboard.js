@@ -17,11 +17,14 @@
   var outBtn = document.getElementById("dashboard-sign-out");
   var projectsRoot = document.getElementById("projects-root");
   var projectsEmpty = document.getElementById("projects-empty");
+  var projectsFilterInput = document.getElementById("projects-filter");
+  var projectsFilterMine = document.getElementById("projects-filter-mine");
   var formNew = document.getElementById("form-new-project");
   var msgEl = document.getElementById("dashboard-msg");
 
   var token = null;
   var userId = null;
+  var cachedProjects = [];
 
   function setDashboardAvatar(user) {
     if (!dashAvatarImg || !dashAvatarPh) return;
@@ -119,16 +122,60 @@
     return userId != null && Number(project.owner_user_id) === Number(userId);
   }
 
-  function renderProjects(data) {
-    if (!projectsRoot) return;
-    var list = (data && data.projects) || [];
-    projectsRoot.innerHTML = "";
-    if (projectsEmpty) {
-      projectsEmpty.hidden = list.length > 0;
-    }
+  function filterProjects(list) {
+    var q = (
+      (projectsFilterInput && projectsFilterInput.value) ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+    var mineOnly = projectsFilterMine && projectsFilterMine.checked;
+    var out = [];
     for (var i = 0; i < list.length; i++) {
-      projectsRoot.appendChild(renderProjectCard(list[i]));
+      var p = list[i];
+      if (mineOnly && !isOwner(p)) continue;
+      if (q) {
+        var title = String(p.title || "").toLowerCase();
+        var desc = String(p.description || "").toLowerCase();
+        var email = String(p.owner_email || "").toLowerCase();
+        if (
+          title.indexOf(q) === -1 &&
+          desc.indexOf(q) === -1 &&
+          email.indexOf(q) === -1
+        ) {
+          continue;
+        }
+      }
+      out.push(p);
     }
+    return out;
+  }
+
+  function renderProjectList() {
+    if (!projectsRoot) return;
+    var list = filterProjects(cachedProjects);
+    projectsRoot.innerHTML = "";
+    var hasAny = cachedProjects.length > 0;
+    if (projectsEmpty) {
+      if (!hasAny) {
+        projectsEmpty.textContent = "No projects yet — create one above.";
+        projectsEmpty.hidden = false;
+      } else if (list.length === 0) {
+        projectsEmpty.textContent =
+          "No projects match your filter — try different words or clear the search.";
+        projectsEmpty.hidden = false;
+      } else {
+        projectsEmpty.hidden = true;
+      }
+    }
+    for (var j = 0; j < list.length; j++) {
+      projectsRoot.appendChild(renderProjectCard(list[j]));
+    }
+  }
+
+  function renderProjects(data) {
+    cachedProjects = (data && data.projects) || [];
+    renderProjectList();
   }
 
   function renderProjectCard(project) {
@@ -354,9 +401,23 @@
     var ok = await loadMe();
     if (!ok) return;
 
+    function onProjectsFilterChange() {
+      renderProjectList();
+    }
+    if (projectsFilterInput) {
+      projectsFilterInput.addEventListener("input", onProjectsFilterChange);
+    }
+    if (projectsFilterMine) {
+      projectsFilterMine.addEventListener("change", onProjectsFilterChange);
+    }
+
     if (formNew) {
       formNew.addEventListener("submit", async function (ev) {
         ev.preventDefault();
+        if (typeof formNew.reportValidity === "function" && !formNew.checkValidity()) {
+          formNew.reportValidity();
+          return;
+        }
         showMsg("", false);
         var fd = new FormData(formNew);
         var payload = {
