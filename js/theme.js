@@ -1,4 +1,4 @@
-/** Theme toggle, persistence, system preference, skip-link focus. Requires theme-init.js in <head>. */
+/** Theme: cycle light → dark → system (auto). Persistence + skip-link focus. Requires theme-init.js in <head>. */
 (function () {
   var KEY = "synodos_theme";
 
@@ -10,21 +10,48 @@
     }
   }
 
-  function effectiveIsDark() {
+  /** Resolved mode: "light" | "dark" | "auto" (includes unset legacy). */
+  function getMode() {
     var s = getStored();
+    if (s === "light" || s === "dark" || s === "auto") return s;
+    return "auto";
+  }
+
+  function effectiveIsDark() {
+    var s = getMode();
     if (s === "light") return false;
     if (s === "dark") return true;
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   }
 
+  function nextMode() {
+    var m = getMode();
+    if (m === "light") return "dark";
+    if (m === "dark") return "auto";
+    return "light";
+  }
+
+  function toggleAriaLabel(mode, darkNow) {
+    if (mode === "light") {
+      return "Theme: light. Activate for dark mode.";
+    }
+    if (mode === "dark") {
+      return "Theme: dark. Activate to match system appearance.";
+    }
+    return (
+      "Theme: system (" +
+      (darkNow ? "dark" : "light") +
+      "). Activate for light mode."
+    );
+  }
+
   function updateToggles() {
     var dark = effectiveIsDark();
+    var mode = getMode();
     document.querySelectorAll("[data-theme-toggle]").forEach(function (el) {
       el.setAttribute("aria-pressed", dark ? "true" : "false");
-      el.setAttribute(
-        "aria-label",
-        dark ? "Switch to light mode" : "Switch to dark mode"
-      );
+      el.setAttribute("aria-label", toggleAriaLabel(mode, dark));
+      el.setAttribute("title", "Cycles: light → dark → system");
     });
   }
 
@@ -49,7 +76,7 @@
 
   var mq = window.matchMedia("(prefers-color-scheme: dark)");
   function onSchemeChange() {
-    if (getStored() === null) apply();
+    if (getMode() === "auto") apply();
   }
   if (mq.addEventListener) {
     mq.addEventListener("change", onSchemeChange);
@@ -59,7 +86,7 @@
 
   document.querySelectorAll("[data-theme-toggle]").forEach(function (el) {
     el.addEventListener("click", function () {
-      setStored(effectiveIsDark() ? "light" : "dark");
+      setStored(nextMode());
     });
   });
 })();

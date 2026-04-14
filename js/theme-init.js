@@ -5,10 +5,13 @@
   try {
     var key = "synodos_theme";
     var stored = localStorage.getItem(key);
-    var dark =
-      stored === "dark" ||
-      (stored !== "light" &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var dark;
+    if (stored === "dark") dark = true;
+    else if (stored === "light") dark = false;
+    else {
+      /* "auto", unset, or legacy: follow system */
+      dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
   } catch (e) {
     /* ignore */
