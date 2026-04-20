@@ -1,0 +1,3 @@
+{"t":1776660465796,"sessionId":"4f232d","ev":"boot","cwd":"C:\\Users\\12067\\Desktop\\Work\\TTU\\4303 P01\\P01_4303_Hazuka","port":8095}
+{"t":1776660465804,"sessionId":"4f232d","ev":"listen","port":8095}
+{"t":1776660489805,"sessionId":"4f232d","ev":"api","method":"GET","path":"/api/debug/session","status":200,"ms":7}

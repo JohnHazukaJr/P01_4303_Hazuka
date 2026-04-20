@@ -34,9 +34,11 @@ With the server running in another terminal, **`npm run verify`** checks `GET /a
 
 The API listens on **http://localhost:8080** (override with `PORT`).
 
+**Debug session logging** (NDJSON files under the repo, `/api/debug/*` helpers, per-request API logging) runs in development by default. It is **disabled** when `NODE_ENV=production` unless you set `SYNODOS_DEBUG=1`. Hard-off with `SYNODOS_SESSION_LOG=0`.
+
 ### “Cannot GET /” in the browser
 
-`http://localhost:8080/` is **only the API**. Open **`index.html`** with **Live Server** for the site. Use **`http://localhost:8080/api/health`** to verify the API.
+`http://localhost:8080/` is **only the API**. Open **`web/index.html`** with **Live Server** (or serve the `web/` folder) for the site. Use **`http://localhost:8080/api/health`** to verify the API.
 
 ### If `npm install` still fails
 
@@ -67,7 +69,7 @@ Copy the full error message. Try `npm install --verbose`.
 
 ## Frontend
 
-Use **Live Server** on `index.html`. Flow: **register.html** → **profile-setup.html** → **dashboard.html**; or **login.html** → **dashboard.html** (or **profile-setup.html** / **profile.html** if profile is incomplete). Edit anytime via **profile.html** (“Your space”). JWT in `localStorage`.
+Use **Live Server** on `web/index.html` (workspace folder `web/`). Flow: **register.html** → **profile-setup.html** → **dashboard.html**; or **login.html** → **dashboard.html** (or **profile-setup.html** / **profile.html** if profile is incomplete). Edit anytime via **profile.html** (“Your space”). JWT in `localStorage`.
 
 ## Notes
 
