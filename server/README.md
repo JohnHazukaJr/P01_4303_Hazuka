@@ -58,6 +58,12 @@ Copy the full error message. Try `npm install --verbose`.
 | `DELETE` | `/api/projects/:id` | Delete project — **owner, auth** |
 | `POST` | `/api/projects/:id/roles` | Add open role — JSON `{ "title", "skills?", "slots?" }` — **owner, auth** |
 | `DELETE` | `/api/projects/:id/roles/:roleId` | Remove open role — **owner, auth** |
+| `POST` | `/api/projects/:id/join-requests` | Request to join — **auth**, not owner — JSON `{ "role_id?": number, "note?": string }` |
+| `GET` | `/api/projects/:id/join-requests` | List join requests — **owner, auth** — query `?status=pending` (default), `all`, or a specific status |
+| `PATCH` | `/api/projects/:id/join-requests/:requestId` | Accept or decline — **owner** — JSON `{ "status": "accepted" \| "declined" }` |
+| `DELETE` | `/api/projects/:id/join-requests/:requestId` | Withdraw your pending request — **requester** |
+| `GET` | `/api/me/join-requests` | Your outgoing join requests (all statuses) — **auth** |
+| `GET` | `/api/me/project-requests-inbox` | Pending requests across projects you own — **auth** |
 
 ## Frontend
 

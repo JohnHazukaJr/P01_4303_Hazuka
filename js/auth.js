@@ -28,6 +28,21 @@
         return base.replace(/\/+$/, "") + path;
       }
     },
+    /**
+     * Bundled default profile image when the user has no custom upload.
+     * Resolved relative to the current HTML page (works with file:// and static hosts).
+     */
+    getDefaultAvatarUrl: function () {
+      var w = typeof window !== "undefined" ? window : null;
+      if (!w || !w.location || !w.location.href) {
+        return "images/default-avatar.png";
+      }
+      try {
+        return new URL("images/default-avatar.png", w.location.href).href;
+      } catch (e) {
+        return "images/default-avatar.png";
+      }
+    },
     getToken: function () {
       try {
         return localStorage.getItem(TOKEN_KEY);

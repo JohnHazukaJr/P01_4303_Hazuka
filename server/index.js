@@ -17,6 +17,10 @@ const {
 const { createRequireAuth, createOptionalAuth } = require("./authMiddleware");
 const { createProjectsRouter } = require("./routes/projects");
 const {
+  registerProjectJoinRoutes,
+  registerMeJoinRoutes,
+} = require("./routes/joinRequests");
+const {
   isValidWorkField,
   isValidWorkSubfield,
   profileFieldsPayload,
@@ -103,6 +107,12 @@ app.get("/", (_req, res) => {
     <li><code>DELETE /api/projects/:id</code> — delete (owner, auth)</li>
     <li><code>POST /api/projects/:id/roles</code> — add open role (owner, auth)</li>
     <li><code>DELETE /api/projects/:id/roles/:roleId</code> — remove role (owner, auth)</li>
+    <li><code>POST /api/projects/:id/join-requests</code> — request to join (auth, not owner); JSON <code>role_id</code> optional, <code>note</code> optional</li>
+    <li><code>GET /api/projects/:id/join-requests</code> — list requests (owner, auth); <code>?status=pending|all|…</code></li>
+    <li><code>PATCH /api/projects/:id/join-requests/:requestId</code> — accept or decline (owner); JSON <code>status</code></li>
+    <li><code>DELETE /api/projects/:id/join-requests/:requestId</code> — withdraw your pending request (requester)</li>
+    <li><code>GET /api/me/join-requests</code> — your outgoing join requests (auth)</li>
+    <li><code>GET /api/me/project-requests-inbox</code> — pending requests on projects you own (auth)</li>
   </ul>
   <p>Open <strong>index.html</strong> via Live Server to use the site.</p>
 </body>
@@ -332,6 +342,8 @@ app.get("/api/me", requireAuth, (req, res) => {
   res.json({ user: userPayload(row, tags) });
 });
 
+registerMeJoinRoutes(app, { db, requireAuth });
+
 app.patch("/api/me", requireAuth, (req, res) => {
   var body = req.body || {};
   var displayNameIn = body.display_name;
@@ -516,10 +528,13 @@ app.patch("/api/me", requireAuth, (req, res) => {
   res.json({ user: userPayload(updated, outTags) });
 });
 
-app.use(
-  "/api/projects",
-  createProjectsRouter({ db, requireAuth, optionalAuth })
-);
+const projectsRouter = createProjectsRouter({
+  db,
+  requireAuth,
+  optionalAuth,
+});
+registerProjectJoinRoutes(projectsRouter, { db, requireAuth });
+app.use("/api/projects", projectsRouter);
 
 const server = app.listen(PORT, () => {
   console.log(`Synodos API listening at http://localhost:${PORT}`);

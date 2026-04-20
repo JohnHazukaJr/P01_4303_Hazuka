@@ -58,11 +58,17 @@
           <div class="dashboard-user-strip__text">
             <h1 class="auth-title dashboard-user-strip__title" id="dashboard-display-name">Welcome back</h1>
             <p class="auth-lead dashboard-user-strip__lead" style="margin-bottom: 0;">
-              Signed in as <strong id="dashboard-email">…</strong>. Post a project and list open roles so peers can discover how to join.
+              Your account email is private. Post a project and list open roles so peers can discover how to join.
             </p>
           </div>
         </div>
       </div>
+
+      <section class="dashboard-section" id="dash-requests-inbox-section" aria-labelledby="dash-inbox-title" hidden>
+        <h2 id="dash-inbox-title" class="dashboard-heading">Requests on my projects</h2>
+        <p class="dashboard-lead">People who asked to join a project you own. Accept or decline to respond.</p>
+        <div id="dash-requests-inbox-root" class="requests-inbox-root"></div>
+      </section>
 
       <section class="dashboard-section" aria-labelledby="new-project-title">
         <h2 id="new-project-title" class="dashboard-heading">Start a project</h2>
@@ -85,7 +91,7 @@
         <p class="dashboard-lead">Everyone signed in can browse; only owners can delete a project or edit its open roles.</p>
         <div class="projects-toolbar" role="search">
           <label class="projects-toolbar__search">
-            <span class="visually-hidden">Filter projects by title, description, or owner email</span>
+            <span class="visually-hidden">Filter projects by title, description, or owner name</span>
             <input type="search" id="projects-filter" class="projects-filter-input" placeholder="Filter by title, description, owner…" autocomplete="off" enterkeyhint="search">
           </label>
           <label class="projects-toolbar__mine">

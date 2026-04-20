@@ -142,6 +142,33 @@ function migratePublicDisplayAsColumn() {
 
 migratePublicDisplayAsColumn();
 
+function migrateProjectJoinRequestsTable() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS project_join_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      requester_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      project_role_id INTEGER REFERENCES project_roles(id) ON DELETE SET NULL,
+      note TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'withdrawn', 'accepted', 'declined')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved_at TEXT
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_pjr_project ON project_join_requests(project_id);
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_pjr_requester ON project_join_requests(requester_user_id);
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_pjr_project_status ON project_join_requests(project_id, status);
+  `);
+}
+
+migrateProjectJoinRequestsTable();
+
 function normalizeEmail(email) {
   return String(email || "")
     .trim()

@@ -55,7 +55,7 @@
                 <span class="profile-section__step" aria-hidden="true">1</span>
                 <h2 id="edit-sec-identity" class="profile-section__title">How you appear</h2>
               </div>
-              <p class="profile-section__help" id="edit-display-desc">Name shown to peers across Synodos.</p>
+              <p class="profile-section__help" id="edit-display-desc">Full name or preferred name (required). Peers see either this or your username — you choose below. Your email is never shown publicly.</p>
               <div class="field">
                 <label for="display_name">Display name</label>
                 <input
@@ -70,6 +70,18 @@
                   aria-describedby="edit-display-desc"
                 >
               </div>
+              <fieldset class="field profile-public-display-fieldset">
+                <legend class="profile-public-display-legend">How peers see you</legend>
+                <p class="field-hint" id="edit-public-display-hint">Shown on project cards and anywhere your name appears to others.</p>
+                <label class="profile-radio-option">
+                  <input type="radio" name="public_display_as" value="full_name" aria-describedby="edit-public-display-hint">
+                  Full name (display name above)
+                </label>
+                <label class="profile-radio-option">
+                  <input type="radio" name="public_display_as" value="username" checked aria-describedby="edit-public-display-hint">
+                  Username
+                </label>
+              </fieldset>
             </section>
 
             <section class="profile-section" aria-labelledby="edit-sec-photo">

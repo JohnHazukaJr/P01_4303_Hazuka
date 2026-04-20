@@ -10,7 +10,6 @@
   }
 
   var API_BASE = window.synodosAuth.apiBase;
-  var emailEl = document.getElementById("dashboard-email");
   var displayNameEl = document.getElementById("dashboard-display-name");
   var dashAvatarImg = document.getElementById("dashboard-avatar-img");
   var dashAvatarPh = document.getElementById("dashboard-avatar-placeholder");
@@ -21,6 +20,8 @@
   var projectsFilterMine = document.getElementById("projects-filter-mine");
   var formNew = document.getElementById("form-new-project");
   var msgEl = document.getElementById("dashboard-msg");
+  var inboxSection = document.getElementById("dash-requests-inbox-section");
+  var inboxRoot = document.getElementById("dash-requests-inbox-root");
 
   var token = null;
   var userId = null;
@@ -28,34 +29,46 @@
 
   function setDashboardAvatar(user) {
     if (!dashAvatarImg || !dashAvatarPh) return;
-    var url = user && user.avatar_url ? String(user.avatar_url) : "";
-    if (url.length > 0) {
-      dashAvatarImg.alt = user.display_name
+    var pub =
+      user && user.public_display_label != null
+        ? String(user.public_display_label).trim()
+        : "";
+    var url = user && user.avatar_url ? String(user.avatar_url).trim() : "";
+    var alt = pub
+      ? "Avatar for " + pub
+      : user && user.display_name
         ? "Avatar for " + String(user.display_name).trim()
         : "Profile photo";
-      function revealDashAvatar() {
-        dashAvatarImg.hidden = false;
-        dashAvatarPh.hidden = true;
-      }
-      dashAvatarImg.onload = function () {
-        revealDashAvatar();
-      };
-      dashAvatarImg.onerror = function () {
-        dashAvatarImg.hidden = true;
-        dashAvatarPh.hidden = false;
-      };
-      dashAvatarImg.src = window.synodosAuth.assetUrl(url);
-      /* Cached images may skip `load`; reveal when pixels are ready (`decode` or sync dimensions). */
-      if (dashAvatarImg.complete && dashAvatarImg.naturalWidth > 0) {
-        revealDashAvatar();
-      } else if (typeof dashAvatarImg.decode === "function") {
-        dashAvatarImg.decode().then(revealDashAvatar).catch(function () {});
-      }
-    } else {
+    dashAvatarImg.alt = alt;
+    var tryUploadedFirst = url.length > 0;
+    function revealDashAvatar() {
+      dashAvatarImg.hidden = false;
+      dashAvatarPh.hidden = true;
+    }
+    function showDashSvgPlaceholder() {
       dashAvatarImg.hidden = true;
       dashAvatarImg.removeAttribute("src");
-      dashAvatarImg.alt = "";
       dashAvatarPh.hidden = false;
+    }
+    dashAvatarImg.onload = function () {
+      revealDashAvatar();
+    };
+    dashAvatarImg.onerror = function () {
+      if (tryUploadedFirst) {
+        tryUploadedFirst = false;
+        dashAvatarImg.src = window.synodosAuth.getDefaultAvatarUrl();
+      } else {
+        showDashSvgPlaceholder();
+      }
+    };
+    dashAvatarImg.src = tryUploadedFirst
+      ? window.synodosAuth.assetUrl(url)
+      : window.synodosAuth.getDefaultAvatarUrl();
+    /* Cached images may skip `load`; reveal when pixels are ready (`decode` or sync dimensions). */
+    if (dashAvatarImg.complete && dashAvatarImg.naturalWidth > 0) {
+      revealDashAvatar();
+    } else if (typeof dashAvatarImg.decode === "function") {
+      dashAvatarImg.decode().then(revealDashAvatar).catch(function () {});
     }
   }
 
@@ -95,12 +108,10 @@
       return false;
     }
     userId = data.user && data.user.id;
-    if (emailEl && data.user && data.user.email) {
-      emailEl.textContent = data.user.email;
-    }
     if (displayNameEl && data.user) {
+      var pub = String(data.user.public_display_label || "").trim();
       var dn = String(data.user.display_name || "").trim();
-      displayNameEl.textContent = dn || "Welcome back";
+      displayNameEl.textContent = pub || dn || "Welcome back";
     }
     if (data.user) {
       setDashboardAvatar(data.user);
@@ -137,11 +148,11 @@
       if (q) {
         var title = String(p.title || "").toLowerCase();
         var desc = String(p.description || "").toLowerCase();
-        var email = String(p.owner_email || "").toLowerCase();
+        var ownerLabel = String(p.owner_display || "").toLowerCase();
         if (
           title.indexOf(q) === -1 &&
           desc.indexOf(q) === -1 &&
-          email.indexOf(q) === -1
+          ownerLabel.indexOf(q) === -1
         ) {
           continue;
         }
@@ -187,12 +198,17 @@
 
     var title = document.createElement("h3");
     title.className = "project-card__title";
-    title.textContent = project.title || "Untitled";
+    var titleLink = document.createElement("a");
+    titleLink.className = "project-card__title-link";
+    titleLink.href =
+      "project.html?id=" + encodeURIComponent(String(project.id));
+    titleLink.textContent = project.title || "Untitled";
+    title.appendChild(titleLink);
 
     var meta = document.createElement("p");
     meta.className = "project-card__meta";
     meta.textContent =
-      "Owner: " + (project.owner_email || "?");
+      "Owner: " + (project.owner_display || "?");
     var feedN = Number(project.feed_match_count);
     if (token && Number.isFinite(feedN) && feedN > 0) {
       var feedBadge = document.createElement("span");
@@ -326,6 +342,107 @@
         (err && err.message) || "Something went wrong loading projects.",
         true
       );
+    }
+    await loadInbox();
+  }
+
+  function renderInboxCard(req) {
+    var card = document.createElement("article");
+    card.className = "requests-inbox-card";
+    var title = document.createElement("h3");
+    title.className = "requests-inbox-card__project";
+    var projLink = document.createElement("a");
+    projLink.href =
+      "project.html?id=" + encodeURIComponent(String(req.project_id));
+    projLink.textContent = req.project_title || "Project";
+    title.appendChild(projLink);
+    card.appendChild(title);
+    var who = document.createElement("p");
+    who.className = "requests-inbox-card__who";
+    who.textContent =
+      "From: " +
+      (req.requester && req.requester.public_display_label
+        ? req.requester.public_display_label
+        : "?");
+    card.appendChild(who);
+    if (req.role_title) {
+      var role = document.createElement("p");
+      role.className = "requests-inbox-card__role";
+      role.textContent = "Interested in: " + req.role_title;
+      card.appendChild(role);
+    }
+    if (req.note) {
+      var note = document.createElement("p");
+      note.className = "requests-inbox-card__note";
+      note.textContent = req.note;
+      card.appendChild(note);
+    }
+    var actions = document.createElement("div");
+    actions.className = "requests-inbox-card__actions";
+    var acc = document.createElement("button");
+    acc.type = "button";
+    acc.className = "btn btn-primary";
+    acc.textContent = "Accept";
+    acc.addEventListener("click", function () {
+      resolveInboxRequest(req.project_id, req.id, "accepted");
+    });
+    var dec = document.createElement("button");
+    dec.type = "button";
+    dec.className = "btn btn-ghost";
+    dec.textContent = "Decline";
+    dec.addEventListener("click", function () {
+      resolveInboxRequest(req.project_id, req.id, "declined");
+    });
+    actions.appendChild(acc);
+    actions.appendChild(dec);
+    card.appendChild(actions);
+    return card;
+  }
+
+  async function loadInbox() {
+    if (!inboxSection || !inboxRoot || !token) return;
+    try {
+      var res = await fetch(API_BASE + "/api/me/project-requests-inbox", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (!res.ok) return;
+      var data = await res.json();
+      var list = data.requests || [];
+      inboxSection.hidden = list.length === 0;
+      inboxRoot.innerHTML = "";
+      for (var i = 0; i < list.length; i++) {
+        inboxRoot.appendChild(renderInboxCard(list[i]));
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  async function resolveInboxRequest(projectId, requestId, status) {
+    showMsg("", false);
+    try {
+      var res = await fetch(
+        API_BASE +
+          "/api/projects/" +
+          projectId +
+          "/join-requests/" +
+          requestId,
+        {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({ status: status }),
+        }
+      );
+      var data = await res.json().catch(function () {
+        return {};
+      });
+      if (!res.ok) {
+        showMsg(data.error || "Could not update request", true);
+        return;
+      }
+      await refresh();
+    } catch (e) {
+      showMsg("Could not update request.", true);
     }
   }
 
