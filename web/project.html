@@ -26,11 +26,15 @@
             <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
           </button>
           <a class="btn btn-ghost" href="index.html">Home</a>
-          <a class="btn btn-ghost" href="login.html" data-nav-guest>Log in</a>
-          <a class="btn btn-ghost" href="register.html" data-nav-guest>Register</a>
-          <a class="btn btn-ghost" href="dashboard.html" data-nav-user hidden>Dashboard</a>
-          <a class="btn btn-ghost" href="profile.html" data-nav-user hidden>Your space</a>
-          <button type="button" class="btn btn-ghost" data-nav-user data-nav-sign-out hidden>Sign out</button>
+          <div class="top-actions__auth-group" data-nav-group="guest" aria-label="Sign in options">
+            <a class="btn btn-ghost" href="login.html">Log in</a>
+            <a class="btn btn-primary" href="register.html">Get started</a>
+          </div>
+          <div class="top-actions__auth-group" data-nav-group="user" hidden aria-label="Your account">
+            <a class="btn btn-ghost" href="dashboard.html">Dashboard</a>
+            <a class="btn btn-ghost" href="profile.html">Your space</a>
+            <button type="button" class="btn btn-ghost" data-nav-sign-out>Sign out</button>
+          </div>
         </div>
       </nav>
     </div>
@@ -66,9 +70,14 @@
     <div class="wrap">
       <nav class="footer-nav" aria-label="Site pages">
         <a href="index.html">Home</a>
-        <a href="login.html">Log in</a>
-        <a href="register.html">Register</a>
-        <a href="dashboard.html">Dashboard</a>
+        <span class="footer-nav__cluster" data-nav-group="guest">
+          <a href="login.html">Log in</a>
+          <a href="register.html">Get started</a>
+        </span>
+        <span class="footer-nav__cluster" data-nav-group="user" hidden>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="profile.html">Your space</a>
+        </span>
       </nav>
       <p>Synodos · P01_4303_Hazuka</p>
     </div>

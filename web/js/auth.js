@@ -64,5 +64,47 @@
         /* ignore */
       }
     },
+    /** Debug session NDJSON via POST /api/debug/client-log (localhost / file only). */
+    agentDebug: function (payload) {
+      var w = typeof window !== "undefined" ? window : null;
+      if (!w || !w.fetch) return;
+      var host = w.location && w.location.hostname;
+      if (
+        host &&
+        host !== "localhost" &&
+        host !== "127.0.0.1" &&
+        host !== "[::1]"
+      ) {
+        return;
+      }
+      var base = String(this.apiBase || "http://localhost:8080")
+        .trim()
+        .replace(/\/+$/, "");
+      if (!base) return;
+      // #region agent log
+      w.fetch(base + "/api/debug/client-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          Object.assign(
+            { sessionId: "4f232d", timestamp: Date.now() },
+            payload || {}
+          )
+        ),
+      }).catch(function () {});
+      // #endregion
+    },
   };
+  // #region agent log
+  global.synodosAuth.agentDebug({
+    hypothesisId: "H1",
+    location: "auth.js:boot",
+    message: "synodosAuth init",
+    data: {
+      apiBase: global.synodosAuth.apiBase,
+      hasToken: !!global.synodosAuth.getToken(),
+      path: win && win.location && win.location.pathname,
+    },
+  });
+  // #endregion
 })(typeof window !== "undefined" ? window : this);

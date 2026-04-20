@@ -97,6 +97,14 @@
     var res = await fetch(API_BASE + "/api/me", {
       headers: { Authorization: "Bearer " + token },
     });
+    // #region agent log
+    window.synodosAuth.agentDebug({
+      hypothesisId: "H3",
+      location: "dashboard.js:loadMe",
+      message: "GET /api/me",
+      data: { status: res.status, ok: res.ok },
+    });
+    // #endregion
     if (!res.ok) {
       window.synodosAuth.clearToken();
       window.location.href = "login.html";

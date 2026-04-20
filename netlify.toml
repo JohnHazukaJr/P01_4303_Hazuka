@@ -1,7 +1,7 @@
-# Static site from repo root (no install/build).
+# Static site lives in `web/` (no install/build).
 [build]
   command = "true"
-  publish = "."
+  publish = "web"
 
 [[headers]]
   for = "/*"

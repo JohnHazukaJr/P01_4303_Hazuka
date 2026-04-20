@@ -32,6 +32,14 @@
       var data = await res.json().catch(function () {
         return {};
       });
+      // #region agent log
+      window.synodosAuth.agentDebug({
+        hypothesisId: "H2",
+        location: "login.js:login_response",
+        message: "POST /api/auth/login",
+        data: { status: res.status, ok: res.ok, err: data.error || null },
+      });
+      // #endregion
       if (!res.ok) {
         window.alert(data.error || res.statusText || "Sign-in failed");
         return;
@@ -47,6 +55,14 @@
       }
       window.location.href = "dashboard.html";
     } catch (err) {
+      // #region agent log
+      window.synodosAuth.agentDebug({
+        hypothesisId: "H2",
+        location: "login.js:login_catch",
+        message: "login fetch failed",
+        data: { name: err && err.name, message: err && err.message },
+      });
+      // #endregion
       if (typeof console !== "undefined" && console.warn) {
         console.warn("Backend not reachable.", err);
       }

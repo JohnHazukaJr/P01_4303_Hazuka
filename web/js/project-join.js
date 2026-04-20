@@ -32,8 +32,8 @@
       pan.innerHTML =
         '<p class="dashboard-lead">Log in to request to join this project.</p>' +
         '<p style="margin:0;display:flex;flex-wrap:wrap;gap:0.5rem">' +
-        '<a class="btn btn-primary" href="login.html">Log in</a>' +
-        '<a class="btn btn-ghost" href="register.html">Register</a>' +
+        '<a class="btn btn-ghost" href="login.html">Log in</a>' +
+        '<a class="btn btn-primary" href="register.html">Get started</a>' +
         "</p>";
       return;
     }
