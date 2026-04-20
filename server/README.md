@@ -36,7 +36,7 @@ The API listens on **http://localhost:8080** (override with `PORT`).
 
 ### “Cannot GET /” in the browser
 
-`http://localhost:8080/` is **only the API**. Open **`index.html`** with **Live Server** for the site. Use **`http://localhost:8080/api/health`** to verify the API.
+`http://localhost:8080/` is **only the API**. Open **`web/index.html`** with **Live Server** (or serve the `web/` folder) for the site. Use **`http://localhost:8080/api/health`** to verify the API.
 
 ### If `npm install` still fails
 
@@ -67,7 +67,7 @@ Copy the full error message. Try `npm install --verbose`.
 
 ## Frontend
 
-Use **Live Server** on `index.html`. Flow: **register.html** → **profile-setup.html** → **dashboard.html**; or **login.html** → **dashboard.html** (or **profile-setup.html** / **profile.html** if profile is incomplete). Edit anytime via **profile.html** (“Your space”). JWT in `localStorage`.
+Use **Live Server** on `web/index.html` (workspace folder `web/`). Flow: **register.html** → **profile-setup.html** → **dashboard.html**; or **login.html** → **dashboard.html** (or **profile-setup.html** / **profile.html** if profile is incomplete). Edit anytime via **profile.html** (“Your space”). JWT in `localStorage`.
 
 ## Notes
 
