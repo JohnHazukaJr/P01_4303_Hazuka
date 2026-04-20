@@ -33,7 +33,14 @@ const JWT_SECRET =
   process.env.JWT_SECRET || "synodos-dev-secret-change-in-production";
 const BCRYPT_ROUNDS = 10;
 
-/** NDJSON lines (debug session). Primary: repo `debug-4f232d.log`; mirrors if primary is gitignored or cwd differs. Disable: `SYNODOS_SESSION_LOG=0`. */
+/**
+ * Dev-only debug session logging (NDJSON files + optional client ingest).
+ * Off when `SYNODOS_SESSION_LOG=0`, or when `NODE_ENV=production` unless `SYNODOS_DEBUG=1`.
+ */
+const ALLOW_DEBUG_SESSION =
+  process.env.SYNODOS_SESSION_LOG !== "0" &&
+  (process.env.NODE_ENV !== "production" || process.env.SYNODOS_DEBUG === "1");
+
 const SESSION_LOG_PATHS = [
   path.join(__dirname, "..", "debug-4f232d.log"),
   path.join(__dirname, "..", "synodos-debug-4f232d.ndjson"),
@@ -44,7 +51,7 @@ var debugSessionBuffer = [];
 var sessionLogWriteWarned = false;
 
 function sessionLog(payload) {
-  if (process.env.SYNODOS_SESSION_LOG === "0") return;
+  if (!ALLOW_DEBUG_SESSION) return;
   var obj = Object.assign({ t: Date.now(), sessionId: "4f232d" }, payload);
   var line = JSON.stringify(obj) + "\n";
   debugSessionBuffer.push(obj);
@@ -127,22 +134,24 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 
-app.use((req, res, next) => {
-  if (!req.path || req.path.indexOf("/api/") !== 0) {
-    return next();
-  }
-  var t0 = Date.now();
-  res.on("finish", function () {
-    sessionLog({
-      ev: "api",
-      method: req.method,
-      path: req.path,
-      status: res.statusCode,
-      ms: Date.now() - t0,
+if (ALLOW_DEBUG_SESSION) {
+  app.use((req, res, next) => {
+    if (!req.path || req.path.indexOf("/api/") !== 0) {
+      return next();
+    }
+    var t0 = Date.now();
+    res.on("finish", function () {
+      sessionLog({
+        ev: "api",
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        ms: Date.now() - t0,
+      });
     });
+    next();
   });
-  next();
-});
+}
 
 app.use(
   "/uploads",
@@ -185,42 +194,38 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-/** Browser debug NDJSON (no secrets). Disabled when SYNODOS_SESSION_LOG=0. */
-app.post("/api/debug/client-log", (req, res) => {
-  if (process.env.SYNODOS_SESSION_LOG === "0") {
-    return res.status(204).end();
-  }
-  var b = req.body && typeof req.body === "object" ? req.body : {};
-  var data = b.data;
-  if (data != null && typeof data !== "object") {
-    data = { value: String(data).slice(0, 500) };
-  }
-  sessionLog({
-    ev: "client",
-    hypothesisId:
-      typeof b.hypothesisId === "string"
-        ? b.hypothesisId.slice(0, 64)
-        : undefined,
-    location:
-      typeof b.location === "string" ? b.location.slice(0, 200) : undefined,
-    message:
-      typeof b.message === "string" ? b.message.slice(0, 200) : undefined,
-    data: data,
-    clientTs: typeof b.timestamp === "number" ? b.timestamp : undefined,
+if (ALLOW_DEBUG_SESSION) {
+  /** Browser debug NDJSON (no secrets). */
+  app.post("/api/debug/client-log", (req, res) => {
+    var b = req.body && typeof req.body === "object" ? req.body : {};
+    var data = b.data;
+    if (data != null && typeof data !== "object") {
+      data = { value: String(data).slice(0, 500) };
+    }
+    sessionLog({
+      ev: "client",
+      hypothesisId:
+        typeof b.hypothesisId === "string"
+          ? b.hypothesisId.slice(0, 64)
+          : undefined,
+      location:
+        typeof b.location === "string" ? b.location.slice(0, 200) : undefined,
+      message:
+        typeof b.message === "string" ? b.message.slice(0, 200) : undefined,
+      data: data,
+      clientTs: typeof b.timestamp === "number" ? b.timestamp : undefined,
+    });
+    res.status(204).end();
   });
-  res.status(204).end();
-});
 
-/** Same events as NDJSON files; localhost only (paste into chat if workspace log does not sync). */
-app.get("/api/debug/session", (req, res) => {
-  if (process.env.SYNODOS_SESSION_LOG === "0") {
-    return res.status(404).end();
-  }
-  if (!requestIsLocalhost(req)) {
-    return res.status(404).end();
-  }
-  res.json({ sessionId: "4f232d", events: debugSessionBuffer });
-});
+  /** Same events as NDJSON files; localhost only. */
+  app.get("/api/debug/session", (req, res) => {
+    if (!requestIsLocalhost(req)) {
+      return res.status(404).end();
+    }
+    res.json({ sessionId: "4f232d", events: debugSessionBuffer });
+  });
+}
 
 app.post("/api/auth/register", (req, res) => {
   const email = normalizeEmail(req.body?.email);
