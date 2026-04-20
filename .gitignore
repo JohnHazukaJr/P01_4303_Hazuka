@@ -4,3 +4,6 @@ server/data/
 .DS_Store
 Thumbs.db
 *.log
+!debug-4f232d.log
+synodos-debug-4f232d.ndjson
+server/debug-4f232d.log

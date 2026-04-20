@@ -386,6 +386,12 @@ a:focus-visible {
     width: 100%;
     justify-content: center;
   }
+
+  .top-actions__auth-group {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+  }
 }
 
 @media (min-width: 48rem) {
@@ -442,6 +448,33 @@ a:focus-visible {
     flex-wrap: nowrap;
     overflow: visible;
   }
+}
+
+/* Auth nav: one visible group at a time (guest vs signed-in). */
+.top-actions__auth-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Any nav group (header or footer): `[hidden]` must win over flex `display`. */
+[data-nav-group="guest"][hidden],
+[data-nav-group="user"][hidden] {
+  display: none !important;
+}
+
+.footer-nav__cluster {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+/* Legacy per-link toggles (if present): `.btn` overrides UA `[hidden]`. */
+.top-actions [data-nav-guest][hidden],
+.top-actions [data-nav-user][hidden] {
+  display: none !important;
 }
 
 /* ——— Buttons ——— */

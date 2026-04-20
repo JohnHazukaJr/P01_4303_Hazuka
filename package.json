@@ -1,0 +1,10 @@
+{
+  "name": "synodos",
+  "private": true,
+  "description": "Synodos — run API from repo root without cd into server/",
+  "scripts": {
+    "start": "npm --prefix server start",
+    "server": "npm --prefix server start",
+    "verify": "npm --prefix server run verify"
+  }
+}

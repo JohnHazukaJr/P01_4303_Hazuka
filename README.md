@@ -37,36 +37,47 @@ These are the capabilities the product is designed around; implementation will g
 
 ## Status
 
-This repository is the home for the Synodos project. Application code, stack choices, and deployment instructions will be added as the build progresses.
+This repo contains a **working prototype**: static pages in [`web/`](web/) and a **Node.js + Express + SQLite** API in [`server/`](server/). Implemented today: accounts (register / login, JWT), profiles with work tags and avatars, projects with open roles, a dashboard feed, public project pages, and join requests (request, owner inbox, accept / decline). Roadmap items (timelines, richer discovery, attribution) are tracked in [`docs/NEXT.md`](docs/NEXT.md).
 
 ## Repository layout
 
 | Path | Purpose |
 |------|---------|
-| [`index.html`](index.html) | Landing page entry (open locally or serve from repo root). |
-| [`login.html`](login.html) | Sign-in with email or username — JWT stored for `dashboard.html`. |
-| [`register.html`](register.html) | Create account with username, email, and password (`POST /api/auth/register`). |
-| [`profile-setup.html`](profile-setup.html) | First-time profile (after register) — full profile + live preview (`PATCH /api/me`). |
-| [`profile.html`](profile.html) | Edit your Synodos space anytime (same fields + preview). |
-| [`dashboard.html`](dashboard.html) | After login and completed profile — projects and `GET /api/me`. |
-| [`project.html`](project.html) | Public project page (`?id=`) — open roles and join requests. |
-| [`css/`](css/) | Stylesheets (`style.css`). |
-| [`js/`](js/) | `auth.js`, `public-nav.js`, `theme-init.js`, `theme.js`, `site-nav.js`, `login.js`, `register.js`, `profile-form.js`, `dashboard.js`, `project-page.js`, `project-join.js`, etc. |
-| [`assets/`](assets/) | Images, icons, or other static files (optional). |
+| [`web/`](web/) | **Static site** — HTML pages, [`web/css/`](web/css/), [`web/js/`](web/js/), [`web/images/`](web/images/). Deploy this folder (Netlify / GitHub Pages). |
+| [`web/index.html`](web/index.html) | Landing page. |
+| [`web/login.html`](web/login.html) | Sign-in — JWT stored for the dashboard. |
+| [`web/register.html`](web/register.html) | Create account (`POST /api/auth/register`). |
+| [`web/profile-setup.html`](web/profile-setup.html) | First-time profile after register (`PATCH /api/me`). |
+| [`web/profile.html`](web/profile.html) | Edit profile (“Your space”). |
+| [`web/dashboard.html`](web/dashboard.html) | Projects feed after login + completed profile. |
+| [`web/project.html`](web/project.html) | Public project page (`?id=`). |
 | [`server/`](server/) | **Node.js (Express)** REST API — see [`server/README.md`](server/README.md). |
-| [`NEXT.md`](NEXT.md) | Roadmap and dev-loop checklist. |
+| [`docs/NEXT.md`](docs/NEXT.md) | Roadmap and dev-loop checklist. |
+| [`docs/STRUCTURE.md`](docs/STRUCTURE.md) | Folder overview. |
+| [`index.html`](index.html) (repo root) | Redirects to [`web/index.html`](web/index.html) when you open the repo root in a browser (`file://` or a static server). |
 
 ## Getting started
 
-**Backend (Node.js):** Use **Node.js 22.5+** (needed for built-in SQLite). In the `server` folder run `npm install` then `npm start`. The API serves at `http://localhost:8080` (`GET /api/health`, auth routes in [`server/README.md`](server/README.md)).
+**Backend (Node.js):** Use **Node.js 22.5+** (needed for built-in SQLite).
 
-**Frontend:** Open `index.html` or `login.html` through a local web server (for example Live Server) so the login page can reach the API. With the server stopped, sign-in shows a short alert explaining how to start it.
+1. Install dependencies (once): from the **repo root** run `npm install --prefix server`, **or** `cd server` then `npm install`.
+2. Start the API:
+   - **From repo root:** `npm start` (uses the root `package.json` to run the server).
+   - **From `server/`:** `npm start`.
 
-**Verify API (optional):** With `npm start` running in another terminal, from `server/` run `npm run verify` — it checks `GET /api/health`.
+The API listens at `http://localhost:8080` (`GET /api/health`; full routes in [`server/README.md`](server/README.md)).
+
+**If `npm start` fails with “port 8080 already in use”:** another program (often a previous `npm start`) is using that port. Stop it, or use another port, e.g. in PowerShell: `$env:PORT=8081; npm start` (from root) or `cd server` then the same `PORT` line before `npm start`.
+
+**If `npm` / `node` is not recognized:** install [Node.js LTS](https://nodejs.org/) and open a **new** terminal.
+
+**Frontend:** Open **`web/index.html`** (or serve the **`web/`** folder) with Live Server so pages can reach the API. If the UI is hosted separately (e.g. GitHub Pages) and the API is on another origin, set **`window.SYNODOS_API_BASE`** to your API base URL (see script includes on pages that load [`web/js/auth.js`](web/js/auth.js)).
+
+**Verify API (optional):** With the server running, from repo root run `npm run verify`, or `cd server` and `npm run verify`.
 
 ## What to do next
 
-See **[`NEXT.md`](NEXT.md)** for the dev loop checklist (Live Server + login) and a **feature roadmap** (real auth, sign-up, projects, deploy). Align priorities with your course requirements.
+See **[`docs/NEXT.md`](docs/NEXT.md)** for the dev loop checklist (Live Server + login) and a **feature roadmap**. Align priorities with your course requirements.
 
 ## Contributing
 

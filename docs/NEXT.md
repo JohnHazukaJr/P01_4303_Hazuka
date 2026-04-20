@@ -23,7 +23,7 @@
 ## Dev loop checklist
 
 1. Terminal: `cd server` → `npm start` (API at `http://localhost:8080`).
-2. **Live Server** on `index.html`.
+2. **Live Server** on **`web/index.html`** (or serve the `web/` folder).
 3. Register → **profile-setup.html** → **dashboard.html** (or log in → dashboard). Create a project and open roles; open **project.html?id=…** to request to join; owners see pending requests on the dashboard.
 4. Optional: `cd server` → `npm run verify` for `/api/health`.
 
