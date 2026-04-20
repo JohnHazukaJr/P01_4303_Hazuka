@@ -1,6 +1,6 @@
-# Synodos — Node.js backend (Express)
+# synodos — Node.js backend (Express)
 
-REST API for the Synodos project. Requires **[Node.js 22.5+](https://nodejs.org/)** (built-in [`node:sqlite`](https://nodejs.org/api/sqlite.html); no native addon install).
+REST API for the synodos project. Requires **[Node.js 22.5+](https://nodejs.org/)** (built-in [`node:sqlite`](https://nodejs.org/api/sqlite.html); no native addon install).
 
 ## Stack
 
@@ -33,8 +33,6 @@ npm start
 With the server running in another terminal, **`npm run verify`** checks `GET /api/health`.
 
 The API listens on **http://localhost:8080** (override with `PORT`).
-
-**Debug session logging** (NDJSON files under the repo, `/api/debug/*` helpers, per-request API logging) runs in development by default. It is **disabled** when `NODE_ENV=production` unless you set `SYNODOS_DEBUG=1`. Hard-off with `SYNODOS_SESSION_LOG=0`.
 
 ### “Cannot GET /” in the browser
 
