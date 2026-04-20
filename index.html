@@ -26,9 +26,12 @@
             <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
           </button>
           <a class="btn btn-ghost" href="#about">About</a>
-          <a class="btn btn-ghost" href="login.html">Log in</a>
-          <a class="btn btn-ghost" href="register.html">Register</a>
-          <a class="btn btn-primary" href="#join">Get started</a>
+          <a class="btn btn-ghost" href="login.html" data-nav-guest>Log in</a>
+          <a class="btn btn-ghost" href="register.html" data-nav-guest>Register</a>
+          <a class="btn btn-primary" href="register.html" data-nav-guest>Get started</a>
+          <a class="btn btn-ghost" href="dashboard.html" data-nav-user hidden>Dashboard</a>
+          <a class="btn btn-ghost" href="profile.html" data-nav-user hidden>Your space</a>
+          <button type="button" class="btn btn-ghost" data-nav-user data-nav-sign-out hidden>Sign out</button>
         </div>
       </nav>
     </div>
@@ -43,7 +46,7 @@
         people who complement your skills and actually want to build with you.
       </p>
       <div class="hero-ctas">
-        <a class="btn btn-primary" href="#join">Join the community</a>
+        <a class="btn btn-primary" href="register.html">Join the community</a>
         <a class="btn btn-ghost" href="#how">See how it works</a>
       </div>
     </div>
@@ -128,7 +131,7 @@
           Synodos is in early development. Check back as the product opens up—or follow your course
           repo for updates on the first public release.
         </p>
-        <a class="btn btn-primary btn-on-cobalt" href="#">Stay in the loop</a>
+        <a class="btn btn-primary btn-on-cobalt" href="register.html">Create an account</a>
       </div>
     </section>
   </main>
@@ -150,6 +153,8 @@
       <p>Synodos · P01_4303_Hazuka</p>
     </div>
   </footer>
+  <script src="js/auth.js" defer></script>
+  <script src="js/public-nav.js" defer></script>
   <script src="js/theme.js" defer></script>
   <script src="js/site-nav.js" defer></script>
 </body>

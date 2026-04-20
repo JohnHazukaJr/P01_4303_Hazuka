@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <script src="js/theme-init.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="View a project on Synodos — open roles and collaborators.">
+  <title>Project — Synodos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page project-detail-page">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="logo" href="index.html">Synodos</a>
+      <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
+        <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <nav id="site-nav" class="top-nav" aria-label="Primary">
+        <div class="top-actions" id="project-top-actions">
+          <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
+            <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          </button>
+          <a class="btn btn-ghost" href="index.html">Home</a>
+          <a class="btn btn-ghost" href="login.html" data-nav-guest>Log in</a>
+          <a class="btn btn-ghost" href="register.html" data-nav-guest>Register</a>
+          <a class="btn btn-ghost" href="dashboard.html" data-nav-user hidden>Dashboard</a>
+          <a class="btn btn-ghost" href="profile.html" data-nav-user hidden>Your space</a>
+          <button type="button" class="btn btn-ghost" data-nav-user data-nav-sign-out hidden>Sign out</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="dashboard-main project-detail-main" id="main-content" tabindex="-1">
+    <div class="wrap dashboard-wrap">
+      <p id="project-page-msg" class="dashboard-msg" hidden></p>
+      <p id="project-page-loading" class="dashboard-empty">Loading project…</p>
+      <div id="project-root" class="project-detail-root" hidden>
+        <p class="project-detail-back">
+          <a class="btn btn-ghost project-detail-back-link" id="project-back-link" href="index.html">← Back</a>
+        </p>
+        <div class="auth-card project-detail-card">
+          <p class="auth-eyebrow">Project</p>
+          <h1 class="auth-title project-detail-title" id="pd-title"></h1>
+          <p class="project-detail-meta" id="pd-meta"></p>
+          <p class="project-detail-desc" id="pd-desc"></p>
+          <div class="project-roles project-detail-roles" id="pd-roles-wrap">
+            <h2 class="project-roles__heading" id="pd-roles-heading">Open roles</h2>
+            <div id="pd-roles-list"></div>
+          </div>
+        </div>
+        <section class="dashboard-section project-join-section" id="project-join-section" aria-labelledby="project-join-title" hidden>
+          <h2 id="project-join-title" class="dashboard-heading">Request to join</h2>
+          <div id="project-join-panel"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="auth-footer-note">
+    <div class="wrap">
+      <nav class="footer-nav" aria-label="Site pages">
+        <a href="index.html">Home</a>
+        <a href="login.html">Log in</a>
+        <a href="register.html">Register</a>
+        <a href="dashboard.html">Dashboard</a>
+      </nav>
+      <p>Synodos · P01_4303_Hazuka</p>
+    </div>
+  </footer>
+
+  <script src="js/auth.js" defer></script>
+  <script src="js/public-nav.js" defer></script>
+  <script src="js/theme.js" defer></script>
+  <script src="js/site-nav.js" defer></script>
+  <script src="js/project-page.js" defer></script>
+  <script src="js/project-join.js" defer></script>
+</body>
+</html>

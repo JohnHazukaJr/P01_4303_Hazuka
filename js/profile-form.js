@@ -47,14 +47,37 @@
     var pendingAvatarDataUrl = null;
     var avatarResetRequested = false;
     var tagRowCounter = 0;
+    var accountUsername = "";
 
-    function showPlaceholderOnly() {
+    function showSvgPlaceholder() {
       if (avatarImg) {
         avatarImg.hidden = true;
         avatarImg.removeAttribute("src");
       }
       if (avatarPh) avatarPh.hidden = false;
       syncPreviewAvatarFromMain();
+    }
+
+    function showDefaultAvatar() {
+      if (!avatarImg || !avatarPh) return;
+      var def = window.synodosAuth.getDefaultAvatarUrl();
+      function revealMainAvatar() {
+        avatarImg.hidden = false;
+        avatarPh.hidden = true;
+        syncPreviewAvatarFromMain();
+      }
+      avatarImg.onload = function () {
+        revealMainAvatar();
+      };
+      avatarImg.onerror = function () {
+        showSvgPlaceholder();
+      };
+      avatarImg.src = def;
+      if (avatarImg.complete && avatarImg.naturalWidth > 0) {
+        revealMainAvatar();
+      } else if (typeof avatarImg.decode === "function") {
+        avatarImg.decode().then(revealMainAvatar).catch(function () {});
+      }
     }
 
     function showImageSrc(src) {
@@ -68,7 +91,7 @@
         revealMainAvatar();
       };
       avatarImg.onerror = function () {
-        showPlaceholderOnly();
+        showDefaultAvatar();
       };
       avatarImg.src = src;
       if (avatarImg.complete && avatarImg.naturalWidth > 0) {
@@ -187,10 +210,26 @@
       }
     }
 
+    function peerVisibleName() {
+      var pref = "username";
+      var radios = form.querySelectorAll('input[name="public_display_as"]');
+      for (var ri = 0; ri < radios.length; ri++) {
+        if (radios[ri].checked) {
+          pref = radios[ri].value;
+          break;
+        }
+      }
+      var dn = displayInput ? String(displayInput.value).trim() : "";
+      var un = accountUsername || "";
+      if (pref === "full_name" && dn.length >= 2) return dn;
+      if (un) return un;
+      if (dn.length >= 2) return dn;
+      return un || "Your name";
+    }
+
     function updateLivePreview() {
       if (previewName) {
-        var n = displayInput ? String(displayInput.value).trim() : "";
-        previewName.textContent = n || "Your name";
+        previewName.textContent = peerVisibleName();
       }
       if (previewBio) {
         var b = bioInput ? String(bioInput.value).trim() : "";
@@ -316,7 +355,7 @@
         if (avatarFile) avatarFile.value = "";
         pendingAvatarDataUrl = null;
         avatarResetRequested = true;
-        showPlaceholderOnly();
+        showDefaultAvatar();
       });
     }
 
@@ -329,6 +368,12 @@
     if (bioInput) {
       bioInput.addEventListener("input", updateLivePreview);
     }
+
+    form.addEventListener("change", function (ev) {
+      if (ev.target && ev.target.name === "public_display_as") {
+        updateLivePreview();
+      }
+    });
 
     function showSaveStatus(ok, msg) {
       if (!saveStatus) return;
@@ -393,11 +438,17 @@
         }
 
         var u = meData.user || {};
+        accountUsername = u.username ? String(u.username).trim() : "";
         if (displayInput && u.display_name) {
           displayInput.value = u.display_name;
         }
         if (bioInput && u.bio) {
           bioInput.value = u.bio;
+        }
+        var pda = String(u.public_display_as || "username").toLowerCase();
+        var pdaRadios = form.querySelectorAll('input[name="public_display_as"]');
+        for (var pi = 0; pi < pdaRadios.length; pi++) {
+          pdaRadios[pi].checked = pdaRadios[pi].value === pda;
         }
 
         if (u.avatar_url && String(u.avatar_url).length > 0) {
@@ -405,7 +456,7 @@
           avatarResetRequested = false;
           pendingAvatarDataUrl = null;
         } else {
-          showPlaceholderOnly();
+          showDefaultAvatar();
         }
 
         clearWorkTagRows();
@@ -447,11 +498,17 @@
         window.location.href = "login.html";
         return;
       }
-      var displayName = (new FormData(form).get("display_name") || "")
+      var fdSubmit = new FormData(form);
+      var displayName = (fdSubmit.get("display_name") || "")
         .toString()
         .trim();
-      var bio = (new FormData(form).get("bio") || "").toString();
+      var bio = (fdSubmit.get("bio") || "").toString();
       var workTags = collectWorkTags();
+      var pdaRaw = fdSubmit.get("public_display_as");
+      var publicDisplayAs =
+        pdaRaw === "full_name" || pdaRaw === "username"
+          ? pdaRaw
+          : "username";
 
       if (workTags.length < 1) {
         showSaveStatus(false, "Add at least one field and subfield pair.");
@@ -460,6 +517,7 @@
 
       var payload = {
         display_name: displayName,
+        public_display_as: publicDisplayAs,
         bio: bio,
         work_tags: workTags,
       };
@@ -498,7 +556,7 @@
           if (data.user && data.user.avatar_url) {
             showImageSrc(window.synodosAuth.assetUrl(String(data.user.avatar_url)));
           } else {
-            showPlaceholderOnly();
+            showDefaultAvatar();
           }
           if (data.user && data.user.work_tags) {
             clearWorkTagRows();

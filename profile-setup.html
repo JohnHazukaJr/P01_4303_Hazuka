@@ -57,7 +57,7 @@
                 <span class="profile-section__step" aria-hidden="true">1</span>
                 <h2 id="sec-identity" class="profile-section__title">How you appear</h2>
               </div>
-              <p class="profile-section__help" id="display-name-desc">This is the name peers see on projects and messages.</p>
+              <p class="profile-section__help" id="display-name-desc">Full name or preferred name (required). Peers see either this or your username — you choose below. Your email is never shown publicly.</p>
               <div class="field">
                 <label for="display_name">Display name</label>
                 <input
@@ -72,6 +72,18 @@
                   aria-describedby="display-name-desc"
                 >
               </div>
+              <fieldset class="field profile-public-display-fieldset">
+                <legend class="profile-public-display-legend">How peers see you</legend>
+                <p class="field-hint" id="setup-public-display-hint">Shown on project cards and anywhere your name appears to others.</p>
+                <label class="profile-radio-option">
+                  <input type="radio" name="public_display_as" value="full_name" aria-describedby="setup-public-display-hint">
+                  Full name (display name above)
+                </label>
+                <label class="profile-radio-option">
+                  <input type="radio" name="public_display_as" value="username" checked aria-describedby="setup-public-display-hint">
+                  Username
+                </label>
+              </fieldset>
             </section>
 
             <section class="profile-section" aria-labelledby="sec-photo">
