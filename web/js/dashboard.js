@@ -97,14 +97,6 @@
     var res = await fetch(API_BASE + "/api/me", {
       headers: { Authorization: "Bearer " + token },
     });
-    // #region agent log
-    window.synodosAuth.agentDebug({
-      hypothesisId: "H3",
-      location: "dashboard.js:loadMe",
-      message: "GET /api/me",
-      data: { status: res.status, ok: res.ok },
-    });
-    // #endregion
     if (!res.ok) {
       window.synodosAuth.clearToken();
       window.location.href = "login.html";
@@ -215,8 +207,21 @@
 
     var meta = document.createElement("p");
     meta.className = "project-card__meta";
-    meta.textContent =
-      "Owner: " + (project.owner_display || "?");
+    meta.appendChild(document.createTextNode("Owner: "));
+    var oun = project.owner_username
+      ? String(project.owner_username).trim()
+      : "";
+    if (oun) {
+      var oa = document.createElement("a");
+      oa.href = "user.html?u=" + encodeURIComponent(oun);
+      oa.className = "project-owner-link";
+      oa.textContent = project.owner_display || oun;
+      meta.appendChild(oa);
+    } else {
+      meta.appendChild(
+        document.createTextNode(project.owner_display || "?")
+      );
+    }
     var feedN = Number(project.feed_match_count);
     if (token && Number.isFinite(feedN) && feedN > 0) {
       var feedBadge = document.createElement("span");
@@ -367,11 +372,30 @@
     card.appendChild(title);
     var who = document.createElement("p");
     who.className = "requests-inbox-card__who";
-    who.textContent =
-      "From: " +
-      (req.requester && req.requester.public_display_label
-        ? req.requester.public_display_label
-        : "?");
+    who.appendChild(document.createTextNode("From: "));
+    if (
+      req.requester &&
+      req.requester.username &&
+      String(req.requester.username).trim()
+    ) {
+      var whoLink = document.createElement("a");
+      whoLink.href =
+        "user.html?u=" +
+        encodeURIComponent(String(req.requester.username).trim());
+      whoLink.textContent =
+        req.requester.public_display_label ||
+        req.requester.username ||
+        "?";
+      who.appendChild(whoLink);
+    } else {
+      who.appendChild(
+        document.createTextNode(
+          req.requester && req.requester.public_display_label
+            ? req.requester.public_display_label
+            : "?"
+        )
+      );
+    }
     card.appendChild(who);
     if (req.role_title) {
       var role = document.createElement("p");
@@ -448,6 +472,7 @@
         showMsg(data.error || "Could not update request", true);
         return;
       }
+      document.dispatchEvent(new CustomEvent("synodos:notifications-refresh"));
       await refresh();
     } catch (e) {
       showMsg("Could not update request.", true);

@@ -107,7 +107,23 @@
       titleEl.textContent = proj.title || "Untitled";
     }
     if (metaEl) {
-      metaEl.textContent = "Posted by " + (proj.owner_display || "—");
+      metaEl.textContent = "";
+      var posted = document.createTextNode("Posted by ");
+      metaEl.appendChild(posted);
+      var un = proj.owner_username
+        ? String(proj.owner_username).trim()
+        : "";
+      if (un) {
+        var a = document.createElement("a");
+        a.href = "user.html?u=" + encodeURIComponent(un);
+        a.className = "project-owner-link";
+        a.textContent = proj.owner_display || un;
+        metaEl.appendChild(a);
+      } else {
+        metaEl.appendChild(
+          document.createTextNode(proj.owner_display || "—")
+        );
+      }
     }
     if (descEl) {
       descEl.textContent = proj.description || "";

@@ -142,6 +142,26 @@ function migratePublicDisplayAsColumn() {
 
 migratePublicDisplayAsColumn();
 
+/** Verified accounts (official / notable). */
+function migrateVerifiedColumn() {
+  const rows = db.prepare("PRAGMA table_info(users)").all();
+  var names = {};
+  for (var i = 0; i < rows.length; i++) {
+    names[rows[i].name] = true;
+  }
+  if (!names.verified) {
+    db.exec("ALTER TABLE users ADD COLUMN verified INTEGER NOT NULL DEFAULT 0");
+  }
+  try {
+    // Seed official account(s).
+    db.prepare(
+      "UPDATE users SET verified = 1 WHERE username = ? COLLATE NOCASE"
+    ).run("synodos");
+  } catch (_) {}
+}
+
+migrateVerifiedColumn();
+
 function migrateProjectJoinRequestsTable() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS project_join_requests (
@@ -168,6 +188,127 @@ function migrateProjectJoinRequestsTable() {
 }
 
 migrateProjectJoinRequestsTable();
+
+function migrateUserFollowsTable() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_follows (
+      follower_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      following_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (follower_user_id, following_user_id),
+      CHECK (follower_user_id != following_user_id)
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON user_follows(follower_user_id);
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_user_id);
+  `);
+}
+
+migrateUserFollowsTable();
+
+function migrateFeedEventsTable() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS feed_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_feed_events_actor_time ON feed_events(actor_user_id, created_at DESC);
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_feed_events_created ON feed_events(created_at DESC);
+  `);
+}
+
+migrateFeedEventsTable();
+
+function migrateDmTables() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dm_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dm_participants (
+      conversation_id INTEGER NOT NULL REFERENCES dm_conversations(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      PRIMARY KEY (conversation_id, user_id)
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_dm_participants_user ON dm_participants(user_id);
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dm_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversation_id INTEGER NOT NULL REFERENCES dm_conversations(id) ON DELETE CASCADE,
+      sender_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_dm_messages_conv_time ON dm_messages(conversation_id, created_at DESC);
+  `);
+}
+
+migrateDmTables();
+
+function migrateUserNotificationsTable() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      notification_type TEXT NOT NULL,
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      read_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_user_notifications_user_unread
+    ON user_notifications(user_id, read_at);
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_user_notifications_user_created
+    ON user_notifications(user_id, created_at DESC);
+  `);
+}
+
+migrateUserNotificationsTable();
+
+function migrateProjectInvitationsTable() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS project_invitations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      inviter_user_id INTEGER NOT NULL REFERENCES users(id),
+      invitee_user_id INTEGER NOT NULL REFERENCES users(id),
+      note TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'accepted', 'declined', 'withdrawn')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved_at TEXT
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_pinv_invitee ON project_invitations(invitee_user_id, status);
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_pinv_project ON project_invitations(project_id);
+  `);
+}
+
+migrateProjectInvitationsTable();
 
 function normalizeEmail(email) {
   return String(email || "")

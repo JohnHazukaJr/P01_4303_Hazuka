@@ -1,6 +1,9 @@
 /** JWT in localStorage and API base URL (`synodosAuth`). */
 (function (global) {
   var TOKEN_KEY = "synodos_token";
+  var LAST_ACTIVE_KEY = "synodos_last_active_at";
+  var SIGN_OUT_REASON_KEY = "synodos_sign_out_reason";
+  var IDLE_MS = 10 * 60 * 1000; // 10 minutes
   var win = typeof window !== "undefined" ? window : null;
   var apiFromWindow =
     win &&
@@ -53,6 +56,7 @@
     setToken: function (token) {
       try {
         localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
       } catch (e) {
         /* ignore */
       }
@@ -64,47 +68,84 @@
         /* ignore */
       }
     },
-    /** Debug session NDJSON via POST /api/debug/client-log (localhost / file only). */
-    agentDebug: function (payload) {
-      var w = typeof window !== "undefined" ? window : null;
-      if (!w || !w.fetch) return;
-      var host = w.location && w.location.hostname;
-      if (
-        host &&
-        host !== "localhost" &&
-        host !== "127.0.0.1" &&
-        host !== "[::1]"
-      ) {
-        return;
+    touchActivity: function () {
+      try {
+        if (!this.getToken()) return;
+        localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+      } catch (e) {
+        /* ignore */
       }
-      var base = String(this.apiBase || "http://localhost:8080")
-        .trim()
-        .replace(/\/+$/, "");
-      if (!base) return;
-      // #region agent log
-      w.fetch(base + "/api/debug/client-log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          Object.assign(
-            { sessionId: "4f232d", timestamp: Date.now() },
-            payload || {}
-          )
-        ),
-      }).catch(function () {});
-      // #endregion
+    },
+    getSignOutReason: function () {
+      try {
+        return localStorage.getItem(SIGN_OUT_REASON_KEY);
+      } catch (e) {
+        return null;
+      }
+    },
+    clearSignOutReason: function () {
+      try {
+        localStorage.removeItem(SIGN_OUT_REASON_KEY);
+      } catch (e) {
+        /* ignore */
+      }
     },
   };
-  // #region agent log
-  global.synodosAuth.agentDebug({
-    hypothesisId: "H1",
-    location: "auth.js:boot",
-    message: "synodosAuth init",
-    data: {
-      apiBase: global.synodosAuth.apiBase,
-      hasToken: !!global.synodosAuth.getToken(),
-      path: win && win.location && win.location.pathname,
-    },
-  });
-  // #endregion
+
+  function pathIsAuthPage(pathname) {
+    var p = String(pathname || "").toLowerCase();
+    return (
+      p.endsWith("/login.html") ||
+      p.endsWith("\\login.html") ||
+      p.endsWith("/register.html") ||
+      p.endsWith("\\register.html")
+    );
+  }
+
+  function startIdleLogout() {
+    if (!win || !win.document) return;
+    var doc = win.document;
+
+    var lastTouch = 0;
+    function onActivity() {
+      var now = Date.now();
+      if (now - lastTouch < 1000) return; // throttle
+      lastTouch = now;
+      if (global.synodosAuth) global.synodosAuth.touchActivity();
+    }
+
+    ["click", "keydown", "mousemove", "scroll", "touchstart"].forEach(function (
+      evt
+    ) {
+      doc.addEventListener(evt, onActivity, { passive: true });
+    });
+
+    setInterval(function () {
+      if (!global.synodosAuth) return;
+      var token = global.synodosAuth.getToken();
+      if (!token) return;
+
+      var last = 0;
+      try {
+        last = Number(localStorage.getItem(LAST_ACTIVE_KEY) || "0");
+      } catch (e) {
+        last = 0;
+      }
+      if (!Number.isFinite(last) || last <= 0) {
+        global.synodosAuth.touchActivity();
+        return;
+      }
+      if (Date.now() - last < IDLE_MS) return;
+
+      try {
+        localStorage.setItem(SIGN_OUT_REASON_KEY, "inactive");
+      } catch (e) {}
+      global.synodosAuth.clearToken();
+      if (win.location && !pathIsAuthPage(win.location.pathname || "")) {
+        win.location.href = "login.html";
+      }
+    }, 5000);
+  }
+
+  startIdleLogout();
 })(typeof window !== "undefined" ? window : this);

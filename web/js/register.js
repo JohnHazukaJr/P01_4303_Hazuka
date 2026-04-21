@@ -43,7 +43,7 @@
       }
       if (typeof window.synodosShowAuthSuccess === "function") {
         await window.synodosShowAuthSuccess(
-          "Account created — welcome to Synodos.",
+          "Account created — welcome to synodos.",
           { holdMs: 1650, fadeMs: 320 }
         );
       }

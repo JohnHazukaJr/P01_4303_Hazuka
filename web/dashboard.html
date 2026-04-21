@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <script src="js/theme-init.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Synodos — your space">
-  <title>Dashboard — Synodos</title>
+  <meta name="description" content="synodos — your space">
+  <title>Dashboard — synodos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="top">
     <div class="wrap top-inner">
-      <a class="logo" href="index.html">Synodos</a>
+      <a class="logo" href="index.html">synodos</a>
       <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
         <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
@@ -26,6 +26,7 @@
             <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
           </button>
           <a class="btn btn-ghost" href="index.html">Home</a>
+          <a class="btn btn-ghost" href="messages.html">Messages</a>
           <a class="btn btn-ghost" href="profile.html">Your space</a>
           <button type="button" class="btn btn-ghost" id="dashboard-sign-out">Sign out</button>
         </div>
@@ -115,14 +116,16 @@
         </span>
         <span class="footer-nav__cluster" data-nav-group="user" hidden>
           <a href="dashboard.html">Dashboard</a>
+          <a href="messages.html">Messages</a>
           <a href="profile.html">Your space</a>
         </span>
       </nav>
-      <p>Synodos · P01_4303_Hazuka</p>
+      <p class="footer-credit">synodos</p>
     </div>
   </footer>
 
   <script src="js/auth.js" defer></script>
+  <script src="js/notification-helpers.js" defer></script>
   <script src="js/public-nav.js" defer></script>
   <script src="js/theme.js" defer></script>
   <script src="js/site-nav.js" defer></script>

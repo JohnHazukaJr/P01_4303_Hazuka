@@ -178,6 +178,7 @@
         return;
       }
       pg.showMsg("Request sent.", false);
+      document.dispatchEvent(new CustomEvent("synodos:notifications-refresh"));
       await renderJoinPanel();
     } catch (e) {
       pg.showMsg("Could not send request.", true);
@@ -212,7 +213,9 @@
   function wire() {
     var pg = page();
     if (!pg) return;
+    var prevReady = pg.onViewerReady;
     pg.onViewerReady = function () {
+      if (typeof prevReady === "function") prevReady();
       renderJoinPanel();
     };
     pg.refreshJoinPanel = renderJoinPanel;

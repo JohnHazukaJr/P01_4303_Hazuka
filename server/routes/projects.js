@@ -1,4 +1,5 @@
 const express = require("express");
+const { insertFeedEvent, EVENT_TYPES } = require("../feedEvents");
 
 function parseId(param) {
   const n = Number(param);
@@ -39,6 +40,8 @@ function loadProject(db, id) {
       row.owner_display_name,
       row.owner_public_display_as
     ),
+    owner_username:
+      row.owner_username != null ? String(row.owner_username) : null,
   };
 }
 
@@ -126,7 +129,8 @@ function createProjectsRouter(deps) {
           p.owner_display_name,
           p.owner_public_display_as
         );
-        delete p.owner_username;
+        p.owner_username =
+          p.owner_username != null ? String(p.owner_username) : null;
         delete p.owner_display_name;
         delete p.owner_public_display_as;
         p.roles = loadRoles(db, p.id);
@@ -177,6 +181,10 @@ function createProjectsRouter(deps) {
         .run(req.user.id, title, description);
       const id = Number(info.lastInsertRowid);
       const project = loadProject(db, id);
+      insertFeedEvent(db, req.user.id, EVENT_TYPES.PROJECT_CREATED, {
+        project_id: id,
+        title: project.title,
+      });
       res.status(201).json({ project });
     } catch (e) {
       console.error(e);
@@ -257,6 +265,15 @@ function createProjectsRouter(deps) {
       const role = db
         .prepare("SELECT * FROM project_roles WHERE id = ?")
         .get(Number(info.lastInsertRowid));
+      const projRow = db
+        .prepare("SELECT title FROM projects WHERE id = ?")
+        .get(projectId);
+      insertFeedEvent(db, req.user.id, EVENT_TYPES.ROLE_ADDED, {
+        project_id: projectId,
+        project_title: projRow ? projRow.title : "",
+        role_id: role.id,
+        role_title: role.title,
+      });
       res.status(201).json({ role });
     } catch (e) {
       console.error(e);

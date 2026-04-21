@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <script src="js/theme-init.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Synodos is social media for peers who build together—find collaborators, open roles, and projects that need your skills.">
-  <title>Synodos — Social for people who ship together</title>
+  <meta name="description" content="synodos is social media for peers who build together—find collaborators, open roles, and projects that need your skills.">
+  <title>synodos — Social for people who ship together</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="top">
     <div class="wrap top-inner">
-      <a class="logo" href="index.html">Synodos</a>
+      <a class="logo" href="index.html">synodos</a>
       <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
         <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
@@ -32,6 +32,7 @@
           </div>
           <div class="top-actions__auth-group" data-nav-group="user" hidden aria-label="Your account">
             <a class="btn btn-ghost" href="dashboard.html">Dashboard</a>
+            <a class="btn btn-ghost" href="messages.html">Messages</a>
             <a class="btn btn-ghost" href="profile.html">Your space</a>
             <button type="button" class="btn btn-ghost" data-nav-sign-out>Sign out</button>
           </div>
@@ -45,7 +46,7 @@
       <span class="hero-tag">Peer-first social</span>
       <h1>Meet collaborators, not algorithms.</h1>
       <p class="hero-lead">
-        Synodos is a social space built around real projects and open roles—so you connect with
+        synodos is a social space built around real projects and open roles—so you connect with
         people who complement your skills and actually want to build with you.
       </p>
       <div class="hero-ctas">
@@ -59,9 +60,9 @@
     <section id="about" aria-labelledby="about-title">
       <div class="wrap">
         <div class="section-head">
-          <h2 id="about-title">What is Synodos?</h2>
+          <h2 id="about-title">What is synodos?</h2>
           <p>
-            Most social feeds optimize for attention. Synodos optimizes for <em>assembly</em>—bringing
+            Most social feeds optimize for attention. synodos optimizes for <em>assembly</em>—bringing
             peers together around coursework, side projects, startups, and creative work where
             who you know matters less than what you can contribute.
           </p>
@@ -95,7 +96,7 @@
     <section id="how" aria-labelledby="how-title">
       <div class="wrap">
         <div class="section-head">
-          <h2 id="how-title">How it feels to use Synodos</h2>
+          <h2 id="how-title">How it feels to use synodos</h2>
           <p>
             Structured discovery keeps things human: you choose projects and people on purpose,
             with approvals and edits in your hands—not automated spam.
@@ -131,7 +132,7 @@
       <div class="wrap cta-inner">
         <h2 id="cta-title">Ready to build with your peers?</h2>
         <p>
-          Synodos is in early development. Check back as the product opens up—or follow your course
+          synodos is in early development. Check back as the product opens up—or follow your course
           repo for updates on the first public release.
         </p>
         <a class="btn btn-primary btn-on-cobalt" href="register.html">Get started</a>
@@ -150,6 +151,7 @@
         </span>
         <span class="footer-nav__cluster" data-nav-group="user" hidden>
           <a href="dashboard.html">Dashboard</a>
+          <a href="messages.html">Messages</a>
           <a href="profile.html">Your space</a>
         </span>
       </nav>
@@ -158,12 +160,22 @@
           <path stroke="currentColor" stroke-width="1.25" stroke-linecap="square" d="M0 6H6V0H12V6H18V12H24V6H30V0H36V6H42V12H48V6H54V0H60V6H66V12H72V6"/>
         </svg>
       </div>
-      <p>Synodos · P01_4303_Hazuka</p>
+      <p class="footer-credit">synodos</p>
     </div>
   </footer>
   <script src="js/auth.js" defer></script>
+  <script src="js/notification-helpers.js" defer></script>
   <script src="js/public-nav.js" defer></script>
   <script src="js/theme.js" defer></script>
   <script src="js/site-nav.js" defer></script>
+  <script>
+    // If you're already signed in, treat "Home" as the app home.
+    (function () {
+      try {
+        var t = localStorage.getItem("synodos_token");
+        if (t && String(t).trim()) window.location.replace("dashboard.html");
+      } catch (e) {}
+    })();
+  </script>
 </body>
 </html>
