@@ -9,13 +9,13 @@ const NOTIFICATION_TYPES = {
   PROJECT_YOU_WERE_ADDED: "project_you_were_added",
 };
 
-/** @param {import("node:sqlite").DatabaseSync} db */
-function insertNotification(db, userId, type, payload) {
+async function insertNotification(db, userId, type, payload) {
   try {
     const body = payload && typeof payload === "object" ? payload : {};
-    db.prepare(
-      `INSERT INTO user_notifications (user_id, notification_type, payload_json) VALUES (?, ?, ?)`
-    ).run(Number(userId), String(type), JSON.stringify(body));
+    await db.run(
+      "INSERT INTO user_notifications (user_id, notification_type, payload_json) VALUES ($1, $2, $3)",
+      [Number(userId), String(type), JSON.stringify(body)]
+    );
   } catch (e) {
     console.error("[synodos] insertNotification", e);
   }

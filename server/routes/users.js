@@ -9,16 +9,18 @@ const { publicDisplayLabel } = require("../displayLabel");
 const { insertFeedEvent, EVENT_TYPES } = require("../feedEvents");
 
 function loadUserWorkTags(db, userId) {
-  const rows = db
-    .prepare(
-      "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = ? ORDER BY id ASC"
+  return db
+    .all(
+      "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = $1 ORDER BY id ASC",
+      [userId]
     )
-    .all(userId);
-  const out = [];
-  for (let i = 0; i < rows.length; i++) {
-    out.push(enrichTag(rows[i].work_field, rows[i].work_subfield));
-  }
-  return out;
+    .then(function (rows) {
+      const out = [];
+      for (let i = 0; i < rows.length; i++) {
+        out.push(enrichTag(rows[i].work_field, rows[i].work_subfield));
+      }
+      return out;
+    });
 }
 
 function profileCompleteFromRow(row, tags) {
@@ -52,21 +54,20 @@ function createUsersRouter(deps) {
   const { db, requireAuth, optionalAuth } = deps;
   const router = express.Router();
 
-  router.get("/:username", optionalAuth, (req, res) => {
+  router.get("/:username", optionalAuth, async (req, res) => {
     const uname = normalizeUsername(req.params.username);
     if (!uname) {
       return res.status(404).json({ error: "Not found" });
     }
-    const row = db
-      .prepare(
-        `SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified
-         FROM users WHERE username = ?`
-      )
-      .get(uname);
+    const row = await db.get(
+      `SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified
+       FROM users WHERE username = $1`,
+      [uname]
+    );
     if (!row) {
       return res.status(404).json({ error: "Not found" });
     }
-    const tags = loadUserWorkTags(db, row.id);
+    const tags = await loadUserWorkTags(db, row.id);
     const user = {
       id: row.id,
       username: row.username != null ? String(row.username) : null,
@@ -80,11 +81,10 @@ function createUsersRouter(deps) {
     };
     let viewer_follows = false;
     if (req.user && Number(req.user.id) !== Number(row.id)) {
-      const f = db
-        .prepare(
-          `SELECT 1 FROM user_follows WHERE follower_user_id = ? AND following_user_id = ?`
-        )
-        .get(req.user.id, row.id);
+      const f = await db.get(
+        "SELECT 1 FROM user_follows WHERE follower_user_id = $1 AND following_user_id = $2",
+        [req.user.id, row.id]
+      );
       viewer_follows = !!f;
     }
     if (req.user && Number(req.user.id) === Number(row.id)) {
@@ -93,14 +93,15 @@ function createUsersRouter(deps) {
     res.json({ user, viewer_follows });
   });
 
-  router.post("/:username/follow", requireAuth, (req, res) => {
+  router.post("/:username/follow", requireAuth, async (req, res) => {
     const uname = normalizeUsername(req.params.username);
     if (!uname) {
       return res.status(404).json({ error: "Not found" });
     }
-    const target = db
-      .prepare("SELECT id, username FROM users WHERE username = ?")
-      .get(uname);
+    const target = await db.get(
+      "SELECT id, username FROM users WHERE username = $1",
+      [uname]
+    );
     if (!target) {
       return res.status(404).json({ error: "Not found" });
     }
@@ -109,19 +110,19 @@ function createUsersRouter(deps) {
     if (tid === me) {
       return res.status(400).json({ error: "You cannot follow yourself" });
     }
-    const existing = db
-      .prepare(
-        `SELECT 1 FROM user_follows WHERE follower_user_id = ? AND following_user_id = ?`
-      )
-      .get(me, tid);
+    const existing = await db.get(
+      "SELECT 1 FROM user_follows WHERE follower_user_id = $1 AND following_user_id = $2",
+      [me, tid]
+    );
     if (existing) {
       return res.status(200).json({ ok: true, following: true });
     }
     try {
-      db.prepare(
-        `INSERT INTO user_follows (follower_user_id, following_user_id) VALUES (?, ?)`
-      ).run(me, tid);
-      insertFeedEvent(db, me, EVENT_TYPES.USER_FOLLOWED, {
+      await db.run(
+        "INSERT INTO user_follows (follower_user_id, following_user_id) VALUES ($1, $2)",
+        [me, tid]
+      );
+      await insertFeedEvent(db, me, EVENT_TYPES.USER_FOLLOWED, {
         target_user_id: tid,
         target_username:
           target.username != null ? String(target.username) : null,
@@ -133,20 +134,22 @@ function createUsersRouter(deps) {
     }
   });
 
-  router.delete("/:username/follow", requireAuth, (req, res) => {
+  router.delete("/:username/follow", requireAuth, async (req, res) => {
     const uname = normalizeUsername(req.params.username);
     if (!uname) {
       return res.status(404).json({ error: "Not found" });
     }
-    const target = db
-      .prepare("SELECT id FROM users WHERE username = ?")
-      .get(uname);
+    const target = await db.get(
+      "SELECT id FROM users WHERE username = $1",
+      [uname]
+    );
     if (!target) {
       return res.status(404).json({ error: "Not found" });
     }
-    db.prepare(
-      `DELETE FROM user_follows WHERE follower_user_id = ? AND following_user_id = ?`
-    ).run(req.user.id, target.id);
+    await db.run(
+      "DELETE FROM user_follows WHERE follower_user_id = $1 AND following_user_id = $2",
+      [req.user.id, target.id]
+    );
     res.status(204).end();
   });
 

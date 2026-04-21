@@ -16,8 +16,8 @@ function ownerPublicDisplay(username, displayName, preference) {
   return un || "Member";
 }
 
-function loadProject(db, id) {
-  const row = db
+async function loadProject(db, id) {
+  const row = await db
     .prepare(
       `SELECT p.id, p.owner_user_id, p.title, p.description, p.created_at,
               u.username AS owner_username,
@@ -45,8 +45,8 @@ function loadProject(db, id) {
   };
 }
 
-function loadRoles(db, projectId) {
-  return db
+async function loadRoles(db, projectId) {
+  return await db
     .prepare(
       `SELECT id, project_id, title, skills, slots, created_at
        FROM project_roles
@@ -61,8 +61,8 @@ function workTagKey(field, sub) {
 }
 
 /** Sets of "field\0subfield" for overlap scoring when signed in. */
-function loadUserTagSet(db, userId) {
-  const rows = db
+async function loadUserTagSet(db, userId) {
+  const rows = await db
     .prepare(
       "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = ?"
     )
@@ -72,7 +72,7 @@ function loadUserTagSet(db, userId) {
     set.add(workTagKey(rows[i].work_field, rows[i].work_subfield));
   }
   if (set.size === 0) {
-    const u = db
+    const u = await db
       .prepare("SELECT work_field, work_subfield FROM users WHERE id = ?")
       .get(userId);
     if (
@@ -99,9 +99,9 @@ function createProjectsRouter(deps) {
   const { db, requireAuth, optionalAuth } = deps;
   const router = express.Router();
 
-  router.get("/", optionalAuth, (req, res) => {
+  router.get("/", optionalAuth, async (req, res) => {
     try {
-      const projects = db
+      const projects = await db
         .prepare(
           `SELECT p.id, p.title, p.description, p.created_at,
                   p.owner_user_id,
@@ -111,13 +111,13 @@ function createProjectsRouter(deps) {
                   (SELECT COUNT(*) FROM project_roles r WHERE r.project_id = p.id) AS role_count
            FROM projects p
            JOIN users u ON u.id = p.owner_user_id
-           ORDER BY datetime(p.created_at) DESC`
+           ORDER BY p.created_at DESC`
         )
         .all();
 
       const viewerSet =
         req.user && req.user.id != null
-          ? loadUserTagSet(db, req.user.id)
+          ? await loadUserTagSet(db, req.user.id)
           : null;
       const personalize =
         viewerSet != null && viewerSet.size > 0;
@@ -133,9 +133,9 @@ function createProjectsRouter(deps) {
           p.owner_username != null ? String(p.owner_username) : null;
         delete p.owner_display_name;
         delete p.owner_public_display_as;
-        p.roles = loadRoles(db, p.id);
+        p.roles = await loadRoles(db, p.id);
         if (personalize) {
-          const ownerSet = loadUserTagSet(db, p.owner_user_id);
+          const ownerSet = await loadUserTagSet(db, p.owner_user_id);
           p.feed_match_count = feedMatchCount(viewerSet, ownerSet);
         } else {
           p.feed_match_count = 0;
@@ -161,7 +161,7 @@ function createProjectsRouter(deps) {
     }
   });
 
-  router.post("/", requireAuth, (req, res) => {
+  router.post("/", requireAuth, async (req, res) => {
     const title = String(req.body?.title || "").trim();
     const description = String(req.body?.description || "").trim();
     if (!title) {
@@ -174,14 +174,17 @@ function createProjectsRouter(deps) {
       return res.status(400).json({ error: "Description is too long" });
     }
     try {
-      const info = db
+      const info = await db
         .prepare(
-          "INSERT INTO projects (owner_user_id, title, description) VALUES (?, ?, ?)"
+          "INSERT INTO projects (owner_user_id, title, description) VALUES (?, ?, ?) RETURNING id"
         )
         .run(req.user.id, title, description);
-      const id = Number(info.lastInsertRowid);
-      const project = loadProject(db, id);
-      insertFeedEvent(db, req.user.id, EVENT_TYPES.PROJECT_CREATED, {
+      const id = info && info.rows && info.rows[0] ? Number(info.rows[0].id) : null;
+      if (!id) {
+        return res.status(500).json({ error: "Could not create project" });
+      }
+      const project = await loadProject(db, id);
+      await insertFeedEvent(db, req.user.id, EVENT_TYPES.PROJECT_CREATED, {
         project_id: id,
         title: project.title,
       });
@@ -192,25 +195,25 @@ function createProjectsRouter(deps) {
     }
   });
 
-  router.get("/:id", (req, res) => {
+  router.get("/:id", async (req, res) => {
     const id = parseId(req.params.id);
     if (!id) {
       return res.status(404).json({ error: "Not found" });
     }
-    const project = loadProject(db, id);
+    const project = await loadProject(db, id);
     if (!project) {
       return res.status(404).json({ error: "Not found" });
     }
-    const roles = loadRoles(db, id);
+    const roles = await loadRoles(db, id);
     res.json({ project, roles });
   });
 
-  router.delete("/:id", requireAuth, (req, res) => {
+  router.delete("/:id", requireAuth, async (req, res) => {
     const id = parseId(req.params.id);
     if (!id) {
       return res.status(404).json({ error: "Not found" });
     }
-    const project = db
+    const project = await db
       .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
       .get(id);
     if (!project) {
@@ -219,16 +222,16 @@ function createProjectsRouter(deps) {
     if (Number(project.owner_user_id) !== Number(req.user.id)) {
       return res.status(403).json({ error: "Only the owner can delete this project" });
     }
-    db.prepare("DELETE FROM projects WHERE id = ?").run(id);
+    await db.prepare("DELETE FROM projects WHERE id = ?").run(id);
     res.status(204).end();
   });
 
-  router.post("/:id/roles", requireAuth, (req, res) => {
+  router.post("/:id/roles", requireAuth, async (req, res) => {
     const projectId = parseId(req.params.id);
     if (!projectId) {
       return res.status(404).json({ error: "Not found" });
     }
-    const project = db
+    const project = await db
       .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
       .get(projectId);
     if (!project) {
@@ -256,19 +259,23 @@ function createProjectsRouter(deps) {
     }
 
     try {
-      const info = db
+      const info = await db
         .prepare(
           `INSERT INTO project_roles (project_id, title, skills, slots)
-           VALUES (?, ?, ?, ?)`
+           VALUES (?, ?, ?, ?) RETURNING id`
         )
         .run(projectId, title, skills, slots);
-      const role = db
+      const rid = info && info.rows && info.rows[0] ? Number(info.rows[0].id) : null;
+      if (!rid) {
+        return res.status(500).json({ error: "Could not add role" });
+      }
+      const role = await db
         .prepare("SELECT * FROM project_roles WHERE id = ?")
-        .get(Number(info.lastInsertRowid));
-      const projRow = db
+        .get(rid);
+      const projRow = await db
         .prepare("SELECT title FROM projects WHERE id = ?")
         .get(projectId);
-      insertFeedEvent(db, req.user.id, EVENT_TYPES.ROLE_ADDED, {
+      await insertFeedEvent(db, req.user.id, EVENT_TYPES.ROLE_ADDED, {
         project_id: projectId,
         project_title: projRow ? projRow.title : "",
         role_id: role.id,
@@ -281,13 +288,13 @@ function createProjectsRouter(deps) {
     }
   });
 
-  router.delete("/:id/roles/:roleId", requireAuth, (req, res) => {
+  router.delete("/:id/roles/:roleId", requireAuth, async (req, res) => {
     const projectId = parseId(req.params.id);
     const roleId = parseId(req.params.roleId);
     if (!projectId || !roleId) {
       return res.status(404).json({ error: "Not found" });
     }
-    const project = db
+    const project = await db
       .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
       .get(projectId);
     if (!project) {
@@ -296,7 +303,7 @@ function createProjectsRouter(deps) {
     if (Number(project.owner_user_id) !== Number(req.user.id)) {
       return res.status(403).json({ error: "Only the owner can remove roles" });
     }
-    const role = db
+    const role = await db
       .prepare(
         "SELECT id FROM project_roles WHERE id = ? AND project_id = ?"
       )
@@ -304,7 +311,7 @@ function createProjectsRouter(deps) {
     if (!role) {
       return res.status(404).json({ error: "Not found" });
     }
-    db.prepare("DELETE FROM project_roles WHERE id = ?").run(roleId);
+    await db.prepare("DELETE FROM project_roles WHERE id = ?").run(roleId);
     res.status(204).end();
   });
 

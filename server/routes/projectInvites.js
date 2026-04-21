@@ -19,12 +19,12 @@ function parseId(param) {
 function registerProjectInviteRoutes(router, deps) {
   const { db, requireAuth } = deps;
 
-  router.post("/:id/invites", requireAuth, (req, res) => {
+  router.post("/:id/invites", requireAuth, async (req, res) => {
     const projectId = parseId(req.params.id);
     if (!projectId) {
       return res.status(404).json({ error: "Not found" });
     }
-    const project = db
+    const project = await db
       .prepare("SELECT id, owner_user_id, title FROM projects WHERE id = ?")
       .get(projectId);
     if (!project) {
@@ -38,7 +38,7 @@ function registerProjectInviteRoutes(router, deps) {
       return res.status(400).json({ error: "username is required" });
     }
     const note = String(req.body?.note || "").trim().slice(0, NOTE_MAX);
-    const invitee = db
+    const invitee = await db
       .prepare(
         `SELECT id, username, display_name, public_display_as FROM users WHERE username = ?`
       )
@@ -49,7 +49,7 @@ function registerProjectInviteRoutes(router, deps) {
     if (Number(invitee.id) === Number(req.user.id)) {
       return res.status(400).json({ error: "You cannot invite yourself" });
     }
-    const pendingJr = db
+    const pendingJr = await db
       .prepare(
         `SELECT 1 FROM project_join_requests
          WHERE project_id = ? AND requester_user_id = ? AND status = 'pending'`
@@ -60,7 +60,7 @@ function registerProjectInviteRoutes(router, deps) {
         error: "That user already has a pending join request for this project",
       });
     }
-    const pendingInv = db
+    const pendingInv = await db
       .prepare(
         `SELECT 1 FROM project_invitations
          WHERE project_id = ? AND invitee_user_id = ? AND status = 'pending'`
@@ -71,20 +71,23 @@ function registerProjectInviteRoutes(router, deps) {
         error: "You already have a pending invitation out to this person for this project",
       });
     }
-    const inviter = db
+    const inviter = await db
       .prepare(
         `SELECT username, display_name, public_display_as FROM users WHERE id = ?`
       )
       .get(req.user.id);
     try {
-      const info = db
+      const info = await db
         .prepare(
           `INSERT INTO project_invitations (project_id, inviter_user_id, invitee_user_id, note, status)
-           VALUES (?, ?, ?, ?, 'pending')`
+           VALUES (?, ?, ?, ?, 'pending') RETURNING id`
         )
         .run(projectId, req.user.id, invitee.id, note);
-      const invId = Number(info.lastInsertRowid);
-      insertNotification(db, invitee.id, NOTIFICATION_TYPES.PROJECT_INVITE_RECEIVED, {
+      const invId = info && info.rows && info.rows[0] ? Number(info.rows[0].id) : null;
+      if (!invId) {
+        return res.status(500).json({ error: "Could not create invitation" });
+      }
+      await insertNotification(db, invitee.id, NOTIFICATION_TYPES.PROJECT_INVITE_RECEIVED, {
         invitation_id: invId,
         project_id: projectId,
         project_title:
@@ -118,9 +121,9 @@ function registerProjectInviteRoutes(router, deps) {
 function registerMeProjectInviteRoutes(app, deps) {
   const { db, requireAuth } = deps;
 
-  app.get("/api/me/project-invitations", requireAuth, (req, res) => {
+  app.get("/api/me/project-invitations", requireAuth, async (req, res) => {
     try {
-      const rows = db
+      const rows = await db
         .prepare(
           `SELECT i.id, i.project_id, i.note, i.created_at,
                   p.title AS project_title,
@@ -157,7 +160,7 @@ function registerMeProjectInviteRoutes(app, deps) {
     }
   });
 
-  app.patch("/api/me/project-invitations/:inviteId", requireAuth, (req, res) => {
+  app.patch("/api/me/project-invitations/:inviteId", requireAuth, async (req, res) => {
     const inviteId = parseId(req.params.inviteId);
     if (!inviteId) {
       return res.status(404).json({ error: "Not found" });
@@ -168,7 +171,7 @@ function registerMeProjectInviteRoutes(app, deps) {
         .status(400)
         .json({ error: 'status must be "accepted" or "declined"' });
     }
-    const row = db
+    const row = await db
       .prepare(
         `SELECT id, project_id, inviter_user_id, invitee_user_id, status FROM project_invitations WHERE id = ?`
       )
@@ -179,21 +182,21 @@ function registerMeProjectInviteRoutes(app, deps) {
     if (row.status !== "pending") {
       return res.status(400).json({ error: "This invitation is no longer pending" });
     }
-    db.prepare(
-      `UPDATE project_invitations SET status = ?, resolved_at = datetime('now') WHERE id = ?`
+    await db.prepare(
+      `UPDATE project_invitations SET status = ?, resolved_at = now() WHERE id = ?`
     ).run(next, inviteId);
     if (next === "accepted") {
-      const proj = db
+      const proj = await db
         .prepare("SELECT id, title FROM projects WHERE id = ?")
         .get(row.project_id);
-      const inviteeRow = db
+      const inviteeRow = await db
         .prepare(
           `SELECT username, display_name, public_display_as FROM users WHERE id = ?`
         )
         .get(req.user.id);
       const title =
         proj && proj.title != null ? String(proj.title) : "";
-      insertNotification(db, row.inviter_user_id, NOTIFICATION_TYPES.PROJECT_INVITE_ACCEPTED, {
+      await insertNotification(db, row.inviter_user_id, NOTIFICATION_TYPES.PROJECT_INVITE_ACCEPTED, {
         invitation_id: inviteId,
         project_id: row.project_id,
         project_title: title,
@@ -206,7 +209,7 @@ function registerMeProjectInviteRoutes(app, deps) {
           ? publicDisplayLabel(inviteeRow)
           : null,
       });
-      insertNotification(db, req.user.id, NOTIFICATION_TYPES.PROJECT_YOU_WERE_ADDED, {
+      await insertNotification(db, req.user.id, NOTIFICATION_TYPES.PROJECT_YOU_WERE_ADDED, {
         invitation_id: inviteId,
         project_id: row.project_id,
         project_title: title,

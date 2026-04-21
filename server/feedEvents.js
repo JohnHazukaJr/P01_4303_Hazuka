@@ -1,9 +1,9 @@
-/** @param {import("node:sqlite").DatabaseSync} db */
-function insertFeedEvent(db, actorUserId, eventType, payload) {
+async function insertFeedEvent(db, actorUserId, eventType, payload) {
   const body = payload && typeof payload === "object" ? payload : {};
-  db.prepare(
-    `INSERT INTO feed_events (actor_user_id, event_type, payload_json) VALUES (?, ?, ?)`
-  ).run(actorUserId, String(eventType), JSON.stringify(body));
+  await db.run(
+    "INSERT INTO feed_events (actor_user_id, event_type, payload_json) VALUES ($1, $2, $3)",
+    [Number(actorUserId), String(eventType), JSON.stringify(body)]
+  );
 }
 
 const EVENT_TYPES = {
