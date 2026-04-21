@@ -4,23 +4,23 @@
   <meta charset="utf-8">
   <script src="js/theme-init.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="View a project on synodos — open roles and collaborators.">
-  <title>Project — synodos</title>
+  <meta name="description" content="Notifications on synodos.">
+  <title>Notifications — synodos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="auth-page project-detail-page">
+<body class="auth-page notifications-page">
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  <header class="top">
+  <header class="top auth-top">
     <div class="wrap top-inner">
       <a class="logo" href="index.html">synodos</a>
       <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
         <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
       <nav id="site-nav" class="top-nav" aria-label="Primary">
-        <div class="top-actions" id="project-top-actions">
+        <div class="top-actions">
           <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
             <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
@@ -41,44 +41,29 @@
     </div>
   </header>
 
-  <main class="dashboard-main project-detail-main" id="main-content" tabindex="-1">
+  <main class="dashboard-main" id="main-content" tabindex="-1">
     <div class="wrap dashboard-wrap">
-      <p id="project-page-msg" class="dashboard-msg" hidden></p>
-      <p id="project-page-loading" class="dashboard-empty">Loading project…</p>
-      <div id="project-root" class="project-detail-root" hidden>
-        <p class="project-detail-back">
-          <a class="btn btn-ghost project-detail-back-link" id="project-back-link" href="index.html">← Back</a>
+      <p id="notifications-page-msg" class="dashboard-msg" hidden></p>
+      <header class="notifications-page-header">
+        <h1 class="auth-title">Notifications</h1>
+        <p class="dashboard-lead">Join requests, invitations, and responses. Unread items show in the header bell.</p>
+        <p class="notifications-toolbar">
+          <button type="button" class="btn btn-ghost" id="notifications-mark-all">Mark all read</button>
         </p>
-        <div class="auth-card project-detail-card">
-          <p class="auth-eyebrow">Project</p>
-          <h1 class="auth-title project-detail-title" id="pd-title"></h1>
-          <p class="project-detail-meta" id="pd-meta"></p>
-          <p class="project-detail-desc" id="pd-desc"></p>
-          <div class="project-roles project-detail-roles" id="pd-roles-wrap">
-            <h2 class="project-roles__heading" id="pd-roles-heading">Open roles</h2>
-            <div id="pd-roles-list"></div>
-          </div>
-        </div>
-        <section class="dashboard-section project-invite-section" id="project-invite-section" aria-labelledby="project-invite-title" hidden>
-          <h2 id="project-invite-title" class="dashboard-heading">Invite someone</h2>
-          <p class="dashboard-lead">Send a username an invitation to join this project. They will get a notification to accept or decline.</p>
-          <form id="project-invite-form" class="project-invite-form" action="#" method="post">
-            <div class="field project-invite-form__row">
-              <label for="invite-username">Username</label>
-              <input id="invite-username" name="username" type="text" required autocomplete="off" placeholder="peer_handle" maxlength="32">
-            </div>
-            <div class="field">
-              <label for="invite-note">Optional note</label>
-              <input id="invite-note" name="note" type="text" maxlength="500" placeholder="Why you’d like them on the team">
-            </div>
-            <button type="submit" class="btn btn-primary">Send invitation</button>
-          </form>
-        </section>
-        <section class="dashboard-section project-join-section" id="project-join-section" aria-labelledby="project-join-title" hidden>
-          <h2 id="project-join-title" class="dashboard-heading">Request to join</h2>
-          <div id="project-join-panel"></div>
-        </section>
-      </div>
+      </header>
+
+      <section class="dashboard-section" aria-labelledby="invites-title">
+        <h2 id="invites-title" class="dashboard-heading">Project invitations</h2>
+        <p class="dashboard-lead">When someone invites you to a project, accept or decline here.</p>
+        <div id="notifications-invites-root" class="notifications-invites-root"></div>
+        <p id="notifications-invites-empty" class="dashboard-empty" hidden>No pending invitations.</p>
+      </section>
+
+      <section class="dashboard-section" aria-labelledby="notif-list-title">
+        <h2 id="notif-list-title" class="dashboard-heading">All activity</h2>
+        <div id="notifications-list-root" class="notifications-list-root"></div>
+        <p id="notifications-list-empty" class="dashboard-empty" hidden>No notifications yet.</p>
+      </section>
     </div>
   </main>
 
@@ -105,8 +90,6 @@
   <script src="js/public-nav.js" defer></script>
   <script src="js/theme.js" defer></script>
   <script src="js/site-nav.js" defer></script>
-  <script src="js/project-page.js" defer></script>
-  <script src="js/project-join.js" defer></script>
-  <script src="js/project-invites.js" defer></script>
+  <script src="js/notifications-page.js" defer></script>
 </body>
 </html>

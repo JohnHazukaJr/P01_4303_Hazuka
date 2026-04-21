@@ -1,18 +1,14 @@
 const NOTE_MAX = 500;
+const { publicDisplayLabel } = require("../displayLabel");
+const { insertFeedEvent, EVENT_TYPES } = require("../feedEvents");
+const {
+  insertNotification,
+  NOTIFICATION_TYPES: NTYPE,
+} = require("../userNotifications");
 
 function parseId(param) {
   const n = Number(param);
   return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-function publicDisplayLabel(row) {
-  const pref = String(row.public_display_as || "username").toLowerCase();
-  const un = row.username != null ? String(row.username).trim() : "";
-  const dn = row.display_name != null ? String(row.display_name).trim() : "";
-  if (pref === "full_name" && dn.length >= 2) return dn;
-  if (un) return un;
-  if (dn.length >= 2) return dn;
-  return un || "Member";
 }
 
 function requestRowToJSON(row, roleTitle) {
@@ -29,6 +25,10 @@ function requestRowToJSON(row, roleTitle) {
       row.requester_id != null
         ? {
             id: row.requester_id,
+            username:
+              row.requester_username != null
+                ? String(row.requester_username)
+                : null,
             public_display_label: publicDisplayLabel({
               username: row.requester_username,
               display_name: row.requester_display_name,
@@ -188,6 +188,27 @@ function registerProjectJoinRoutes(router, deps) {
            WHERE r.id = ?`
         )
         .get(id);
+      const projRow = db
+        .prepare("SELECT owner_user_id, title FROM projects WHERE id = ?")
+        .get(projectId);
+      if (projRow) {
+        insertNotification(db, projRow.owner_user_id, NTYPE.JOIN_REQUEST_RECEIVED, {
+          project_id: projectId,
+          project_title:
+            projRow.title != null ? String(projRow.title) : "",
+          join_request_id: id,
+          requester_user_id: req.user.id,
+          requester_username:
+            row.requester_username != null
+              ? String(row.requester_username)
+              : null,
+          requester_public_display_label: publicDisplayLabel({
+            username: row.requester_username,
+            display_name: row.requester_display_name,
+            public_display_as: row.requester_public_display_as,
+          }),
+        });
+      }
       res.status(201).json({
         request: requestRowToJSON(
           {
@@ -238,7 +259,7 @@ function registerProjectJoinRoutes(router, deps) {
       }
       const row = db
         .prepare(
-          `SELECT id, project_id, status FROM project_join_requests WHERE id = ? AND project_id = ?`
+          `SELECT id, project_id, status, requester_user_id FROM project_join_requests WHERE id = ? AND project_id = ?`
         )
         .get(requestId, projectId);
       if (!row) {
@@ -279,6 +300,30 @@ function registerProjectJoinRoutes(router, deps) {
       db.prepare(
         `UPDATE project_join_requests SET status = ?, resolved_at = datetime('now') WHERE id = ?`
       ).run(nextStatus, requestId);
+      const proj = db
+        .prepare("SELECT id, title FROM projects WHERE id = ?")
+        .get(projectId);
+      const projTitle =
+        proj && proj.title != null ? String(proj.title) : "";
+      if (nextStatus === "accepted") {
+        if (proj) {
+          insertFeedEvent(db, row.requester_user_id, EVENT_TYPES.JOIN_ACCEPTED, {
+            project_id: proj.id,
+            project_title: projTitle,
+          });
+        }
+        insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_ACCEPTED, {
+          project_id: projectId,
+          project_title: projTitle,
+          join_request_id: requestId,
+        });
+      } else if (nextStatus === "declined") {
+        insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_DECLINED, {
+          project_id: projectId,
+          project_title: projTitle,
+          join_request_id: requestId,
+        });
+      }
       const updated = db
         .prepare(
           `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,

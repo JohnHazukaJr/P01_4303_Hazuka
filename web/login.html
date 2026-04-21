@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <script src="js/theme-init.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sign in to Synodos — connect with collaborators and projects.">
-  <title>Sign in — Synodos</title>
+  <meta name="description" content="Sign in to synodos — connect with collaborators and projects.">
+  <title>Sign in — synodos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="top auth-top">
     <div class="wrap top-inner">
-      <a class="logo" href="index.html">Synodos</a>
+      <a class="logo" href="index.html">synodos</a>
       <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
         <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
@@ -37,8 +37,9 @@
         <p class="auth-eyebrow">Welcome back</p>
         <h1 class="auth-title">Sign in</h1>
         <p class="auth-lead">
-          Sign in with your Synodos account. The server stores passwords securely (SQLite + bcrypt) and issues a session token.
+          Sign in with your synodos account. The server stores passwords securely (SQLite + bcrypt) and issues a session token.
         </p>
+        <p id="login-msg" class="dashboard-msg" hidden></p>
 
         <form class="auth-form" id="login-form" action="#" method="post" novalidate>
           <div class="field">
@@ -95,7 +96,7 @@
         </form>
 
         <p class="auth-footer">
-          New to Synodos?
+          New to synodos?
           <a href="register.html">Get started</a>
           ·
           <a href="index.html#join">Waitlist</a>
@@ -114,14 +115,16 @@
         </span>
         <span class="footer-nav__cluster" data-nav-group="user" hidden>
           <a href="dashboard.html">Dashboard</a>
+          <a href="messages.html">Messages</a>
           <a href="profile.html">Your space</a>
         </span>
       </nav>
-      <p>Synodos · P01_4303_Hazuka</p>
+      <p class="footer-credit">synodos</p>
     </div>
   </footer>
 
   <script src="js/auth.js" defer></script>
+  <script src="js/notification-helpers.js" defer></script>
   <script src="js/public-nav.js" defer></script>
   <script src="js/auth-feedback.js" defer></script>
   <script src="js/theme.js" defer></script>

@@ -20,12 +20,21 @@ const {
   registerProjectJoinRoutes,
   registerMeJoinRoutes,
 } = require("./routes/joinRequests");
+const { createUsersRouter } = require("./routes/users");
+const { registerFeedRoutes } = require("./routes/feed");
+const { registerConversationRoutes } = require("./routes/conversations");
+const { registerNotificationRoutes } = require("./routes/notifications");
+const {
+  registerProjectInviteRoutes,
+  registerMeProjectInviteRoutes,
+} = require("./routes/projectInvites");
 const {
   isValidWorkField,
   isValidWorkSubfield,
   profileFieldsPayload,
   enrichTag,
 } = require("./profileFields");
+const { publicDisplayLabel } = require("./displayLabel");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -56,17 +65,6 @@ function loadUserWorkTags(userId) {
     out.push(enrichTag(rows[i].work_field, rows[i].work_subfield));
   }
   return out;
-}
-
-/** Label shown on project cards and elsewhere — never includes email. */
-function publicDisplayLabel(row) {
-  var pref = String(row.public_display_as || "username").toLowerCase();
-  var un = row.username != null ? String(row.username).trim() : "";
-  var dn = row.display_name != null ? String(row.display_name).trim() : "";
-  if (pref === "full_name" && dn.length >= 2) return dn;
-  if (un) return un;
-  if (dn.length >= 2) return dn;
-  return un || "Member";
 }
 
 function signUserToken(userId, email) {
@@ -113,6 +111,18 @@ app.get("/", (_req, res) => {
     <li><code>DELETE /api/projects/:id/join-requests/:requestId</code> — withdraw your pending request (requester)</li>
     <li><code>GET /api/me/join-requests</code> — your outgoing join requests (auth)</li>
     <li><code>GET /api/me/project-requests-inbox</code> — pending requests on projects you own (auth)</li>
+    <li><code>GET /api/me/notifications/unread-count</code> — badge count (auth)</li>
+    <li><code>GET /api/me/notifications</code> — list notifications (auth); <code>PATCH …/:id/read</code>; <code>POST …/read-all</code></li>
+    <li><code>POST /api/projects/:id/invites</code> — invite by username (owner, auth); JSON <code>username</code>, optional <code>note</code></li>
+    <li><code>GET /api/me/project-invitations</code> — your pending invites (auth)</li>
+    <li><code>PATCH /api/me/project-invitations/:id</code> — accept or decline (auth); JSON <code>status</code></li>
+    <li><code>GET /api/users/:username</code> — public profile (optional <code>Authorization</code> adds <code>viewer_follows</code>)</li>
+    <li><code>POST /api/users/:username/follow</code> / <code>DELETE …/follow</code> — follow or unfollow (auth)</li>
+    <li><code>GET /api/feed</code> — activity from you and people you follow (auth); <code>?cursor=</code> <code>&limit=</code></li>
+    <li><code>GET /api/conversations</code> — your DM threads (auth)</li>
+    <li><code>POST /api/conversations</code> — open or create 1:1 thread (auth); JSON <code>with_username</code></li>
+    <li><code>GET /api/conversations/:id/messages</code> — messages (auth, participant); <code>?cursor=</code> <code>&limit=</code></li>
+    <li><code>POST /api/conversations/:id/messages</code> — send (auth); JSON <code>body</code></li>
   </ul>
   <p>Open <strong>web/index.html</strong> via Live Server to use the site.</p>
 </body>
@@ -308,6 +318,7 @@ function userPayload(row, tags) {
         ? String(row.public_display_as)
         : "username",
     public_display_label: publicDisplayLabel(row),
+    verified: Number(row.verified) === 1,
     bio: bio,
     avatar_url: row.avatar_url != null ? String(row.avatar_url) : "",
     work_field: primary
@@ -332,7 +343,7 @@ app.get("/api/profile-fields", (_req, res) => {
 app.get("/api/me", requireAuth, (req, res) => {
   var row = db
     .prepare(
-      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
+      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = ?"
     )
     .get(req.user.id);
   if (!row) {
@@ -343,6 +354,13 @@ app.get("/api/me", requireAuth, (req, res) => {
 });
 
 registerMeJoinRoutes(app, { db, requireAuth });
+registerMeProjectInviteRoutes(app, { db, requireAuth });
+registerNotificationRoutes(app, { db, requireAuth });
+registerFeedRoutes(app, { db, requireAuth });
+registerConversationRoutes(app, { db, requireAuth });
+
+const usersRouter = createUsersRouter({ db, requireAuth, optionalAuth });
+app.use("/api/users", usersRouter);
 
 app.patch("/api/me", requireAuth, (req, res) => {
   var body = req.body || {};
@@ -452,7 +470,7 @@ app.patch("/api/me", requireAuth, (req, res) => {
 
   var row = db
     .prepare(
-      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
+      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = ?"
     )
     .get(req.user.id);
   if (!row) {
@@ -521,7 +539,7 @@ app.patch("/api/me", requireAuth, (req, res) => {
 
   var updated = db
     .prepare(
-      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield FROM users WHERE id = ?"
+      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = ?"
     )
     .get(req.user.id);
   var outTags = loadUserWorkTags(req.user.id);
@@ -534,6 +552,7 @@ const projectsRouter = createProjectsRouter({
   optionalAuth,
 });
 registerProjectJoinRoutes(projectsRouter, { db, requireAuth });
+registerProjectInviteRoutes(projectsRouter, { db, requireAuth });
 app.use("/api/projects", projectsRouter);
 
 const server = app.listen(PORT, () => {

@@ -1,32 +1,25 @@
-# What to build next (Synodos)
+# Roadmap
 
-## Done recently
+## Shipped in this repo
 
-- **Dashboard:** filter / search open projects (title, description, owner email) and “My projects only”; new-project form uses `reportValidity()` for clearer HTML5 errors.
-- **Theme:** appearance cycles **light → dark → system** (stored as `auto`); system preference updates live when in system mode.
-- **Nav (mobile):** menu open/close uses height/opacity transition; menu icon rotates slightly when open.
-- SQLite user store, bcrypt, JWT, register/login/dashboard.
-- **Projects & open roles:** tables `projects` and `project_roles`, REST under `/api/projects`, dashboard UI to create projects and manage roles.
-- **Profile:** `users.display_name` / `bio`, `GET/PATCH /api/me`, **profile-setup.html** after registration; dashboard redirects until profile is complete.
-- **Project page:** **`project.html?id=…`** (public view + shareable link); dashboard cards link here.
-- **Join requests:** table `project_join_requests`, REST (`POST/GET/PATCH/DELETE` under `/api/projects/:id/join-requests`, inbox at `GET /api/me/project-requests-inbox`), UI on project page and dashboard **Requests on my projects**.
-- **Landing:** CTAs point to **register.html**; **`public-nav.js`** swaps header when a JWT is present.
+- Accounts: registration, login, JWT in `localStorage`, profile completion gate
+- Profiles: display name, bio, work tags, avatars (`PATCH /api/me`)
+- Projects: create, list, filter, open roles, public project page (`project.html?id=…`)
+- Join requests: request/withdraw, owner inbox, accept/decline
+- UI: light/dark/system theme, responsive nav, guest vs signed-in header/footer
 
-## Suggested order
+## Next (suggested)
 
-| Priority | Work |
-|----------|------|
-| **Deploy** | Host API (Render, Railway, Fly.io) and static site; set `JWT_SECRET`, `SYNODOS_API_BASE` on pages, tighten CORS. |
-| **Profile** | **`profile.html`** edits the same fields as setup (live preview). |
-| **Polish** | Messaging, team membership after accept, or richer discovery — as your syllabus allows. |
+| Area | Ideas |
+|------|--------|
+| **Hosting** | Deploy API (e.g. Railway, Render, Fly.io); set `JWT_SECRET`; tighten CORS |
+| **Product** | Team membership after accept, messaging, richer discovery |
+| **Quality** | Tests, rate limiting, input hardening |
 
-## Dev loop checklist
+## Local development
 
-1. Terminal: `cd server` → `npm start` (API at `http://localhost:8080`).
-2. **Live Server** on **`web/index.html`** (or serve the `web/` folder).
-3. Register → **profile-setup.html** → **dashboard.html** (or log in → dashboard). Create a project and open roles; open **project.html?id=…** to request to join; owners see pending requests on the dashboard.
-4. Optional: `cd server` → `npm run verify` for `/api/health`.
+1. `npm start` from repo root (or `npm start` inside `server/`).
+2. Serve `web/` over HTTP (not `file://` for API calls).
+3. Flow: register → profile setup → dashboard; exercise project page and join requests.
 
-## Course alignment
-
-Match milestones to your syllabus (auth, DB, deployment) and update this file or issues as you go.
+Optional: `npm run verify` with the API running.

@@ -4,23 +4,23 @@
   <meta charset="utf-8">
   <script src="js/theme-init.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="View a project on synodos — open roles and collaborators.">
-  <title>Project — synodos</title>
+  <meta name="description" content="Peer profile on synodos.">
+  <title>Profile — synodos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="auth-page project-detail-page">
+<body class="auth-page user-public-page">
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  <header class="top">
+  <header class="top auth-top">
     <div class="wrap top-inner">
       <a class="logo" href="index.html">synodos</a>
       <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
         <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
       <nav id="site-nav" class="top-nav" aria-label="Primary">
-        <div class="top-actions" id="project-top-actions">
+        <div class="top-actions">
           <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
             <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
@@ -41,43 +41,47 @@
     </div>
   </header>
 
-  <main class="dashboard-main project-detail-main" id="main-content" tabindex="-1">
+  <main class="dashboard-main" id="main-content" tabindex="-1">
     <div class="wrap dashboard-wrap">
-      <p id="project-page-msg" class="dashboard-msg" hidden></p>
-      <p id="project-page-loading" class="dashboard-empty">Loading project…</p>
-      <div id="project-root" class="project-detail-root" hidden>
+      <p id="user-page-msg" class="dashboard-msg" hidden></p>
+      <p id="user-page-loading" class="dashboard-empty">Loading profile…</p>
+      <div id="user-page-root" class="user-public-root" hidden>
         <p class="project-detail-back">
-          <a class="btn btn-ghost project-detail-back-link" id="project-back-link" href="index.html">← Back</a>
+          <a class="btn btn-ghost project-detail-back-link" id="user-page-back" href="dashboard.html">← Back</a>
         </p>
-        <div class="auth-card project-detail-card">
-          <p class="auth-eyebrow">Project</p>
-          <h1 class="auth-title project-detail-title" id="pd-title"></h1>
-          <p class="project-detail-meta" id="pd-meta"></p>
-          <p class="project-detail-desc" id="pd-desc"></p>
-          <div class="project-roles project-detail-roles" id="pd-roles-wrap">
-            <h2 class="project-roles__heading" id="pd-roles-heading">Open roles</h2>
-            <div id="pd-roles-list"></div>
+        <div class="auth-card user-public-card">
+          <div class="user-public-head">
+            <div class="profile-avatar-preview profile-avatar-preview--sm user-public-avatar" id="user-page-avatar-wrap">
+              <img class="profile-avatar-img" id="user-page-avatar-img" alt="" width="64" height="64" hidden>
+              <span class="profile-avatar-placeholder" id="user-page-avatar-ph" aria-hidden="true">
+                <svg class="profile-avatar-default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14 30c10-18 42-18 52 0" />
+                  <path d="M18 28c8-12 36-12 44 0" />
+                  <ellipse cx="40" cy="48" rx="15" ry="17" />
+                </svg>
+              </span>
+            </div>
+            <div class="user-public-head__text">
+              <p class="auth-eyebrow">Peer profile</p>
+              <h1 class="auth-title" id="user-page-title">—</h1>
+              <p class="user-public-username" id="user-page-username"></p>
+            </div>
           </div>
+          <p class="user-public-bio" id="user-page-bio"></p>
+          <div class="user-public-actions" id="user-page-actions" hidden>
+            <button type="button" class="btn btn-primary" id="user-page-follow-btn">Follow</button>
+            <button type="button" class="btn btn-ghost" id="user-page-unfollow-btn" hidden>Unfollow</button>
+            <a class="btn btn-ghost" id="user-page-edit-link" href="profile.html" hidden>Edit profile</a>
+            <button type="button" class="btn btn-ghost" id="user-page-message-btn" hidden>Message</button>
+          </div>
+          <p class="user-page-login-hint dashboard-lead" id="user-page-login-hint" hidden>
+            <a href="login.html">Log in</a> to follow or message this person.
+          </p>
+          <section class="user-public-tags-section" aria-labelledby="user-tags-heading">
+            <h2 id="user-tags-heading" class="dashboard-heading" style="font-size: 1rem;">Skills &amp; fields</h2>
+            <ul class="user-public-tags" id="user-page-tags"></ul>
+          </section>
         </div>
-        <section class="dashboard-section project-invite-section" id="project-invite-section" aria-labelledby="project-invite-title" hidden>
-          <h2 id="project-invite-title" class="dashboard-heading">Invite someone</h2>
-          <p class="dashboard-lead">Send a username an invitation to join this project. They will get a notification to accept or decline.</p>
-          <form id="project-invite-form" class="project-invite-form" action="#" method="post">
-            <div class="field project-invite-form__row">
-              <label for="invite-username">Username</label>
-              <input id="invite-username" name="username" type="text" required autocomplete="off" placeholder="peer_handle" maxlength="32">
-            </div>
-            <div class="field">
-              <label for="invite-note">Optional note</label>
-              <input id="invite-note" name="note" type="text" maxlength="500" placeholder="Why you’d like them on the team">
-            </div>
-            <button type="submit" class="btn btn-primary">Send invitation</button>
-          </form>
-        </section>
-        <section class="dashboard-section project-join-section" id="project-join-section" aria-labelledby="project-join-title" hidden>
-          <h2 id="project-join-title" class="dashboard-heading">Request to join</h2>
-          <div id="project-join-panel"></div>
-        </section>
       </div>
     </div>
   </main>
@@ -105,8 +109,6 @@
   <script src="js/public-nav.js" defer></script>
   <script src="js/theme.js" defer></script>
   <script src="js/site-nav.js" defer></script>
-  <script src="js/project-page.js" defer></script>
-  <script src="js/project-join.js" defer></script>
-  <script src="js/project-invites.js" defer></script>
+  <script src="js/user-page.js" defer></script>
 </body>
 </html>
