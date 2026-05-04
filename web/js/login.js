@@ -55,6 +55,36 @@
     var password = (fd.get("password") || "").toString();
 
     try {
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7727/ingest/2e0e05ed-2293-4597-b6c6-1abe56458da5",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "374fbb",
+          },
+          body: JSON.stringify({
+            sessionId: "374fbb",
+            hypothesisId: "H1",
+            location: "web/js/login.js:submit",
+            message: "login_fetch_start",
+            data: {
+              apiBaseLen: String(API_BASE || "").length,
+              apiBaseHost: (function () {
+                try {
+                  return new URL(String(API_BASE)).hostname;
+                } catch (e) {
+                  return "parse_fail";
+                }
+              })(),
+              idLen: identifier.length,
+            },
+            timestamp: Date.now(),
+          }),
+        }
+      ).catch(function () {});
+      // #endregion
       var res = await fetch(API_BASE + "/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,6 +96,30 @@
       var data = await res.json().catch(function () {
         return {};
       });
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7727/ingest/2e0e05ed-2293-4597-b6c6-1abe56458da5",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "374fbb",
+          },
+          body: JSON.stringify({
+            sessionId: "374fbb",
+            hypothesisId: "H2",
+            location: "web/js/login.js:submit",
+            message: "login_fetch_response",
+            data: {
+              httpStatus: res.status,
+              ok: res.ok,
+              errKey: data && data.error ? String(data.error).slice(0, 80) : "",
+            },
+            timestamp: Date.now(),
+          }),
+        }
+      ).catch(function () {});
+      // #endregion
       if (!res.ok) {
         var err = data.error || res.statusText || "Sign-in failed";
         if (res.status === 401) {
@@ -88,6 +142,29 @@
       }
       window.location.href = "dashboard.html";
     } catch (err) {
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7727/ingest/2e0e05ed-2293-4597-b6c6-1abe56458da5",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "374fbb",
+          },
+          body: JSON.stringify({
+            sessionId: "374fbb",
+            hypothesisId: "H2",
+            location: "web/js/login.js:submit",
+            message: "login_fetch_network_error",
+            data: {
+              errName: err && err.name,
+              errMsg: err && err.message ? String(err.message).slice(0, 120) : "",
+            },
+            timestamp: Date.now(),
+          }),
+        }
+      ).catch(function () {});
+      // #endregion
       if (typeof console !== "undefined" && console.warn) {
         console.warn("Backend not reachable.", err);
       }
