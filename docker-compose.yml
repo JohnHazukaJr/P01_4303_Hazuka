@@ -1,0 +1,19 @@
+# Optional: local Postgres to run `npm run migrate` / `npm run verify-schema`
+# without a Supabase project. Not for production — use Supabase DATABASE_URL for real dev.
+#
+# Usage:
+#   docker compose up -d
+#   Set server/.env: DATABASE_URL=postgresql://postgres:synodos_smoke@127.0.0.1:55432/synodos
+#                    PGSSLMODE=disable
+#   npm run migrate && npm run verify-schema
+#   docker compose down
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: synodos_smoke
+      POSTGRES_DB: synodos
+    ports:
+      - "55432:5432"

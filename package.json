@@ -1,10 +1,16 @@
 {
   "name": "synodos",
   "private": true,
-  "description": "synodos — run API from repo root without cd into server/",
+  "workspaces": ["server"],
+  "description": "synodos — peer-first collaborator matching; root scripts proxy to server/",
   "scripts": {
     "start": "npm --prefix server start",
     "server": "npm --prefix server start",
-    "verify": "npm --prefix server run verify"
+    "verify": "npm --prefix server run verify",
+    "migrate": "npm --prefix server run migrate",
+    "migrate:avatars": "npm --prefix server run migrate-avatars",
+    "check-env": "npm --prefix server run check-env",
+    "verify-schema": "npm --prefix server run verify-schema",
+    "health-check": "npm --prefix server run health-check"
   }
 }

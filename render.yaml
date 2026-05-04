@@ -1,29 +1,32 @@
+# Render blueprint: Node API + static site.
+# Set DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (and JWT_SECRET, etc.) in the Render dashboard.
+# This file does not provision Postgres — use Supabase for the database.
+#
+# API: install from repo root so `yarn` / `npm install` picks up the workspace and
+# installs server/ deps (avoids MODULE_NOT_FOUND for dotenv when build only ran at root).
+
 services:
   - type: web
     name: synodos-api
     env: node
-    rootDir: server
-    buildCommand: npm install && npm run migrate
+    buildCommand: npm install
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: synodos-db
-          property: connectionString
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: JWT_SECRET
         generateValue: true
-      # Optional: lock CORS down once you know your static origin.
       # - key: ALLOWED_ORIGINS
-      #   value: https://synodos-web.onrender.com
+      #   sync: false
+      # - key: SYNODOS_ADMIN_USERNAMES
+      #   sync: false
 
   - type: web
     name: synodos-web
     env: static
     rootDir: web
     staticPublishPath: .
-
-databases:
-  - name: synodos-db
-    databaseName: synodos
-    plan: free
-

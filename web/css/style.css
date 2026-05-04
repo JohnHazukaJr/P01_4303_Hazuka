@@ -2141,6 +2141,29 @@ footer {
   font-weight: 900;
 }
 
+.official-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-gold-strong);
+  background: var(--color-gold-faint);
+  border: 1px solid var(--color-border-gold);
+  border-radius: 6px;
+  vertical-align: middle;
+  transform: translateY(-0.06em);
+}
+
+.official-badge::before {
+  content: "★";
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
 .feed-list {
   display: flex;
   flex-direction: column;
