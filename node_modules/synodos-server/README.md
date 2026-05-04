@@ -150,3 +150,11 @@ Usually the API cannot query Postgres. On **Render**, open **Logs** and look for
 2. **Password** — Use the real database password in the URI (not the placeholder). URL-encode special characters in the password.
 3. **`PGSSLMODE`** — Leave unset for Supabase (TLS required). Only set `PGSSLMODE=disable` for local Postgres without TLS.
 4. After deploying this version, failed logins caused by DB connectivity return **503** with a clearer JSON `error` instead of a generic 500.
+
+### Render still “not working” after fixing env
+
+- **`server/.env` is not deployed** — it is listed in [`.gitignore`](.gitignore). Render does **not** read a file you “upload” in the repo UI unless you add a custom build step that writes secrets (avoid committing secrets). Use **Render → your web service → Environment** only; variable names must match [`.env.example`](.env.example) exactly (`DATABASE_URL`, not `Database_URL`).
+- **Redeploy** after every env change (or use “Clear build cache & deploy” once).
+- From your laptop, run: `node server/scripts/verify-health.js` with `SYNODOS_API_BASE` or edit the script’s URL to your Render `https://…/api/health` — you want `database: connected`.
+- **Browser → Network** on login: confirm the request URL is your **Render** API (not `localhost`), status code, and response JSON `error` text.
+- **Netlify** still needs **`SYNODOS_API_BASE`** (and a rebuild) so the static site calls Render, not `localhost`.
