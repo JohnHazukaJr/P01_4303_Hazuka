@@ -5,6 +5,7 @@ require("dotenv").config();
 require("express-async-errors");
 
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -40,6 +41,8 @@ const { publicDisplayLabel } = require("./displayLabel");
 const { registerAdminRoutes, createIsAdmin } = require("./routes/admin");
 
 const app = express();
+/* Respect X-Forwarded-For when behind Render/reverse proxy (rate limit + logs). */
+app.set("trust proxy", 1);
 const PORT = Number(process.env.PORT) || 8080;
 const JWT_SECRET =
   process.env.JWT_SECRET || "synodos-dev-secret-change-in-production";
@@ -92,6 +95,18 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many attempts. Try again in a few minutes.",
+    });
+  },
+});
 
 app.get("/", (_req, res) => {
   res.type("html").send(`<!DOCTYPE html>
@@ -150,7 +165,7 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
-app.post("/api/auth/register", async (req, res) => {
+app.post("/api/auth/register", authLimiter, async (req, res) => {
   const email = normalizeEmail(req.body?.email);
   const password = req.body?.password;
   const usernameCheck = validateUsername(req.body?.username);
@@ -201,7 +216,7 @@ app.post("/api/auth/register", async (req, res) => {
   }
 });
 
-app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", authLimiter, async (req, res) => {
   const raw =
     req.body?.identifier != null && req.body.identifier !== ""
       ? String(req.body.identifier).trim()
@@ -539,6 +554,21 @@ const projectsRouter = createProjectsRouter({
 registerProjectJoinRoutes(projectsRouter, { db, requireAuth });
 registerProjectInviteRoutes(projectsRouter, { db, requireAuth });
 app.use("/api/projects", projectsRouter);
+
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
+app.use((err, _req, res, _next) => {
+  console.error("[synodos] Unhandled error:", err);
+  if (res.headersSent) return;
+  const status = err && typeof err.status === "number" ? err.status : 500;
+  const msg =
+    err && err.expose && err.message
+      ? err.message
+      : "Internal server error";
+  res.status(status).json({ error: msg });
+});
 
 const server = app.listen(PORT, () => {
   console.log(`synodos API listening at http://localhost:${PORT}`);

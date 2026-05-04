@@ -171,6 +171,10 @@
       headers: { Authorization: "Bearer " + token },
     });
     if (!res.ok) {
+      if (res.status === 401) {
+        window.synodosAuth.handleUnauthorized();
+        return;
+      }
       if (
         window.synodosProjectPage &&
         window.synodosProjectPage.onViewerReady

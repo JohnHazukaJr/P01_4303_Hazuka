@@ -36,5 +36,8 @@ The directory `server/data/` is **gitignored**. It may hold legacy files (e.g. o
 | `web/project.html` | Public project (`?id=`) |
 | `web/user.html` | Public profile (`?u=username`) |
 | `web/messages.html` / `web/notifications.html` | Comms |
+| `web/404.html` | Static “page not found” (Netlify / Render static serve this for unknown URLs) |
 
 **Local workflow:** `npm start` at repo root (or `cd server && npm start`), then serve `web/` with Live Server so `fetch` reaches the API.
+
+**Frontend resilience:** `web/js/global-errors.js` shows a one-time dismissible banner on uncaught JS errors / unhandled promise rejections (included on pages that load `config.js` + `auth.js`).

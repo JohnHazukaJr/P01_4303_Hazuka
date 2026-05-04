@@ -37,14 +37,14 @@
   })();
 
   var passwordInput = document.getElementById("password");
-  function clearWrongPasswordMsg() {
-    if (msgEl && msgEl.textContent === "Incorrect password") {
+  function clearErrorMsg() {
+    if (msgEl && msgEl.classList.contains("dashboard-msg--error")) {
       showMsg("", false);
     }
   }
   if (passwordInput) {
-    passwordInput.addEventListener("focus", clearWrongPasswordMsg);
-    passwordInput.addEventListener("click", clearWrongPasswordMsg);
+    passwordInput.addEventListener("focus", clearErrorMsg);
+    passwordInput.addEventListener("click", clearErrorMsg);
   }
 
   loginForm.addEventListener("submit", async function (e) {
@@ -69,7 +69,6 @@
       if (!res.ok) {
         var err = data.error || res.statusText || "Sign-in failed";
         if (res.status === 401) {
-          err = "Incorrect password";
           var pw = document.getElementById("password");
           if (pw) {
             pw.value = "";
@@ -92,10 +91,7 @@
       if (typeof console !== "undefined" && console.warn) {
         console.warn("Backend not reachable.", err);
       }
-      showMsg(
-        "Could not reach the server. In the server folder run: npm install && npm start",
-        true
-      );
+      showMsg("Could not reach the server. Please try again.", true);
     }
   });
 })();

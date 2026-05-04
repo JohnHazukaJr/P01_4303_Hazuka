@@ -11,6 +11,9 @@ REST API for the synodos project. Requires **[Node.js 22.5+](https://nodejs.org/
 - **Supabase Storage** via [`@supabase/supabase-js`](https://github.com/supabase/supabase-js) — avatars bucket (CDN-served, survives redeploys)
 - **bcryptjs** — password hashing
 - **jsonwebtoken** — JWT bearer tokens (7-day expiry)
+- **express-rate-limit** — limits `POST /api/auth/login` and `POST /api/auth/register` (abuse / brute-force mitigation)
+
+**API errors:** Unhandled route failures return JSON `{ error: "Internal server error" }` via a final Express error handler (with `express-async-errors`, async route throws are included). Unknown `/api/*` paths return **404** `{ error: "Not found" }`.
 
 All relational data for the app (users, projects, roles, join requests, invitations, follows, feed events, DMs, notifications, etc.) is stored **only** in Postgres on Supabase via `DATABASE_URL`. The API does not use a local SQLite file or any server-local database. Profile photos are the only blobs; they go to Storage, not the database.
 

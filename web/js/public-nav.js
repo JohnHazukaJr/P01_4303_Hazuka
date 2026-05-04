@@ -129,7 +129,19 @@
       headers: { Authorization: "Bearer " + token },
     })
       .then(function (res) {
-        return res.ok ? res.json() : null;
+        if (res.status === 401) {
+          if (window.synodosAuth && window.synodosAuth.handleUnauthorized) {
+            window.synodosAuth.handleUnauthorized();
+          }
+          return null;
+        }
+        if (!res.ok) {
+          if (typeof console !== "undefined" && console.warn) {
+            console.warn("[synodos] unread-count fetch failed", res.status);
+          }
+          return null;
+        }
+        return res.json();
       })
       .then(function (data) {
         if (!data) return;
@@ -137,7 +149,11 @@
         applyBadgeCount(Number.isFinite(n) ? n : 0);
         if (menuOpen) loadDropdown();
       })
-      .catch(function () {});
+      .catch(function (e) {
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn("[synodos] unread-count request failed", e);
+        }
+      });
   }
 
   function startPolling() {
@@ -166,7 +182,11 @@
     return fetch(base + "/api/me/notifications/" + id + "/read", {
       method: "PATCH",
       headers: { Authorization: "Bearer " + token },
-    }).catch(function () {});
+    }).catch(function (e) {
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn("[synodos] mark notification read failed", e);
+      }
+    });
   }
 
   function renderNotifItem(n) {
@@ -267,6 +287,32 @@
     return row;
   }
 
+  function ensureDropdownLoadErrorEl() {
+    var scroll = document.querySelector("#synodos-notify-dropdown .notify-menu__scroll");
+    if (!scroll) return null;
+    var el = document.getElementById("synodos-notify-load-error");
+    if (!el) {
+      el = document.createElement("p");
+      el.id = "synodos-notify-load-error";
+      el.className = "notify-menu__load-error";
+      el.setAttribute("role", "status");
+      scroll.insertBefore(el, scroll.firstChild);
+    }
+    return el;
+  }
+
+  function setDropdownLoadError(msg) {
+    var el = ensureDropdownLoadErrorEl();
+    if (!el) return;
+    if (msg) {
+      el.textContent = msg;
+      el.removeAttribute("hidden");
+    } else {
+      el.textContent = "";
+      el.setAttribute("hidden", "");
+    }
+  }
+
   async function loadDropdown() {
     if (!window.synodosAuth || !isAuthed()) return;
     var base = window.synodosAuth.apiBase || "http://localhost:8080";
@@ -280,37 +326,87 @@
     var newEmpty = document.getElementById("synodos-notify-new-empty");
     var earlierEmpty = document.getElementById("synodos-notify-earlier-empty");
 
+    var notifFailed = false;
+    var invFailed = false;
+
     try {
       var res = await fetch(base + "/api/me/notifications?limit=50", { headers: headers });
-      var data = res.ok ? await res.json() : { notifications: [] };
-      var list = data.notifications || [];
-      var unread = list.filter(function (n) { return !n.read_at; });
-      var read = list.filter(function (n) { return !!n.read_at; }).slice(0, 20);
-
-      if (newRoot) {
-        newRoot.innerHTML = "";
-        for (var i = 0; i < unread.length; i++) newRoot.appendChild(renderNotifItem(unread[i]));
+      if (res.status === 401) {
+        if (window.synodosAuth && window.synodosAuth.handleUnauthorized) {
+          window.synodosAuth.handleUnauthorized();
+        }
+        return;
       }
-      if (newEmpty) newEmpty.hidden = unread.length > 0;
+      if (!res.ok) {
+        notifFailed = true;
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn("[synodos] notifications dropdown list failed", res.status);
+        }
+        if (newRoot) newRoot.innerHTML = "";
+        if (earlierRoot) earlierRoot.innerHTML = "";
+        if (newEmpty) newEmpty.setAttribute("hidden", "");
+        if (earlierEmpty) earlierEmpty.setAttribute("hidden", "");
+      } else {
+        var data = await res.json();
+        var list = (data && data.notifications) || [];
+        var unread = list.filter(function (n) { return !n.read_at; });
+        var read = list.filter(function (n) { return !!n.read_at; }).slice(0, 20);
 
-      if (earlierRoot) {
-        earlierRoot.innerHTML = "";
-        for (var j = 0; j < read.length; j++) earlierRoot.appendChild(renderNotifItem(read[j]));
+        if (newRoot) {
+          newRoot.innerHTML = "";
+          for (var i = 0; i < unread.length; i++) newRoot.appendChild(renderNotifItem(unread[i]));
+        }
+        if (newEmpty) newEmpty.hidden = unread.length > 0;
+
+        if (earlierRoot) {
+          earlierRoot.innerHTML = "";
+          for (var j = 0; j < read.length; j++) earlierRoot.appendChild(renderNotifItem(read[j]));
+        }
+        if (earlierEmpty) earlierEmpty.hidden = read.length > 0;
       }
-      if (earlierEmpty) earlierEmpty.hidden = read.length > 0;
-    } catch (_) {}
+    } catch (e) {
+      notifFailed = true;
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn("[synodos] notifications dropdown", e);
+      }
+    }
 
     try {
       var invRes = await fetch(base + "/api/me/project-invitations", { headers: headers });
-      var invData = invRes.ok ? await invRes.json() : { invitations: [] };
-      var invs = invData.invitations || [];
-      if (invWrap && invRoot) {
-        invRoot.innerHTML = "";
-        invWrap.hidden = invs.length === 0;
-        for (var k = 0; k < invs.length; k++) invRoot.appendChild(renderInviteItem(invs[k], base, token));
+      if (invRes.status === 401) {
+        if (window.synodosAuth && window.synodosAuth.handleUnauthorized) {
+          window.synodosAuth.handleUnauthorized();
+        }
+        return;
+      }
+      if (!invRes.ok) {
+        invFailed = true;
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn("[synodos] project-invitations fetch failed", invRes.status);
+        }
+        if (invWrap) invWrap.hidden = true;
+        if (invRoot) invRoot.innerHTML = "";
+      } else {
+        var invData = await invRes.json();
+        var invs = (invData && invData.invitations) || [];
+        if (invWrap && invRoot) {
+          invRoot.innerHTML = "";
+          invWrap.hidden = invs.length === 0;
+          for (var k = 0; k < invs.length; k++) invRoot.appendChild(renderInviteItem(invs[k], base, token));
+        }
       }
     } catch (e2) {
+      invFailed = true;
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn("[synodos] project-invitations", e2);
+      }
       if (invWrap) invWrap.hidden = true;
+    }
+
+    if (notifFailed || invFailed) {
+      setDropdownLoadError("Couldn't load notifications.");
+    } else {
+      setDropdownLoadError("");
     }
   }
 

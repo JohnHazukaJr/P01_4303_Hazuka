@@ -90,6 +90,15 @@
         /* ignore */
       }
     },
+    /**
+     * Clear session and go to sign-in (e.g. expired or invalid token on /api/me).
+     */
+    handleUnauthorized: function () {
+      this.clearToken();
+      if (win && win.location) {
+        win.location.href = "login.html";
+      }
+    },
   };
 
   function pathIsAuthPage(pathname) {
