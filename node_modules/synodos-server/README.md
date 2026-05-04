@@ -19,7 +19,7 @@ All relational data for the app (users, projects, roles, join requests, invitati
 
 ## Environment variables
 
-Copy `.env.example` to `.env` (or set these in your host's dashboard):
+Copy `.env.example` to `.env` (or set these in your host's dashboard). If you used alternate spellings on Render (e.g. `Database_URL`, `Supabase_Serivce_Role_Key`), the server maps those to the canonical names at startup.
 
 | Variable | Required | Description |
 |---|---|---|
@@ -150,6 +150,12 @@ Usually the API cannot query Postgres. On **Render**, open **Logs** and look for
 2. **Password** — Use the real database password in the URI (not the placeholder). URL-encode special characters in the password.
 3. **`PGSSLMODE`** — Leave unset for Supabase (TLS required). Only set `PGSSLMODE=disable` for local Postgres without TLS.
 4. After deploying this version, failed logins caused by DB connectivity return **503** with a clearer JSON `error` instead of a generic 500.
+
+### One-shot env sanity check (Render)
+
+1. In the Render dashboard add **`SYNODOS_DEBUG_SURFACE`** = **`1`**, save, redeploy.
+2. Open **`GET https://YOUR-API.onrender.com/api/debug/env-check`** in the browser. You should see JSON booleans: `hasDatabaseUrl`, `hasSupabaseUrl`, `hasServiceRole`, `hasJwtSecret`, `allowedOriginsConfigured` — all should be **`true`** for a working production setup (no secret values are returned).
+3. **Remove** `SYNODOS_DEBUG_SURFACE` from Render (or set to `0`) after checking so the endpoint returns 404 again.
 
 ### Render still “not working” after fixing env
 
