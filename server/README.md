@@ -1,15 +1,31 @@
 # synodos — Node.js backend (Express)
 
-REST API for the synodos project. Requires **[Node.js 22.5+](https://nodejs.org/)** (built-in [`node:sqlite`](https://nodejs.org/api/sqlite.html); no native addon install).
+REST API for the synodos project. Requires **[Node.js 22.5+](https://nodejs.org/)** and a [Supabase](https://supabase.com/) project (hosted Postgres + object storage).
 
 ## Stack
 
 - **Express** — HTTP API
-- **`node:sqlite`** (`DatabaseSync`) — local database file `data/synodos.db` (created on first run; gitignored)
+- **PostgreSQL** via [`pg`](https://node-postgres.com/) — schema in [`migrations/`](migrations), applied with `npm run migrate`
+- **Supabase Storage** via [`@supabase/supabase-js`](https://github.com/supabase/supabase-js) — avatars bucket (CDN-served, survives redeploys)
 - **bcryptjs** — password hashing
 - **jsonwebtoken** — JWT bearer tokens (7-day expiry)
 
-Set **`JWT_SECRET`** in production (environment variable). A default is used for local dev only.
+All relational data for the app (users, projects, roles, join requests, invitations, follows, feed events, DMs, notifications, etc.) is stored **only** in Postgres on Supabase via `DATABASE_URL`. The API does not use a local SQLite file or any server-local database. Profile photos are the only blobs; they go to Storage, not the database.
+
+## Environment variables
+
+Copy `.env.example` to `.env` (or set these in your host's dashboard):
+
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | yes | Supabase **Pooled** connection string (port `6543`). Used by `pg.Pool`. |
+| `JWT_SECRET` | prod | Secret used to sign session JWTs. A default is used for local dev only. |
+| `SUPABASE_URL` | yes | `https://<project-ref>.supabase.co` — used to build avatar public URLs. |
+| `SUPABASE_SERVICE_ROLE_KEY` | yes | Service-role key for server-side uploads. **Never** ship to the browser. |
+| `SUPABASE_AVATAR_BUCKET` | no | Storage bucket name. Defaults to `avatars`. |
+| `ALLOWED_ORIGINS` | prod | Comma-separated CORS allowlist (e.g. `https://synodos.netlify.app`). Omit in dev to allow all. |
+| `PORT` | no | API port. Defaults to `8080`. |
+| `PGSSLMODE` | no | Set to `disable` for local Postgres without TLS. Otherwise leave unset (Supabase requires TLS). |
 
 ## Setup
 
@@ -21,18 +37,48 @@ Download the **LTS** installer from [https://nodejs.org/](https://nodejs.org/) a
 
 Open a **new** terminal and run `node -v` and `npm -v`.
 
-### 3. Install dependencies and run
+### Legacy `synodos.db` on disk
+
+Older clones may still have `server/data/synodos.db`. The current API **does not open that file** — all SQL goes to `DATABASE_URL`. If the file is still present, close any program locking it and delete it to avoid confusion.
+
+### 3. Provision Supabase (one-time)
+
+1. Create a project at [supabase.com](https://supabase.com/dashboard).
+2. **Project Settings → Database → Connection string**: copy the **Pooled** URI (port `6543`). Set it as `DATABASE_URL`.
+3. **Project Settings → API**: copy the **Project URL** → `SUPABASE_URL`, and the **`service_role`** key → `SUPABASE_SERVICE_ROLE_KEY`. Treat the service-role key like a password.
+4. **Storage → New bucket**: create a **public** bucket named `avatars` (or any name; set `SUPABASE_AVATAR_BUCKET` to match).
+
+### 4. Install dependencies, migrate, and run
 
 From this `server/` directory:
 
 ```bash
 npm install
+npm run migrate   # applies migrations/*.sql to DATABASE_URL (idempotent)
 npm start
 ```
 
-With the server running in another terminal, **`npm run verify`** checks `GET /api/health`.
+With the server running in another terminal, **`npm run verify`** checks `GET /api/health` (includes a database ping).
+
+Optional scripted checks (after `server/.env` is filled with real Supabase values):
+
+| Script | What it does |
+|--------|----------------|
+| `npm run check-env` | Validates `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| `npm run verify-schema` | Confirms every table from `migrations/` exists (run after migrate) |
+| `npm run health-check` | Boots the API on port **19876**, asserts `/api/health` returns `database: connected`, then exits |
 
 The API listens on **http://localhost:8080** (override with `PORT`).
+
+### Carrying over legacy on-disk avatars (optional, one-time)
+
+If you still have files under `data/uploads/avatars/` from an older deployment that saved avatars on the API host, run:
+
+```bash
+npm run migrate-avatars
+```
+
+It uploads each matching `users.avatar_url` (`/uploads/avatars/…`) to the bucket and rewrites the column. Idempotent.
 
 ### “Cannot GET /” in the browser
 
@@ -46,7 +92,7 @@ Copy the full error message. Try `npm install --verbose`.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/health` | Health check |
+| `GET` | `/api/health` | Health check — `200` with DB connected, or `503` if Postgres is unreachable |
 | `POST` | `/api/auth/register` | Create account — JSON `{ "username", "email", "password" }` (username 3–32 chars; password min 8) |
 | `POST` | `/api/auth/login` | Sign in — JSON `{ "identifier", "password" }` or legacy `{ "email", "password" }` — `identifier` is email **or** username — returns `{ token, message }` |
 | `GET` | `/api/profile-fields` | Work taxonomy — JSON `{ fields: { tech, art, blue_collar: { label, subfields[] } } }` (no auth) |

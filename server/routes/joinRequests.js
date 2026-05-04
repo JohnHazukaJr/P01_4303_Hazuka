@@ -46,12 +46,12 @@ function requestRowToJSON(row, roleTitle) {
 function registerProjectJoinRoutes(router, deps) {
   const { db, requireAuth } = deps;
 
-  router.get("/:id/join-requests", requireAuth, (req, res) => {
+  router.get("/:id/join-requests", requireAuth, async (req, res) => {
     const projectId = parseId(req.params.id);
     if (!projectId) {
       return res.status(404).json({ error: "Not found" });
     }
-    const project = db
+    const project = await db
       .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
       .get(projectId);
     if (!project) {
@@ -65,7 +65,7 @@ function registerProjectJoinRoutes(router, deps) {
     const statusFilter = String(req.query.status || "pending").toLowerCase();
     let rows;
     if (statusFilter === "all") {
-      rows = db
+      rows = await db
         .prepare(
           `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                   u.id AS requester_id, u.username AS requester_username, u.display_name AS requester_display_name,
@@ -84,7 +84,7 @@ function registerProjectJoinRoutes(router, deps) {
       statusFilter === "declined" ||
       statusFilter === "withdrawn"
     ) {
-      rows = db
+      rows = await db
         .prepare(
           `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                   u.id AS requester_id, u.username AS requester_username, u.display_name AS requester_display_name,
@@ -121,12 +121,12 @@ function registerProjectJoinRoutes(router, deps) {
     res.json({ requests: out });
   });
 
-  router.post("/:id/join-requests", requireAuth, (req, res) => {
+  router.post("/:id/join-requests", requireAuth, async (req, res) => {
     const projectId = parseId(req.params.id);
     if (!projectId) {
       return res.status(404).json({ error: "Not found" });
     }
-    const project = db
+    const project = await db
       .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
       .get(projectId);
     if (!project) {
@@ -147,7 +147,7 @@ function registerProjectJoinRoutes(router, deps) {
       if (!roleId) {
         return res.status(400).json({ error: "Invalid role" });
       }
-      const role = db
+      const role = await db
         .prepare(
           "SELECT id FROM project_roles WHERE id = ? AND project_id = ?"
         )
@@ -157,7 +157,7 @@ function registerProjectJoinRoutes(router, deps) {
       }
     }
     const note = String(req.body?.note || "").trim().slice(0, NOTE_MAX);
-    const pending = db
+    const pending = await db
       .prepare(
         `SELECT id FROM project_join_requests
          WHERE project_id = ? AND requester_user_id = ? AND status = 'pending'`
@@ -169,14 +169,17 @@ function registerProjectJoinRoutes(router, deps) {
       });
     }
     try {
-      const info = db
+      const info = await db
         .prepare(
           `INSERT INTO project_join_requests (project_id, requester_user_id, project_role_id, note, status)
-           VALUES (?, ?, ?, ?, 'pending')`
+           VALUES (?, ?, ?, ?, 'pending') RETURNING id`
         )
         .run(projectId, req.user.id, roleId, note);
-      const id = Number(info.lastInsertRowid);
-      const row = db
+      const id = info && info.rows && info.rows[0] ? Number(info.rows[0].id) : null;
+      if (!id) {
+        return res.status(500).json({ error: "Could not create join request" });
+      }
+      const row = await db
         .prepare(
           `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                   u.id AS requester_id, u.username AS requester_username, u.display_name AS requester_display_name,
@@ -188,11 +191,11 @@ function registerProjectJoinRoutes(router, deps) {
            WHERE r.id = ?`
         )
         .get(id);
-      const projRow = db
+      const projRow = await db
         .prepare("SELECT owner_user_id, title FROM projects WHERE id = ?")
         .get(projectId);
       if (projRow) {
-        insertNotification(db, projRow.owner_user_id, NTYPE.JOIN_REQUEST_RECEIVED, {
+        await insertNotification(db, projRow.owner_user_id, NTYPE.JOIN_REQUEST_RECEIVED, {
           project_id: projectId,
           project_title:
             projRow.title != null ? String(projRow.title) : "",
@@ -236,13 +239,13 @@ function registerProjectJoinRoutes(router, deps) {
   router.patch(
     "/:id/join-requests/:requestId",
     requireAuth,
-    (req, res) => {
+    async (req, res) => {
       const projectId = parseId(req.params.id);
       const requestId = parseId(req.params.requestId);
       if (!projectId || !requestId) {
         return res.status(404).json({ error: "Not found" });
       }
-      const project = db
+      const project = await db
         .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
         .get(projectId);
       if (!project) {
@@ -257,7 +260,7 @@ function registerProjectJoinRoutes(router, deps) {
           .status(400)
           .json({ error: 'status must be "accepted" or "declined"' });
       }
-      const row = db
+      const row = await db
         .prepare(
           `SELECT id, project_id, status, requester_user_id FROM project_join_requests WHERE id = ? AND project_id = ?`
         )
@@ -266,7 +269,7 @@ function registerProjectJoinRoutes(router, deps) {
         return res.status(404).json({ error: "Not found" });
       }
       if (row.status !== "pending") {
-        const full = db
+        const full = await db
           .prepare(
             `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                     u.id AS requester_id, u.username AS requester_username, u.display_name AS requester_display_name,
@@ -297,34 +300,34 @@ function registerProjectJoinRoutes(router, deps) {
           ),
         });
       }
-      db.prepare(
-        `UPDATE project_join_requests SET status = ?, resolved_at = datetime('now') WHERE id = ?`
+      await db.prepare(
+        `UPDATE project_join_requests SET status = ?, resolved_at = now() WHERE id = ?`
       ).run(nextStatus, requestId);
-      const proj = db
+      const proj = await db
         .prepare("SELECT id, title FROM projects WHERE id = ?")
         .get(projectId);
       const projTitle =
         proj && proj.title != null ? String(proj.title) : "";
       if (nextStatus === "accepted") {
         if (proj) {
-          insertFeedEvent(db, row.requester_user_id, EVENT_TYPES.JOIN_ACCEPTED, {
+          await insertFeedEvent(db, row.requester_user_id, EVENT_TYPES.JOIN_ACCEPTED, {
             project_id: proj.id,
             project_title: projTitle,
           });
         }
-        insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_ACCEPTED, {
+        await insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_ACCEPTED, {
           project_id: projectId,
           project_title: projTitle,
           join_request_id: requestId,
         });
       } else if (nextStatus === "declined") {
-        insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_DECLINED, {
+        await insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_DECLINED, {
           project_id: projectId,
           project_title: projTitle,
           join_request_id: requestId,
         });
       }
-      const updated = db
+      const updated = await db
         .prepare(
           `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                   u.id AS requester_id, u.username AS requester_username, u.display_name AS requester_display_name,
@@ -360,13 +363,13 @@ function registerProjectJoinRoutes(router, deps) {
   router.delete(
     "/:id/join-requests/:requestId",
     requireAuth,
-    (req, res) => {
+    async (req, res) => {
       const projectId = parseId(req.params.id);
       const requestId = parseId(req.params.requestId);
       if (!projectId || !requestId) {
         return res.status(404).json({ error: "Not found" });
       }
-      const row = db
+      const row = await db
         .prepare(
           `SELECT id, requester_user_id, status FROM project_join_requests WHERE id = ? AND project_id = ?`
         )
@@ -380,8 +383,8 @@ function registerProjectJoinRoutes(router, deps) {
       if (row.status !== "pending") {
         return res.status(400).json({ error: "Only pending requests can be withdrawn" });
       }
-      db.prepare(
-        `UPDATE project_join_requests SET status = 'withdrawn', resolved_at = datetime('now') WHERE id = ?`
+      await db.prepare(
+        `UPDATE project_join_requests SET status = 'withdrawn', resolved_at = now() WHERE id = ?`
       ).run(requestId);
       res.status(204).end();
     }
@@ -395,9 +398,9 @@ function registerProjectJoinRoutes(router, deps) {
 function registerMeJoinRoutes(app, deps) {
   const { db, requireAuth } = deps;
 
-  app.get("/api/me/join-requests", requireAuth, (req, res) => {
+  app.get("/api/me/join-requests", requireAuth, async (req, res) => {
     try {
-      const rows = db
+      const rows = await db
         .prepare(
           `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                   p.title AS project_title,
@@ -427,9 +430,9 @@ function registerMeJoinRoutes(app, deps) {
     }
   });
 
-  app.get("/api/me/project-requests-inbox", requireAuth, (req, res) => {
+  app.get("/api/me/project-requests-inbox", requireAuth, async (req, res) => {
     try {
-      const rows = db
+      const rows = await db
         .prepare(
           `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                   p.title AS project_title,

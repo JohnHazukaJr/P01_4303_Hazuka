@@ -12,7 +12,7 @@ function parseCursor(raw) {
 function registerFeedRoutes(app, deps) {
   const { db, requireAuth } = deps;
 
-  app.get("/api/feed", requireAuth, (req, res) => {
+  app.get("/api/feed", requireAuth, async (req, res) => {
     try {
       const limitRaw = Number(req.query.limit);
       const limit = Math.min(
@@ -21,7 +21,7 @@ function registerFeedRoutes(app, deps) {
       );
       const cursor = parseCursor(req.query.cursor);
 
-      const followingRows = db
+      const followingRows = await db
         .prepare(
           `SELECT following_user_id FROM user_follows WHERE follower_user_id = ?`
         )
@@ -52,7 +52,7 @@ function registerFeedRoutes(app, deps) {
       sql += ` ORDER BY e.id DESC LIMIT ?`;
       params.push(limit + 1);
 
-      const rows = db.prepare(sql).all(...params);
+      const rows = await db.prepare(sql).all(...params);
       const hasMore = rows.length > limit;
       const slice = hasMore ? rows.slice(0, limit) : rows;
       const events = slice.map((row) => {

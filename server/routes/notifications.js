@@ -5,9 +5,9 @@
 function registerNotificationRoutes(app, deps) {
   const { db, requireAuth } = deps;
 
-  app.get("/api/me/notifications/unread-count", requireAuth, (req, res) => {
+  app.get("/api/me/notifications/unread-count", requireAuth, async (req, res) => {
     try {
-      const row = db
+      const row = await db
         .prepare(
           `SELECT COUNT(*) AS n FROM user_notifications
            WHERE user_id = ? AND read_at IS NULL`
@@ -21,14 +21,14 @@ function registerNotificationRoutes(app, deps) {
     }
   });
 
-  app.get("/api/me/notifications", requireAuth, (req, res) => {
+  app.get("/api/me/notifications", requireAuth, async (req, res) => {
     try {
       const limitRaw = Number(req.query.limit);
       const limit = Math.min(
         100,
         Math.max(1, Number.isFinite(limitRaw) ? Math.floor(limitRaw) : 40)
       );
-      const rows = db
+      const rows = await db
         .prepare(
           `SELECT id, notification_type, payload_json, read_at, created_at
            FROM user_notifications
@@ -57,27 +57,27 @@ function registerNotificationRoutes(app, deps) {
     }
   });
 
-  app.patch("/api/me/notifications/:id/read", requireAuth, (req, res) => {
+  app.patch("/api/me/notifications/:id/read", requireAuth, async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
       return res.status(404).json({ error: "Not found" });
     }
-    const info = db
+    const info = await db
       .prepare(
-        `UPDATE user_notifications SET read_at = datetime('now')
+        `UPDATE user_notifications SET read_at = now()
          WHERE id = ? AND user_id = ? AND read_at IS NULL`
       )
       .run(id, req.user.id);
-    if (Number(info.changes) === 0) {
+    if (!info || Number(info.rowCount) === 0) {
       return res.status(404).json({ error: "Not found" });
     }
     res.status(204).end();
   });
 
-  app.post("/api/me/notifications/read-all", requireAuth, (req, res) => {
+  app.post("/api/me/notifications/read-all", requireAuth, async (req, res) => {
     try {
-      db.prepare(
-        `UPDATE user_notifications SET read_at = datetime('now')
+      await db.prepare(
+        `UPDATE user_notifications SET read_at = now()
          WHERE user_id = ? AND read_at IS NULL`
       ).run(req.user.id);
       res.status(204).end();

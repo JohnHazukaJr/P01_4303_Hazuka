@@ -7,15 +7,24 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node index.js",
-    "verify": "node scripts/verify-health.js"
+    "verify": "node scripts/verify-health.js",
+    "migrate": "node scripts/migrate.js",
+    "migrate-avatars": "node scripts/migrate-avatars-to-supabase.js",
+    "check-env": "node scripts/check-supabase-env.js",
+    "verify-schema": "node scripts/verify-schema.js",
+    "health-check": "node scripts/dev-health-check.js"
   },
   "engines": {
     "node": ">=22.5.0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.105.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2"
+    "express-async-errors": "^3.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3"
   }
 }

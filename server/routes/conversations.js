@@ -14,10 +14,10 @@ function parseCursor(raw) {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-function findPairConversationId(db, userA, userB) {
+async function findPairConversationId(db, userA, userB) {
   const a = Math.min(userA, userB);
   const b = Math.max(userA, userB);
-  const row = db
+  const row = await db
     .prepare(
       `SELECT c.id FROM dm_conversations c
        JOIN dm_participants p1 ON p1.conversation_id = c.id AND p1.user_id = ?
@@ -28,24 +28,25 @@ function findPairConversationId(db, userA, userB) {
   return row ? Number(row.id) : null;
 }
 
-function findOrCreatePairConversation(db, userA, userB) {
-  const existing = findPairConversationId(db, userA, userB);
+async function findOrCreatePairConversation(db, userA, userB) {
+  const existing = await findPairConversationId(db, userA, userB);
   if (existing) return existing;
-  const info = db
-    .prepare(`INSERT INTO dm_conversations DEFAULT VALUES`)
+  const info = await db
+    .prepare(`INSERT INTO dm_conversations DEFAULT VALUES RETURNING id`)
     .run();
-  const cid = Number(info.lastInsertRowid);
-  db.prepare(
+  const cid = info && info.rows && info.rows[0] ? Number(info.rows[0].id) : null;
+  if (!cid) throw new Error("Could not create conversation");
+  await db.prepare(
     `INSERT INTO dm_participants (conversation_id, user_id) VALUES (?, ?)`
   ).run(cid, userA);
-  db.prepare(
+  await db.prepare(
     `INSERT INTO dm_participants (conversation_id, user_id) VALUES (?, ?)`
   ).run(cid, userB);
   return cid;
 }
 
-function userInConversation(db, conversationId, userId) {
-  const row = db
+async function userInConversation(db, conversationId, userId) {
+  const row = await db
     .prepare(
       `SELECT 1 FROM dm_participants WHERE conversation_id = ? AND user_id = ?`
     )
@@ -53,8 +54,8 @@ function userInConversation(db, conversationId, userId) {
   return !!row;
 }
 
-function otherParticipantRow(db, conversationId, myUserId) {
-  return db
+async function otherParticipantRow(db, conversationId, myUserId) {
+  return await db
     .prepare(
       `SELECT u.id, u.username, u.display_name, u.public_display_as
        FROM dm_participants p
@@ -70,9 +71,9 @@ function otherParticipantRow(db, conversationId, myUserId) {
 function registerConversationRoutes(app, deps) {
   const { db, requireAuth } = deps;
 
-  app.get("/api/conversations", requireAuth, (req, res) => {
+  app.get("/api/conversations", requireAuth, async (req, res) => {
     try {
-      const rows = db
+      const rows = await db
         .prepare(
           `SELECT c.id, c.updated_at,
                   (SELECT body FROM dm_messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_body,
@@ -86,13 +87,15 @@ function registerConversationRoutes(app, deps) {
         )
         .all(req.user.id);
 
-      const list = rows.map((r) => {
-        const other = otherParticipantRow(db, r.id, req.user.id);
+      const list = [];
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        const other = await otherParticipantRow(db, r.id, req.user.id);
         const preview =
           r.last_body != null
             ? String(r.last_body).slice(0, 160)
             : null;
-        return {
+        list.push({
           id: r.id,
           other_user: other
             ? {
@@ -104,8 +107,8 @@ function registerConversationRoutes(app, deps) {
             : null,
           last_message_preview: preview,
           last_message_at: r.last_at != null ? r.last_at : null,
-        };
-      });
+        });
+      }
       res.json({ conversations: list });
     } catch (e) {
       console.error(e);
@@ -113,12 +116,12 @@ function registerConversationRoutes(app, deps) {
     }
   });
 
-  app.post("/api/conversations", requireAuth, (req, res) => {
+  app.post("/api/conversations", requireAuth, async (req, res) => {
     const uname = normalizeUsername(req.body?.with_username);
     if (!uname) {
       return res.status(400).json({ error: "with_username is required" });
     }
-    const other = db
+    const other = await db
       .prepare("SELECT id FROM users WHERE username = ?")
       .get(uname);
     if (!other) {
@@ -130,7 +133,7 @@ function registerConversationRoutes(app, deps) {
       return res.status(400).json({ error: "Cannot start a conversation with yourself" });
     }
     try {
-      const cid = findOrCreatePairConversation(db, me, oid);
+      const cid = await findOrCreatePairConversation(db, me, oid);
       res.status(200).json({ conversation: { id: cid } });
     } catch (e) {
       console.error(e);
@@ -138,12 +141,12 @@ function registerConversationRoutes(app, deps) {
     }
   });
 
-  app.get("/api/conversations/:id/messages", requireAuth, (req, res) => {
+  app.get("/api/conversations/:id/messages", requireAuth, async (req, res) => {
     const cid = parseId(req.params.id);
     if (!cid) {
       return res.status(404).json({ error: "Not found" });
     }
-    if (!userInConversation(db, cid, req.user.id)) {
+    if (!(await userInConversation(db, cid, req.user.id))) {
       return res.status(403).json({ error: "Not a participant" });
     }
     try {
@@ -165,7 +168,7 @@ function registerConversationRoutes(app, deps) {
       }
       sql += ` ORDER BY id DESC LIMIT ?`;
       params.push(limit + 1);
-      const rows = db.prepare(sql).all(...params);
+      const rows = await db.prepare(sql).all(...params);
       const hasMore = rows.length > limit;
       const slice = hasMore ? rows.slice(0, limit) : rows;
       const messages = slice.map((m) => ({
@@ -183,12 +186,12 @@ function registerConversationRoutes(app, deps) {
     }
   });
 
-  app.post("/api/conversations/:id/messages", requireAuth, (req, res) => {
+  app.post("/api/conversations/:id/messages", requireAuth, async (req, res) => {
     const cid = parseId(req.params.id);
     if (!cid) {
       return res.status(404).json({ error: "Not found" });
     }
-    if (!userInConversation(db, cid, req.user.id)) {
+    if (!(await userInConversation(db, cid, req.user.id))) {
       return res.status(403).json({ error: "Not a participant" });
     }
     const body = String(req.body?.body || "").trim();
@@ -201,19 +204,20 @@ function registerConversationRoutes(app, deps) {
       });
     }
     try {
-      const info = db
+      const info = await db
         .prepare(
-          `INSERT INTO dm_messages (conversation_id, sender_user_id, body) VALUES (?, ?, ?)`
+          `INSERT INTO dm_messages (conversation_id, sender_user_id, body) VALUES (?, ?, ?) RETURNING id`
         )
         .run(cid, req.user.id, body);
-      db.prepare(
-        `UPDATE dm_conversations SET updated_at = datetime('now') WHERE id = ?`
+      await db.prepare(
+        `UPDATE dm_conversations SET updated_at = now() WHERE id = ?`
       ).run(cid);
-      const msg = db
+      const mid = info && info.rows && info.rows[0] ? Number(info.rows[0].id) : null;
+      const msg = await db
         .prepare(
           `SELECT id, sender_user_id, body, created_at FROM dm_messages WHERE id = ?`
         )
-        .get(Number(info.lastInsertRowid));
+        .get(mid);
       res.status(201).json({
         message: {
           id: msg.id,

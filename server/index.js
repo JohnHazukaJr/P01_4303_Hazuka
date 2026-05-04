@@ -1,19 +1,21 @@
 /**
- * synodos API — Express + SQLite + JWT
+ * synodos API — Express + Postgres + JWT
  */
+require("dotenv").config();
+require("express-async-errors");
+
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const {
-  db,
   normalizeEmail,
   normalizeUsername,
   validateUsername,
   looksLikeEmail,
 } = require("./db");
+const db = require("./dbPool");
+const storage = require("./storage");
 const { createRequireAuth, createOptionalAuth } = require("./authMiddleware");
 const { createProjectsRouter } = require("./routes/projects");
 const {
@@ -54,12 +56,11 @@ const optionalAuth = createOptionalAuth(db, JWT_SECRET);
 const WORK_TAGS_MIN = 1;
 const WORK_TAGS_MAX = 12;
 
-function loadUserWorkTags(userId) {
-  var rows = db
-    .prepare(
-      "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = ? ORDER BY id ASC"
-    )
-    .all(userId);
+async function loadUserWorkTags(userId) {
+  var rows = await db.all(
+    "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = $1 ORDER BY id ASC",
+    [userId]
+  );
   var out = [];
   for (var i = 0; i < rows.length; i++) {
     out.push(enrichTag(rows[i].work_field, rows[i].work_subfield));
@@ -71,19 +72,24 @@ function signUserToken(userId, email) {
   return jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: "7d" });
 }
 
+function parseAllowedOrigins() {
+  const raw = String(process.env.ALLOWED_ORIGINS || "").trim();
+  if (!raw) return null;
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+const allowedOrigins = parseAllowedOrigins();
 app.use(
   cors({
-    origin: true,
+    origin: allowedOrigins && allowedOrigins.length ? allowedOrigins : true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json({ limit: "1mb" }));
-
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "data", "uploads"))
-);
 
 app.get("/", (_req, res) => {
   res.type("html").send(`<!DOCTYPE html>
@@ -129,11 +135,19 @@ app.get("/", (_req, res) => {
 </html>`);
 });
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/api/health", async (_req, res) => {
+  try {
+    await db.query("SELECT 1 AS ok");
+    res.json({ status: "ok", database: "connected" });
+  } catch (e) {
+    console.error("[synodos] /api/health database check failed", e);
+    res
+      .status(503)
+      .json({ status: "error", database: "unavailable" });
+  }
 });
 
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   const email = normalizeEmail(req.body?.email);
   const password = req.body?.password;
   const usernameCheck = validateUsername(req.body?.username);
@@ -154,38 +168,37 @@ app.post("/api/auth/register", (req, res) => {
   const username = usernameCheck.value;
 
   try {
-    const info = db
-      .prepare(
-        "INSERT INTO users (email, password_hash, username) VALUES (?, ?, ?)"
-      )
-      .run(email, passwordHash, username);
+    const inserted = await db.get(
+      "INSERT INTO users (email, password_hash, username) VALUES ($1, $2, $3) RETURNING id",
+      [email, passwordHash, username]
+    );
 
-    const token = signUserToken(Number(info.lastInsertRowid), email);
+    const token = signUserToken(Number(inserted.id), email);
     return res.status(201).json({
       token,
       message: "Account created. Welcome to synodos.",
     });
   } catch (e) {
-    const unique =
-      e &&
-      (e.errcode === 2067 ||
-        String(e.message || "").includes("UNIQUE constraint"));
-    if (unique) {
-      const msg = String(e.message || "");
-      if (msg.includes("users.email") || msg.includes("email")) {
-        return res.status(409).json({ error: "That email is already registered" });
+    if (e && e.code === "23505") {
+      const msg = String(e.constraint || e.detail || e.message || "");
+      if (msg.toLowerCase().includes("email")) {
+        return res
+          .status(409)
+          .json({ error: "That email is already registered" });
       }
-      if (msg.includes("users.username") || msg.includes("username")) {
+      if (msg.toLowerCase().includes("username")) {
         return res.status(409).json({ error: "That username is already taken" });
       }
-      return res.status(409).json({ error: "That email or username is already registered" });
+      return res
+        .status(409)
+        .json({ error: "That email or username is already registered" });
     }
     console.error(e);
     return res.status(500).json({ error: "Could not create account" });
   }
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const raw =
     req.body?.identifier != null && req.body.identifier !== ""
       ? String(req.body.identifier).trim()
@@ -203,17 +216,15 @@ app.post("/api/auth/login", (req, res) => {
 
   var row;
   if (looksLikeEmail(raw)) {
-    row = db
-      .prepare(
-        "SELECT id, email, password_hash FROM users WHERE email = ?"
-      )
-      .get(normalizeEmail(raw));
+    row = await db.get(
+      "SELECT id, email, password_hash FROM users WHERE email = $1",
+      [normalizeEmail(raw)]
+    );
   } else {
-    row = db
-      .prepare(
-        "SELECT id, email, password_hash FROM users WHERE username = ?"
-      )
-      .get(normalizeUsername(raw));
+    row = await db.get(
+      "SELECT id, email, password_hash FROM users WHERE username = $1",
+      [normalizeUsername(raw)]
+    );
   }
 
   if (!row || !bcrypt.compareSync(String(password), row.password_hash)) {
@@ -231,36 +242,14 @@ app.post("/api/auth/login", (req, res) => {
 
 const DISPLAY_NAME_MAX = 100;
 const BIO_MAX = 2000;
-const AVATAR_MAX_BYTES = 512 * 1024;
-const AVATAR_MIME_EXT = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/gif": ".gif",
-  "image/webp": ".webp",
-};
 
-function avatarUploadDir() {
-  return path.join(__dirname, "data", "uploads", "avatars");
-}
-
-function removeUserAvatarFiles(userId) {
-  var dir = avatarUploadDir();
-  Object.keys(AVATAR_MIME_EXT).forEach(function (mime) {
-    var ext = AVATAR_MIME_EXT[mime];
-    try {
-      fs.unlinkSync(path.join(dir, String(userId) + ext));
-    } catch (_) {}
-  });
-}
-
-function saveAvatarFromDataUrl(userId, dataUrl) {
+async function saveAvatarFromDataUrl(userId, dataUrl) {
   var m = /^data:(image\/[a-z0-9.+*-]+);base64,(.+)$/i.exec(String(dataUrl).trim());
   if (!m) {
     return { ok: false, error: "Invalid image data" };
   }
   var mime = m[1].toLowerCase();
-  var ext = AVATAR_MIME_EXT[mime];
-  if (!ext) {
+  if (!storage.AVATAR_MIME_EXT[mime]) {
     return { ok: false, error: "Use JPEG, PNG, GIF, or WebP" };
   }
   var buf;
@@ -269,15 +258,14 @@ function saveAvatarFromDataUrl(userId, dataUrl) {
   } catch (_) {
     return { ok: false, error: "Invalid image data" };
   }
-  if (buf.length > AVATAR_MAX_BYTES) {
+  if (buf.length > storage.AVATAR_MAX_BYTES) {
     return { ok: false, error: "Image too large (max 512 KB)" };
   }
-  var dir = avatarUploadDir();
-  fs.mkdirSync(dir, { recursive: true });
-  removeUserAvatarFiles(userId);
-  var filename = String(userId) + ext;
-  fs.writeFileSync(path.join(dir, filename), buf);
-  return { ok: true, url: "/uploads/avatars/" + filename };
+  var saved = await storage.uploadAvatar(userId, buf, mime);
+  if (!saved.ok) return saved;
+  // Bucket overwrites the same key on re-upload, so the bare URL would not
+  // change. Append a cache-buster so <img src> reloads immediately.
+  return { ok: true, url: saved.url + "?v=" + Date.now() };
 }
 
 function profileCompleteFromRow(row, tags) {
@@ -340,16 +328,15 @@ app.get("/api/profile-fields", (_req, res) => {
   res.json(profileFieldsPayload());
 });
 
-app.get("/api/me", requireAuth, (req, res) => {
-  var row = db
-    .prepare(
-      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = ?"
-    )
-    .get(req.user.id);
+app.get("/api/me", requireAuth, async (req, res) => {
+  var row = await db.get(
+    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = $1",
+    [req.user.id]
+  );
   if (!row) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  var tags = loadUserWorkTags(req.user.id);
+  var tags = await loadUserWorkTags(req.user.id);
   res.json({ user: userPayload(row, tags) });
 });
 
@@ -362,7 +349,7 @@ registerConversationRoutes(app, { db, requireAuth });
 const usersRouter = createUsersRouter({ db, requireAuth, optionalAuth });
 app.use("/api/users", usersRouter);
 
-app.patch("/api/me", requireAuth, (req, res) => {
+app.patch("/api/me", requireAuth, async (req, res) => {
   var body = req.body || {};
   var displayNameIn = body.display_name;
   var bioIn = body.bio;
@@ -468,11 +455,10 @@ app.patch("/api/me", requireAuth, (req, res) => {
     nextPublicDisplayAs = pda;
   }
 
-  var row = db
-    .prepare(
-      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = ?"
-    )
-    .get(req.user.id);
+  var row = await db.get(
+    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = $1",
+    [req.user.id]
+  );
   if (!row) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -493,13 +479,13 @@ app.patch("/api/me", requireAuth, (req, res) => {
   var nextWs = String(row.work_subfield || "").trim();
 
   if (tagsToSave !== null) {
-    db.prepare("DELETE FROM user_work_tags WHERE user_id = ?").run(req.user.id);
-    var ins = db.prepare(
-      "INSERT INTO user_work_tags (user_id, work_field, work_subfield) VALUES (?, ?, ?)"
-    );
+    await db.run("DELETE FROM user_work_tags WHERE user_id = $1", [req.user.id]);
     for (var j = 0; j < tagsToSave.length; j++) {
       var tg = tagsToSave[j];
-      ins.run(req.user.id, tg.work_field, tg.work_subfield);
+      await db.run(
+        "INSERT INTO user_work_tags (user_id, work_field, work_subfield) VALUES ($1, $2, $3)",
+        [req.user.id, tg.work_field, tg.work_subfield]
+      );
     }
     nextWf = tagsToSave[0].work_field;
     nextWs = tagsToSave[0].work_subfield;
@@ -509,10 +495,10 @@ app.patch("/api/me", requireAuth, (req, res) => {
     row.avatar_url != null ? String(row.avatar_url) : "";
 
   if (avatarReset) {
-    removeUserAvatarFiles(req.user.id);
+    await storage.deleteAvatar(req.user.id);
     nextAvatarUrl = "";
   } else if (typeof avatarData === "string" && avatarData.length > 0) {
-    var saved = saveAvatarFromDataUrl(req.user.id, avatarData);
+    var saved = await saveAvatarFromDataUrl(req.user.id, avatarData);
     if (!saved.ok) {
       return res.status(400).json({ error: saved.error });
     }
@@ -525,24 +511,16 @@ app.patch("/api/me", requireAuth, (req, res) => {
       .json({ error: "Display name must be at least 2 characters" });
   }
 
-  db.prepare(
-    "UPDATE users SET display_name = ?, bio = ?, avatar_url = ?, work_field = ?, work_subfield = ?, public_display_as = ? WHERE id = ?"
-  ).run(
-    nextDisplay,
-    nextBio,
-    nextAvatarUrl,
-    nextWf,
-    nextWs,
-    nextPda,
-    req.user.id
+  await db.run(
+    "UPDATE users SET display_name = $1, bio = $2, avatar_url = $3, work_field = $4, work_subfield = $5, public_display_as = $6 WHERE id = $7",
+    [nextDisplay, nextBio, nextAvatarUrl, nextWf, nextWs, nextPda, req.user.id]
   );
 
-  var updated = db
-    .prepare(
-      "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = ?"
-    )
-    .get(req.user.id);
-  var outTags = loadUserWorkTags(req.user.id);
+  var updated = await db.get(
+    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = $1",
+    [req.user.id]
+  );
+  var outTags = await loadUserWorkTags(req.user.id);
   res.json({ user: userPayload(updated, outTags) });
 });
 
