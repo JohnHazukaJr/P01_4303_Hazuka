@@ -1216,16 +1216,19 @@ footer {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 10000;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 100000;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
   padding: 0.65rem 1rem;
-  background: var(--color-msg-info-bg);
-  border-bottom: 1px solid var(--color-msg-info-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /* Opaque bar — translucent --color-msg-info-bg let the header show through (logo looked “on top” of the message). */
+  background: var(--color-marble-deep);
+  border-bottom: 1px solid var(--color-marble-border);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
 }
 
 .synodos-global-error-banner__text {
