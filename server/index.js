@@ -5,8 +5,6 @@ require("dotenv").config();
 require("express-async-errors");
 
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -17,6 +15,7 @@ const {
   looksLikeEmail,
 } = require("./db");
 const db = require("./dbPool");
+const storage = require("./storage");
 const { createRequireAuth, createOptionalAuth } = require("./authMiddleware");
 const { createProjectsRouter } = require("./routes/projects");
 const {
@@ -92,11 +91,6 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "data", "uploads"))
-);
-
 app.get("/", (_req, res) => {
   res.type("html").send(`<!DOCTYPE html>
 <html lang="en">
@@ -141,8 +135,16 @@ app.get("/", (_req, res) => {
 </html>`);
 });
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/api/health", async (_req, res) => {
+  try {
+    await db.query("SELECT 1 AS ok");
+    res.json({ status: "ok", database: "connected" });
+  } catch (e) {
+    console.error("[synodos] /api/health database check failed", e);
+    res
+      .status(503)
+      .json({ status: "error", database: "unavailable" });
+  }
 });
 
 app.post("/api/auth/register", async (req, res) => {
@@ -240,36 +242,14 @@ app.post("/api/auth/login", async (req, res) => {
 
 const DISPLAY_NAME_MAX = 100;
 const BIO_MAX = 2000;
-const AVATAR_MAX_BYTES = 512 * 1024;
-const AVATAR_MIME_EXT = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/gif": ".gif",
-  "image/webp": ".webp",
-};
 
-function avatarUploadDir() {
-  return path.join(__dirname, "data", "uploads", "avatars");
-}
-
-function removeUserAvatarFiles(userId) {
-  var dir = avatarUploadDir();
-  Object.keys(AVATAR_MIME_EXT).forEach(function (mime) {
-    var ext = AVATAR_MIME_EXT[mime];
-    try {
-      fs.unlinkSync(path.join(dir, String(userId) + ext));
-    } catch (_) {}
-  });
-}
-
-function saveAvatarFromDataUrl(userId, dataUrl) {
+async function saveAvatarFromDataUrl(userId, dataUrl) {
   var m = /^data:(image\/[a-z0-9.+*-]+);base64,(.+)$/i.exec(String(dataUrl).trim());
   if (!m) {
     return { ok: false, error: "Invalid image data" };
   }
   var mime = m[1].toLowerCase();
-  var ext = AVATAR_MIME_EXT[mime];
-  if (!ext) {
+  if (!storage.AVATAR_MIME_EXT[mime]) {
     return { ok: false, error: "Use JPEG, PNG, GIF, or WebP" };
   }
   var buf;
@@ -278,15 +258,14 @@ function saveAvatarFromDataUrl(userId, dataUrl) {
   } catch (_) {
     return { ok: false, error: "Invalid image data" };
   }
-  if (buf.length > AVATAR_MAX_BYTES) {
+  if (buf.length > storage.AVATAR_MAX_BYTES) {
     return { ok: false, error: "Image too large (max 512 KB)" };
   }
-  var dir = avatarUploadDir();
-  fs.mkdirSync(dir, { recursive: true });
-  removeUserAvatarFiles(userId);
-  var filename = String(userId) + ext;
-  fs.writeFileSync(path.join(dir, filename), buf);
-  return { ok: true, url: "/uploads/avatars/" + filename };
+  var saved = await storage.uploadAvatar(userId, buf, mime);
+  if (!saved.ok) return saved;
+  // Bucket overwrites the same key on re-upload, so the bare URL would not
+  // change. Append a cache-buster so <img src> reloads immediately.
+  return { ok: true, url: saved.url + "?v=" + Date.now() };
 }
 
 function profileCompleteFromRow(row, tags) {
@@ -516,10 +495,10 @@ app.patch("/api/me", requireAuth, async (req, res) => {
     row.avatar_url != null ? String(row.avatar_url) : "";
 
   if (avatarReset) {
-    removeUserAvatarFiles(req.user.id);
+    await storage.deleteAvatar(req.user.id);
     nextAvatarUrl = "";
   } else if (typeof avatarData === "string" && avatarData.length > 0) {
-    var saved = saveAvatarFromDataUrl(req.user.id, avatarData);
+    var saved = await saveAvatarFromDataUrl(req.user.id, avatarData);
     if (!saved.ok) {
       return res.status(400).json({ error: saved.error });
     }

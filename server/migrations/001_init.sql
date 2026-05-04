@@ -1,5 +1,4 @@
 -- Initial PostgreSQL schema for synodos (fresh DB).
--- Keep API behavior aligned with prior SQLite schema.
 
 BEGIN;
 
