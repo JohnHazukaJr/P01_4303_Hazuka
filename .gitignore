@@ -1,6 +1,10 @@
 server/node_modules/
 server/data/
 
+# Repo-root env file (optional); server/.env is ignored in server/.gitignore
+.env
+.env.local
+
 .DS_Store
 Thumbs.db
 *.log
