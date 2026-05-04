@@ -141,3 +141,12 @@ Use **Live Server** on `web/index.html` (workspace folder `web/`). Flow: **regis
 ## Notes
 
 - **CORS** is open for development (`origin: true`). Restrict before production.
+
+### Sign-in returns 500 / “Internal server error” on the host
+
+Usually the API cannot query Postgres. On **Render**, open **Logs** and look for `POST /api/auth/login failed` plus a Postgres or TLS error. Typical fixes:
+
+1. **`DATABASE_URL`** — Use Supabase **transaction pooler** URI (host like `aws-0-…pooler.supabase.com`, port **6543**), not the direct `5432` session string, which often times out from cloud hosts.
+2. **Password** — Use the real database password in the URI (not the placeholder). URL-encode special characters in the password.
+3. **`PGSSLMODE`** — Leave unset for Supabase (TLS required). Only set `PGSSLMODE=disable` for local Postgres without TLS.
+4. After deploying this version, failed logins caused by DB connectivity return **503** with a clearer JSON `error` instead of a generic 500.

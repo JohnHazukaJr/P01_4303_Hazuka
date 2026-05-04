@@ -1,6 +1,7 @@
-# Static site lives in `web/` (no install/build).
+# Static site in `web/`. Injects Render (or other) API origin into `web/js/netlify-api-base.js`.
+# Netlify → Site configuration → Environment variables → add SYNODOS_API_BASE = https://your-service.onrender.com (no trailing slash)
 [build]
-  command = "true"
+  command = "node web/scripts/write-netlify-api-base.js"
   publish = "web"
 
 [[headers]]

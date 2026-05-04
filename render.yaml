@@ -29,4 +29,6 @@ services:
     name: synodos-web
     env: static
     rootDir: web
+    buildCommand: node scripts/write-netlify-api-base.js
     staticPublishPath: .
+    # Set SYNODOS_API_BASE in the Render dashboard to your API URL (same as Netlify).
