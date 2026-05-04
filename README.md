@@ -85,7 +85,7 @@ Full route list: [`server/README.md`](server/README.md).
 
 ## Deployment
 
-- **Static site (Netlify):** [https://synodos.netlify.app/](https://synodos.netlify.app/) — publish root is `web/` (see [`netlify.toml`](netlify.toml)). GitHub Pages workflow: [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml).
+- **Static site (Netlify):** [https://synodos.netlify.app/](https://synodos.netlify.app/) — publish root is `web/` (see [`netlify.toml`](netlify.toml)). **Required:** add environment variable **`SYNODOS_API_BASE`** = your API origin (e.g. `https://synodos-api.onrender.com`, no trailing slash). Each build runs `node web/scripts/write-netlify-api-base.js`, which writes `web/js/netlify-api-base.js` so login/register call the real API instead of `localhost:8080`. GitHub Pages: see [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) — set the same variable in the workflow if you use it.
 - **API:** not hosted on Netlify; run separately (e.g. Railway, Render, Fly).
 
 ### Deploying the API
@@ -99,7 +99,7 @@ Because the database lives in Supabase and avatars live in Supabase Storage, the
 2. Build / install: `npm install --prefix server`.
 3. Start: `npm start` (or `node server/index.js`).
 4. **Once per database**, apply migrations: `npm run migrate` (idempotent; tracks applied files in `schema_migrations`).
-5. Point the live UI at the deployed API by setting `window.SYNODOS_API_BASE` in [`web/js/config.js`](web/js/config.js) (or via a deploy-time substitution).
+5. Point the live UI at the deployed API: on **Netlify** set **`SYNODOS_API_BASE`** (see above). Alternatively use a `<meta name="synodos-api-base" content="https://…">` tag or `localStorage.setItem("synodos_api_base", "https://…")` (see [`web/js/config.js`](web/js/config.js)).
 
 ## License / attribution
 

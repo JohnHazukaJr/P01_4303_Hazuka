@@ -15,6 +15,19 @@
     }
   } catch (_) {}
 
+  // <meta name="synodos-api-base" content="https://your-api.onrender.com"> in <head>
+  try {
+    var meta = document.querySelector('meta[name="synodos-api-base"]');
+    var mc =
+      meta && meta.getAttribute("content") != null
+        ? String(meta.getAttribute("content")).trim()
+        : "";
+    if (mc) {
+      window.SYNODOS_API_BASE = mc.replace(/\/+$/, "");
+      return;
+    }
+  } catch (_) {}
+
   // Convention: Render static site named synodos-web, API named synodos-api.
   // Example:
   //   https://synodos-web.onrender.com  -> https://synodos-api.onrender.com

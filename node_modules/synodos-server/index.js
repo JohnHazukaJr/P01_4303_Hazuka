@@ -77,6 +77,34 @@ function signUserToken(userId, email) {
   return jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: "7d" });
 }
 
+/** True when Postgres/Node indicates the pool cannot talk to the database (not a normal app error). */
+function isDatabaseConnectivityError(err) {
+  if (!err) return false;
+  const c = err.code;
+  if (
+    c === "ECONNREFUSED" ||
+    c === "ETIMEDOUT" ||
+    c === "ENOTFOUND" ||
+    c === "EAI_AGAIN"
+  ) {
+    return true;
+  }
+  if (typeof c === "string") {
+    if (c === "28P01") return true; /* invalid_password — usually wrong DATABASE_URL */
+    if (c === "57P01" || c === "57P03") return true;
+    if (c.startsWith("08")) return true; /* Class 08 — connection_exception */
+  }
+  const msg = String(err.message || "").toLowerCase();
+  if (
+    msg.includes("connection terminated") ||
+    msg.includes("connect econnrefused") ||
+    msg.includes("timeout") && msg.includes("connection")
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function parseAllowedOrigins() {
   const raw = String(process.env.ALLOWED_ORIGINS || "").trim();
   if (!raw) return null;
@@ -98,7 +126,7 @@ app.use(express.json({ limit: "1mb" }));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 40,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, res) => {
@@ -232,30 +260,63 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
     return res.status(400).json({ error: "Password is required" });
   }
 
-  var row;
-  if (looksLikeEmail(raw)) {
-    row = await db.get(
-      "SELECT id, email, password_hash FROM users WHERE email = $1",
-      [normalizeEmail(raw)]
-    );
-  } else {
-    row = await db.get(
-      "SELECT id, email, password_hash FROM users WHERE username = $1",
-      [normalizeUsername(raw)]
-    );
-  }
+  try {
+    var row;
+    if (looksLikeEmail(raw)) {
+      row = await db.get(
+        "SELECT id, email, password_hash FROM users WHERE email = $1",
+        [normalizeEmail(raw)]
+      );
+    } else {
+      row = await db.get(
+        "SELECT id, email, password_hash FROM users WHERE username = $1",
+        [normalizeUsername(raw)]
+      );
+    }
 
-  if (!row || !bcrypt.compareSync(String(password), row.password_hash)) {
-    return res
-      .status(401)
-      .json({ error: "Invalid email, username, or password" });
-  }
+    if (
+      !row ||
+      row.password_hash == null ||
+      String(row.password_hash).trim() === ""
+    ) {
+      return res
+        .status(401)
+        .json({ error: "Invalid email, username, or password" });
+    }
 
-  const token = signUserToken(row.id, row.email);
-  res.json({
-    token,
-    message: "Signed in.",
-  });
+    var passwordOk = false;
+    try {
+      passwordOk = bcrypt.compareSync(
+        String(password),
+        String(row.password_hash)
+      );
+    } catch (bcErr) {
+      console.warn("[synodos] login bcrypt.compareSync", bcErr);
+      passwordOk = false;
+    }
+    if (!passwordOk) {
+      return res
+        .status(401)
+        .json({ error: "Invalid email, username, or password" });
+    }
+
+    const token = signUserToken(Number(row.id), row.email);
+    return res.json({
+      token,
+      message: "Signed in.",
+    });
+  } catch (e) {
+    console.error("[synodos] POST /api/auth/login failed", e);
+    if (isDatabaseConnectivityError(e)) {
+      return res.status(503).json({
+        error:
+          "The server could not reach the database. On the host, check DATABASE_URL (use Supabase transaction pooler, port 6543, and the real DB password).",
+      });
+    }
+    return res.status(500).json({
+      error: "Sign-in temporarily unavailable. Try again later.",
+    });
+  }
 });
 
 const DISPLAY_NAME_MAX = 100;

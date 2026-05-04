@@ -24,6 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Write API base (optional)
+        env:
+          SYNODOS_API_BASE: ${{ secrets.SYNODOS_API_BASE }}
+        run: node web/scripts/write-netlify-api-base.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
