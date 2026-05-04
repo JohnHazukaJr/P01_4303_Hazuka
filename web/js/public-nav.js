@@ -54,7 +54,7 @@
       '<button type="button" class="btn btn-ghost notify-menu__markall" id="synodos-notify-markall">Mark all read</button></div>' +
       '<div class="notify-menu__scroll">' +
       '<div class="notify-menu__section" id="synodos-notify-invites-wrap" hidden><div class="notify-menu__section-title">Invitations</div><div id="synodos-notify-invites"></div></div>' +
-      '<div class="notify-menu__section"><div class="notify-menu__section-title">What\\'s new</div><div id="synodos-notify-new"></div><p class="notify-menu__empty" id="synodos-notify-new-empty" hidden>Nothing new.</p></div>' +
+      '<div class="notify-menu__section"><div class="notify-menu__section-title">What\u0027s new</div><div id="synodos-notify-new"></div><p class="notify-menu__empty" id="synodos-notify-new-empty" hidden>Nothing new.</p></div>' +
       '<div class="notify-menu__section"><div class="notify-menu__section-title">Earlier</div><div id="synodos-notify-earlier"></div><p class="notify-menu__empty" id="synodos-notify-earlier-empty" hidden>No older items yet.</p></div>' +
       "</div>" +
       '<a class="notify-menu__footer" href="notifications.html">Open full notifications</a>' +
