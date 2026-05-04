@@ -13,9 +13,26 @@ http
     res.on("end", () => {
       try {
         const j = JSON.parse(data);
-        if (j.status === "ok") {
+        if (res.statusCode !== 200) {
+          console.error("verify-health: HTTP", res.statusCode, j);
+          process.exit(1);
+        }
+        if (j.status === "ok" && j.database === "connected") {
           console.log("verify-health: OK", j);
           process.exit(0);
+        }
+        if (j.status === "ok" && j.database == null) {
+          console.error(
+            "verify-health: API returned legacy health JSON (no database field). Restart the server after pulling latest code."
+          );
+          process.exit(1);
+        }
+        if (j.status === "ok") {
+          console.error(
+            "verify-health: expected database: connected, got:",
+            j.database
+          );
+          process.exit(1);
         }
       } catch (_) {
         /* fall through */

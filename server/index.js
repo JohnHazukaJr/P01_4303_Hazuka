@@ -37,6 +37,7 @@ const {
   enrichTag,
 } = require("./profileFields");
 const { publicDisplayLabel } = require("./displayLabel");
+const { registerAdminRoutes, createIsAdmin } = require("./routes/admin");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -52,6 +53,7 @@ if (!process.env.JWT_SECRET) {
 
 const requireAuth = createRequireAuth(db, JWT_SECRET);
 const optionalAuth = createOptionalAuth(db, JWT_SECRET);
+const isAdminUser = createIsAdmin(db);
 
 const WORK_TAGS_MIN = 1;
 const WORK_TAGS_MAX = 12;
@@ -105,6 +107,7 @@ app.get("/", (_req, res) => {
     <li><code>GET /api/me</code> — current user + profile (<code>Authorization: Bearer …</code>)</li>
     <li><code>GET /api/profile-fields</code> — work field / subfield options (JSON)</li>
     <li><code>PATCH /api/me</code> — update profile (JSON, auth): <code>work_tags</code> (array of <code>{ work_field, work_subfield }</code>, 1–12), or legacy <code>work_field</code>+<code>work_subfield</code>; plus <code>display_name</code>, <code>public_display_as</code> (<code>full_name</code> or <code>username</code>), <code>bio</code>, optional <code>avatar_data</code>, <code>avatar_reset</code></li>
+    <li><code>PATCH /api/admin/users/:username/badges</code> — set <code>verified</code> and/or <code>official_account</code> (JSON booleans); <strong>admin only</strong> (<code>SYNODOS_ADMIN_USER_IDS</code> and/or <code>SYNODOS_ADMIN_USERNAMES</code> in <code>server/.env</code>)</li>
     <li><code>GET /api/projects</code> — list projects + open roles; with <code>Authorization: Bearer …</code>, each project includes <code>feed_match_count</code> (tag overlap with you) and list is sorted by match then date</li>
     <li><code>POST /api/projects</code> — create project (JSON, auth)</li>
     <li><code>GET /api/projects/:id</code> — project detail</li>
@@ -307,6 +310,8 @@ function userPayload(row, tags) {
         : "username",
     public_display_label: publicDisplayLabel(row),
     verified: Number(row.verified) === 1,
+    official_account:
+      row.official_account === true || Number(row.official_account) === 1,
     bio: bio,
     avatar_url: row.avatar_url != null ? String(row.avatar_url) : "",
     work_field: primary
@@ -330,7 +335,7 @@ app.get("/api/profile-fields", (_req, res) => {
 
 app.get("/api/me", requireAuth, async (req, res) => {
   var row = await db.get(
-    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = $1",
+    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account FROM users WHERE id = $1",
     [req.user.id]
   );
   if (!row) {
@@ -339,6 +344,8 @@ app.get("/api/me", requireAuth, async (req, res) => {
   var tags = await loadUserWorkTags(req.user.id);
   res.json({ user: userPayload(row, tags) });
 });
+
+registerAdminRoutes(app, { db, requireAuth, isAdmin: isAdminUser });
 
 registerMeJoinRoutes(app, { db, requireAuth });
 registerMeProjectInviteRoutes(app, { db, requireAuth });
@@ -456,7 +463,7 @@ app.patch("/api/me", requireAuth, async (req, res) => {
   }
 
   var row = await db.get(
-    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = $1",
+    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account FROM users WHERE id = $1",
     [req.user.id]
   );
   if (!row) {
@@ -517,7 +524,7 @@ app.patch("/api/me", requireAuth, async (req, res) => {
   );
 
   var updated = await db.get(
-    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified FROM users WHERE id = $1",
+    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account FROM users WHERE id = $1",
     [req.user.id]
   );
   var outTags = await loadUserWorkTags(req.user.id);

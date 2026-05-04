@@ -60,7 +60,7 @@ function createUsersRouter(deps) {
       return res.status(404).json({ error: "Not found" });
     }
     const row = await db.get(
-      `SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified
+      `SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account
        FROM users WHERE username = $1`,
       [uname]
     );
@@ -74,6 +74,8 @@ function createUsersRouter(deps) {
       display_name: row.display_name != null ? String(row.display_name) : "",
       public_display_label: publicDisplayLabel(row),
       verified: Number(row.verified) === 1,
+      official_account:
+        row.official_account === true || Number(row.official_account) === 1,
       bio: row.bio != null ? String(row.bio) : "",
       avatar_url: row.avatar_url != null ? String(row.avatar_url) : "",
       work_tags: tags,

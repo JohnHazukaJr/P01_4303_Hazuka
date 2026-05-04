@@ -2,6 +2,8 @@
 
 REST API for the synodos project. Requires **[Node.js 22.5+](https://nodejs.org/)** and a [Supabase](https://supabase.com/) project (hosted Postgres + object storage).
 
+**Docs index** (structure, roadmap, smoke tests): [`../docs/README.md`](../docs/README.md).
+
 ## Stack
 
 - **Express** — HTTP API
@@ -26,6 +28,8 @@ Copy `.env.example` to `.env` (or set these in your host's dashboard):
 | `ALLOWED_ORIGINS` | prod | Comma-separated CORS allowlist (e.g. `https://synodos.netlify.app`). Omit in dev to allow all. |
 | `PORT` | no | API port. Defaults to `8080`. |
 | `PGSSLMODE` | no | Set to `disable` for local Postgres without TLS. Otherwise leave unset (Supabase requires TLS). |
+| `SYNODOS_ADMIN_USER_IDS` | no | Comma-separated numeric user IDs allowed to call `PATCH /api/admin/users/:username/badges`. |
+| `SYNODOS_ADMIN_USERNAMES` | no | Comma-separated **usernames** (e.g. `synodos`) — same admin powers as IDs. Easiest if you do not know your numeric id. |
 
 ## Setup
 
@@ -39,7 +43,7 @@ Open a **new** terminal and run `node -v` and `npm -v`.
 
 ### Legacy `synodos.db` on disk
 
-Older clones may still have `server/data/synodos.db`. The current API **does not open that file** — all SQL goes to `DATABASE_URL`. If the file is still present, close any program locking it and delete it to avoid confusion.
+Older clones may still have `server/data/synodos.db`. The current API **does not open that file** — all SQL goes to `DATABASE_URL`. Delete it when nothing has the file open (e.g. close DB browser tabs), e.g. `Remove-Item server/data/synodos.db` in PowerShell, to avoid confusion.
 
 ### 3. Provision Supabase (one-time)
 
@@ -96,8 +100,9 @@ Copy the full error message. Try `npm install --verbose`.
 | `POST` | `/api/auth/register` | Create account — JSON `{ "username", "email", "password" }` (username 3–32 chars; password min 8) |
 | `POST` | `/api/auth/login` | Sign in — JSON `{ "identifier", "password" }` or legacy `{ "email", "password" }` — `identifier` is email **or** username — returns `{ token, message }` |
 | `GET` | `/api/profile-fields` | Work taxonomy — JSON `{ fields: { tech, art, blue_collar: { label, subfields[] } } }` (no auth) |
-| `GET` | `/api/me` | Current user — `Authorization: Bearer <jwt>` — includes `work_tags[]` (labels + ids), legacy `work_field` / `work_subfield` (first tag), `avatar_url`, `profile_complete`, etc. |
+| `GET` | `/api/me` | Current user — `Authorization: Bearer <jwt>` — includes `work_tags[]`, `verified` (identity), `official_account` (platform), `avatar_url`, `profile_complete`, etc. |
 | `PATCH` | `/api/me` | Update profile — **auth** — `work_tags`: 1–12 × `{ work_field, work_subfield }`, or legacy single pair; plus `display_name`, `bio?`, optional `avatar_data`, `avatar_reset` |
+| `PATCH` | `/api/admin/users/:username/badges` | **Admin only** (`SYNODOS_ADMIN_USER_IDS` and/or `SYNODOS_ADMIN_USERNAMES` in `.env`) — JSON `{ "verified"?: boolean, "official_account"?: boolean }` |
 | `GET` | `/api/projects` | List projects (`roles[]`, `role_count`). With `Authorization: Bearer <jwt>`, each project has `feed_match_count` (how many of your field/subfield tags match the owner’s); results sorted by match count then recency |
 | `POST` | `/api/projects` | Create project — JSON `{ "title", "description?" }` — **auth** |
 | `GET` | `/api/projects/:id` | Project detail + roles |
