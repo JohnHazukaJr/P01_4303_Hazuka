@@ -3,6 +3,20 @@
  */
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
+/* Map common Render/dashboard typos to names the code reads (see server/.env.example). */
+(function applyCommonEnvAliases() {
+  const e = process.env;
+  if (!e.DATABASE_URL && e.Database_URL) e.DATABASE_URL = e.Database_URL;
+  if (!e.SUPABASE_URL && e.Supabase_URL) e.SUPABASE_URL = e.Supabase_URL;
+  if (!e.SUPABASE_SERVICE_ROLE_KEY && e.Supabase_Serivce_Role_Key) {
+    e.SUPABASE_SERVICE_ROLE_KEY = e.Supabase_Serivce_Role_Key;
+  }
+  if (!e.SUPABASE_SERVICE_ROLE_KEY && e.Supabase_Service_Role_Key) {
+    e.SUPABASE_SERVICE_ROLE_KEY = e.Supabase_Service_Role_Key;
+  }
+  if (!e.ALLOWED_ORIGINS && e.Allowed_Origins) e.ALLOWED_ORIGINS = e.Allowed_Origins;
+  if (!e.JWT_SECRET && e.Jwt_Secret) e.JWT_SECRET = e.Jwt_Secret;
+})();
 require("express-async-errors");
 
 const express = require("express");
@@ -192,6 +206,28 @@ app.get("/api/health", async (_req, res) => {
       .status(503)
       .json({ status: "error", database: "unavailable" });
   }
+});
+
+/**
+ * Optional: set SYNODOS_DEBUG_SURFACE=1 on the host, GET this once, then remove the flag.
+ * Returns booleans only (no secret values) so you can confirm Render env names resolved.
+ */
+app.get("/api/debug/env-check", (_req, res) => {
+  if (String(process.env.SYNODOS_DEBUG_SURFACE || "").trim() !== "1") {
+    return res.status(404).json({ error: "Not found" });
+  }
+  const e = process.env;
+  res.json({
+    hasDatabaseUrl: !!(e.DATABASE_URL && String(e.DATABASE_URL).trim()),
+    hasSupabaseUrl: !!(e.SUPABASE_URL && String(e.SUPABASE_URL).trim()),
+    hasServiceRole: !!(
+      e.SUPABASE_SERVICE_ROLE_KEY && String(e.SUPABASE_SERVICE_ROLE_KEY).trim()
+    ),
+    hasJwtSecret: !!(e.JWT_SECRET && String(e.JWT_SECRET).trim()),
+    allowedOriginsConfigured: !!(
+      e.ALLOWED_ORIGINS && String(e.ALLOWED_ORIGINS).trim()
+    ),
+  });
 });
 
 app.post("/api/auth/register", authLimiter, async (req, res) => {
