@@ -98,8 +98,11 @@
       headers: { Authorization: "Bearer " + token },
     });
     if (!res.ok) {
-      window.synodosAuth.clearToken();
-      window.location.href = "login.html";
+      if (res.status === 401) {
+        window.synodosAuth.handleUnauthorized();
+        return false;
+      }
+      showMsg("Could not load your account. Please try again.", true);
       return false;
     }
     var data = await res.json();

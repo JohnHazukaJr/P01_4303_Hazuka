@@ -162,7 +162,11 @@
     }
     var meRes = await fetch(API_BASE + "/api/me", { headers: authHeaders(false) });
     if (!meRes.ok) {
-      window.location.href = "login.html";
+      if (meRes.status === 401) {
+        window.synodosAuth.handleUnauthorized();
+        return;
+      }
+      showPageMsg("Could not load your account. Please try again.", true);
       return;
     }
     var meData = await meRes.json();
@@ -176,7 +180,13 @@
     });
     var invRoot = document.getElementById("notifications-invites-root");
     var invEmpty = document.getElementById("notifications-invites-empty");
-    if (invRes.ok && invRoot) {
+    if (!invRes.ok) {
+      if (invRes.status === 401) {
+        window.synodosAuth.handleUnauthorized();
+        return;
+      }
+      showPageMsg("Could not load notifications. Please refresh.", true);
+    } else if (invRoot) {
       var invData = await invRes.json();
       var invs = invData.invitations || [];
       invRoot.innerHTML = "";
@@ -191,7 +201,13 @@
     });
     var listRoot = document.getElementById("notifications-list-root");
     var listEmpty = document.getElementById("notifications-list-empty");
-    if (listRes.ok && listRoot) {
+    if (!listRes.ok) {
+      if (listRes.status === 401) {
+        window.synodosAuth.handleUnauthorized();
+        return;
+      }
+      showPageMsg("Could not load notifications. Please refresh.", true);
+    } else if (listRoot) {
       var listData = await listRes.json();
       var notes = listData.notifications || [];
       listRoot.innerHTML = "";

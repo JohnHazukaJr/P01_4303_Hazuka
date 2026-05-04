@@ -43,7 +43,11 @@
       headers: authHeaders(false),
     });
     if (!res.ok) {
-      window.location.href = "login.html";
+      if (res.status === 401) {
+        window.synodosAuth.handleUnauthorized();
+        return false;
+      }
+      showMsg("Could not load your account. Please try again.", true);
       return false;
     }
     var data = await res.json();
@@ -85,7 +89,15 @@
     var res = await fetch(API_BASE + "/api/conversations", {
       headers: authHeaders(false),
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      if (res.status === 401) {
+        window.synodosAuth.handleUnauthorized();
+        return [];
+      }
+      showMsg("Could not load conversations. Please refresh.", true);
+      if (emptyEl) emptyEl.hidden = true;
+      return [];
+    }
     var data = await res.json();
     var convs = data.conversations || [];
     listEl.innerHTML = "";

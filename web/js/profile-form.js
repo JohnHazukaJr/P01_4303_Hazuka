@@ -401,8 +401,11 @@
           headers: { Authorization: "Bearer " + token },
         });
         if (!resMe.ok) {
-          window.synodosAuth.clearToken();
-          window.location.href = "login.html";
+          if (resMe.status === 401) {
+            window.synodosAuth.handleUnauthorized();
+            return;
+          }
+          window.alert("Could not load your profile. Please try again.");
           return;
         }
         var resFields = await fetch(API_BASE + "/api/profile-fields");
@@ -484,7 +487,7 @@
           console.warn("Could not load profile.", err);
         }
         window.alert(
-          "Could not reach the server. In the server folder run: npm install && npm start"
+          "Could not reach the server. Please try again."
         );
         if (workTagsAddBtn) workTagsAddBtn.disabled = true;
       }
@@ -573,7 +576,7 @@
           console.warn("Backend not reachable.", err);
         }
         window.alert(
-          "Could not reach the server. In the server folder run: npm install && npm start"
+          "Could not reach the server. Please try again."
         );
       } finally {
         if (submitBtn) submitBtn.disabled = false;

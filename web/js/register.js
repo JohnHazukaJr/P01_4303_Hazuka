@@ -35,7 +35,10 @@
         return {};
       });
       if (!res.ok) {
-        window.alert(data.error || res.statusText || "Registration failed");
+        window.alert(
+          "Could not create account. " +
+            (data.error || res.statusText || "Try again.")
+        );
         return;
       }
       if (data.token) {
@@ -53,9 +56,7 @@
       if (typeof console !== "undefined" && console.warn) {
         console.warn("Backend not reachable.", err);
       }
-      window.alert(
-        "Could not reach the server. In the server folder run: npm install && npm start"
-      );
+      window.alert("Could not reach the server. Please try again.");
     }
   });
 })();
