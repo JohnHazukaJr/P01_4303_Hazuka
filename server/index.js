@@ -129,8 +129,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-/* PATCH /api/me may include base64 avatar_data (~680KB for a 512KB file) plus JSON. */
-app.use(express.json({ limit: "2mb" }));
+/* PATCH /api/me may include base64 avatar_data + work_tags; allow headroom. */
+app.use(express.json({ limit: "4mb" }));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -593,6 +593,7 @@ app.patch("/api/me", requireAuth, async (req, res) => {
   } else if (typeof avatarData === "string" && avatarData.length > 0) {
     var saved = await saveAvatarFromDataUrl(req.user.id, avatarData);
     if (!saved.ok) {
+      console.warn("[synodos] PATCH /api/me avatar upload failed:", saved.error);
       return res.status(400).json({ error: saved.error });
     }
     nextAvatarUrl = saved.url;
@@ -630,11 +631,17 @@ app.use("/api", (_req, res) => {
 app.use((err, _req, res, _next) => {
   console.error("[synodos] Unhandled error:", err);
   if (res.headersSent) return;
-  const status = err && typeof err.status === "number" ? err.status : 500;
-  const msg =
+  let status = err && typeof err.status === "number" ? err.status : 500;
+  if (err && err.type === "entity.too.large") {
+    status = 413;
+  }
+  let msg =
     err && err.expose && err.message
       ? err.message
       : "Internal server error";
+  if (status === 413) {
+    msg = "Request too large (try a smaller photo or save without changing the picture).";
+  }
   res.status(status).json({ error: msg });
 });
 
