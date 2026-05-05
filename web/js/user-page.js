@@ -1,23 +1,8 @@
 /** Public user profile: ?u=username. Requires auth.js. */
 (function () {
-  var API_BASE =
-    window.synodosAuth && window.synodosAuth.apiBase
-      ? window.synodosAuth.apiBase
-      : "http://localhost:8080";
-
   function qsUser() {
     var q = new URLSearchParams(window.location.search).get("u");
     return q != null ? String(q).trim().toLowerCase() : "";
-  }
-
-  function authHeaders() {
-    var h = { "Content-Type": "application/json" };
-    var t =
-      window.synodosAuth &&
-      window.synodosAuth.getToken &&
-      window.synodosAuth.getToken();
-    if (t) h.Authorization = "Bearer " + t;
-    return h;
   }
 
   function showMsg(el, text, isError) {
@@ -29,20 +14,15 @@
   }
 
   async function openOrGetConversation(username) {
-    var token = window.synodosAuth.getToken();
-    if (!token) return null;
-    var res = await fetch(API_BASE + "/api/conversations", {
+    if (!window.synodosAuth.getToken()) return null;
+    var result = await window.synodosAuth.apiFetch("/api/conversations", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
+      headers: window.synodosAuth.authHeaders({ json: true }),
       body: JSON.stringify({ with_username: username }),
     });
-    var data = await res.json().catch(function () {
-      return {};
-    });
-    if (!res.ok || !data.conversation) return null;
+    if (!result) return null;
+    var data = result.data;
+    if (!result.res.ok || !data.conversation) return null;
     return data.conversation.id;
   }
 
@@ -83,18 +63,16 @@
       window.synodosAuth.getToken &&
       window.synodosAuth.getToken();
     if (existingToken) {
-      var meRes = await fetch(API_BASE + "/api/me", {
-        headers: authHeaders(),
-      }).catch(function () {
-        return null;
+      var cachedMe = window.synodosAuth.getCachedMe();
+      if (cachedMe && cachedMe.id != null) {
+        meId = Number(cachedMe.id);
+      }
+      var meResult = await window.synodosAuth.apiFetch("/api/me", {
+        skipUnauthorized: true,
       });
-      if (meRes && meRes.ok) {
-        var meData = await meRes.json().catch(function () {
-          return {};
-        });
-        if (meData.user && meData.user.id != null) {
-          meId = Number(meData.user.id);
-        }
+      if (meResult && meResult.res.ok && meResult.data.user) {
+        window.synodosAuth.setCachedMe(meResult.data.user);
+        meId = Number(meResult.data.user.id);
       }
     }
     if (back) {
@@ -102,13 +80,15 @@
       back.textContent = meId ? "← Back to dashboard" : "← Back to home";
     }
 
-    var res = await fetch(
-      API_BASE + "/api/users/" + encodeURIComponent(uname),
-      { headers: authHeaders() }
+    var profResult = await window.synodosAuth.apiFetch(
+      "/api/users/" + encodeURIComponent(uname),
+      {}
     );
-    var data = await res.json().catch(function () {
-      return {};
-    });
+    if (!profResult) {
+      return;
+    }
+    var res = profResult.res;
+    var data = profResult.data;
     if (loadingEl) loadingEl.hidden = true;
     if (!res.ok) {
       showMsg(msgEl, data.error || "Profile not found.", true);
@@ -197,19 +177,16 @@
       if (btnFollow) {
         btnFollow.onclick = async function () {
           showMsg(msgEl, "", false);
-          var r = await fetch(
-            API_BASE + "/api/users/" + encodeURIComponent(user.username) + "/follow",
+          var fr = await window.synodosAuth.apiFetch(
+            "/api/users/" + encodeURIComponent(user.username) + "/follow",
             {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + token,
-              },
+              headers: window.synodosAuth.authHeaders({ json: true }),
             }
           );
-          var d = await r.json().catch(function () {
-            return {};
-          });
+          if (!fr) return;
+          var r = fr.res;
+          var d = fr.data;
           if (!r.ok) {
             showMsg(msgEl, d.error || "Could not follow.", true);
             return;
@@ -221,14 +198,14 @@
       if (btnUnfollow) {
         btnUnfollow.onclick = async function () {
           showMsg(msgEl, "", false);
-          var r = await fetch(
-            API_BASE + "/api/users/" + encodeURIComponent(user.username) + "/follow",
-            { method: "DELETE", headers: { Authorization: "Bearer " + token } }
+          var ufr = await window.synodosAuth.apiFetch(
+            "/api/users/" + encodeURIComponent(user.username) + "/follow",
+            { method: "DELETE" }
           );
+          if (!ufr) return;
+          var r = ufr.res;
           if (!r.ok && r.status !== 204) {
-            var d = await r.json().catch(function () {
-              return {};
-            });
+            var d = ufr.data;
             showMsg(msgEl, d.error || "Could not unfollow.", true);
             return;
           }

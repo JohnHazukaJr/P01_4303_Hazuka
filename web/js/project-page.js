@@ -1,10 +1,5 @@
 /** Public project detail + join requests. Requires auth.js (API base + token). */
 (function () {
-  var API_BASE =
-    window.synodosAuth && window.synodosAuth.apiBase
-      ? window.synodosAuth.apiBase
-      : "http://localhost:8080";
-
   var msgEl = document.getElementById("project-page-msg");
   var loadingEl = document.getElementById("project-page-loading");
   var rootEl = document.getElementById("project-root");
@@ -29,14 +24,6 @@
     msgEl.hidden = !text;
     msgEl.className =
       "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
-  }
-
-  function authHeaders() {
-    var h = { "Content-Type": "application/json" };
-    if (token) {
-      h.Authorization = "Bearer " + token;
-    }
-    return h;
   }
 
   function syncBackLink() {
@@ -136,10 +123,12 @@
 
   async function loadProject(id) {
     showMsg("", false);
-    var res = await fetch(API_BASE + "/api/projects/" + id);
-    var data = await res.json().catch(function () {
-      return {};
-    });
+    var result = await window.synodosAuth.apiFetch("/api/projects/" + id, {});
+    if (!result) {
+      return;
+    }
+    var res = result.res;
+    var data = result.data;
     if (!res.ok) {
       if (loadingEl) loadingEl.hidden = true;
       showMsg(data.error || "Project not found.", true);
@@ -167,14 +156,13 @@
       }
       return;
     }
-    var res = await fetch(API_BASE + "/api/me", {
-      headers: { Authorization: "Bearer " + token },
-    });
+    var result = await window.synodosAuth.apiFetch("/api/me", {});
+    if (!result) {
+      return;
+    }
+    var res = result.res;
+    var data = result.data;
     if (!res.ok) {
-      if (res.status === 401) {
-        window.synodosAuth.handleUnauthorized();
-        return;
-      }
       if (
         window.synodosProjectPage &&
         window.synodosProjectPage.onViewerReady
@@ -183,7 +171,6 @@
       }
       return;
     }
-    var data = await res.json();
     if (data.user && !data.user.profile_complete) {
       if (
         window.synodosProjectPage &&
@@ -192,6 +179,9 @@
         window.synodosProjectPage.onViewerReady();
       }
       return;
+    }
+    if (data.user) {
+      window.synodosAuth.setCachedMe(data.user);
     }
     userId = data.user && data.user.id;
     isOwner =
@@ -225,7 +215,9 @@
     isOwner: function () {
       return isOwner;
     },
-    authHeaders: authHeaders,
+    authHeaders: function () {
+      return window.synodosAuth.authHeaders({ json: true });
+    },
     showMsg: showMsg,
     refreshJoinPanel: function () {},
     onViewerReady: function () {},

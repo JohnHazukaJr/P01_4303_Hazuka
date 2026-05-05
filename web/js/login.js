@@ -88,9 +88,6 @@
       }
       window.location.href = "dashboard.html";
     } catch (err) {
-      if (typeof console !== "undefined" && console.warn) {
-        console.warn("Backend not reachable.", err);
-      }
       showMsg("Could not reach the server. Please try again.", true);
     }
   });

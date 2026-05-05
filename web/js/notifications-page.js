@@ -1,16 +1,7 @@
 /** Notifications list + invitation actions. Requires auth.js + public-nav (badge). */
 (function () {
-  var API_BASE =
-    window.synodosAuth && window.synodosAuth.apiBase
-      ? window.synodosAuth.apiBase
-      : "http://localhost:8080";
-
-  function authHeaders(json) {
-    var h = {};
-    if (json) h["Content-Type"] = "application/json";
-    var t = window.synodosAuth.getToken();
-    if (t) h.Authorization = "Bearer " + t;
-    return h;
+  function H() {
+    return window.synodosNotificationHelpers || null;
   }
 
   function bumpBadge() {
@@ -20,27 +11,23 @@
   }
 
   function labelForType(type, payload) {
-    var H = window.synodosNotificationHelpers;
-    if (H) return H.labelForType(type, payload);
+    var h = H();
+    if (h) return h.labelForType(type, payload);
     return type || "Notification";
   }
 
   function primaryLink(type, payload) {
-    var H = window.synodosNotificationHelpers;
-    if (H) return H.primaryLink(type, payload);
-    var p = payload || {};
-    if (p.project_id) {
-      return "project.html?id=" + encodeURIComponent(String(p.project_id));
-    }
+    var h = H();
+    if (h) return h.primaryLink(type, payload);
     return null;
   }
 
   async function markRead(id) {
-    await fetch(API_BASE + "/api/me/notifications/" + id + "/read", {
-      method: "PATCH",
-      headers: authHeaders(false),
-    });
-    bumpBadge();
+    var mr = await window.synodosAuth.apiFetch(
+      "/api/me/notifications/" + id + "/read",
+      { method: "PATCH" }
+    );
+    if (mr) bumpBadge();
   }
 
   function renderNotificationRow(n) {
@@ -135,18 +122,20 @@
 
   async function resolveInvite(id, status) {
     showPageMsg("", false);
-    var res = await fetch(
-      API_BASE + "/api/me/project-invitations/" + id,
+    var rv = await window.synodosAuth.apiFetch(
+      "/api/me/project-invitations/" + id,
       {
         method: "PATCH",
-        headers: authHeaders(true),
+        headers: window.synodosAuth.authHeaders({ json: true }),
         body: JSON.stringify({ status: status }),
       }
     );
+    if (!rv) {
+      return;
+    }
+    var res = rv.res;
+    var d = rv.data;
     if (!res.ok) {
-      var d = await res.json().catch(function () {
-        return {};
-      });
       showPageMsg(d.error || "Could not update invitation", true);
       return;
     }
@@ -160,34 +149,42 @@
       window.location.href = "login.html";
       return;
     }
-    var meRes = await fetch(API_BASE + "/api/me", { headers: authHeaders(false) });
-    if (!meRes.ok) {
-      if (meRes.status === 401) {
-        window.synodosAuth.handleUnauthorized();
-        return;
-      }
+    var cached = window.synodosAuth.getCachedMe();
+    if (cached && cached.profile_complete === false) {
+      window.location.href = "profile-setup.html";
+      return;
+    }
+    var meResult = await window.synodosAuth.apiFetch("/api/me", {});
+    if (!meResult) {
+      return;
+    }
+    if (!meResult.res.ok) {
       showPageMsg("Could not load your account. Please try again.", true);
       return;
     }
-    var meData = await meRes.json();
+    var meData = meResult.data;
     if (meData.user && !meData.user.profile_complete) {
       window.location.href = "profile-setup.html";
       return;
     }
+    if (meData.user) {
+      window.synodosAuth.setCachedMe(meData.user);
+    }
 
-    var invRes = await fetch(API_BASE + "/api/me/project-invitations", {
-      headers: authHeaders(false),
-    });
+    var invResult = await window.synodosAuth.apiFetch(
+      "/api/me/project-invitations",
+      {}
+    );
     var invRoot = document.getElementById("notifications-invites-root");
     var invEmpty = document.getElementById("notifications-invites-empty");
+    if (!invResult) {
+      return;
+    }
+    var invRes = invResult.res;
     if (!invRes.ok) {
-      if (invRes.status === 401) {
-        window.synodosAuth.handleUnauthorized();
-        return;
-      }
       showPageMsg("Could not load notifications. Please refresh.", true);
     } else if (invRoot) {
-      var invData = await invRes.json();
+      var invData = invResult.data;
       var invs = invData.invitations || [];
       invRoot.innerHTML = "";
       if (invEmpty) invEmpty.hidden = invs.length > 0;
@@ -196,19 +193,20 @@
       }
     }
 
-    var listRes = await fetch(API_BASE + "/api/me/notifications?limit=80", {
-      headers: authHeaders(false),
-    });
+    var listResult = await window.synodosAuth.apiFetch(
+      "/api/me/notifications?limit=80",
+      {}
+    );
     var listRoot = document.getElementById("notifications-list-root");
     var listEmpty = document.getElementById("notifications-list-empty");
+    if (!listResult) {
+      return;
+    }
+    var listRes = listResult.res;
     if (!listRes.ok) {
-      if (listRes.status === 401) {
-        window.synodosAuth.handleUnauthorized();
-        return;
-      }
       showPageMsg("Could not load notifications. Please refresh.", true);
     } else if (listRoot) {
-      var listData = await listRes.json();
+      var listData = listResult.data;
       var notes = listData.notifications || [];
       listRoot.innerHTML = "";
       if (listEmpty) listEmpty.hidden = notes.length > 0;
@@ -220,9 +218,8 @@
   }
 
   async function markAllRead() {
-    await fetch(API_BASE + "/api/me/notifications/read-all", {
+    await window.synodosAuth.apiFetch("/api/me/notifications/read-all", {
       method: "POST",
-      headers: authHeaders(false),
     });
     bumpBadge();
     await refresh();

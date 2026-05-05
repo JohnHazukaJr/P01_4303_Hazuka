@@ -9,7 +9,6 @@
     return;
   }
 
-  var API_BASE = window.synodosAuth.apiBase;
   var displayNameEl = document.getElementById("dashboard-display-name");
   var dashAvatarImg = document.getElementById("dashboard-avatar-img");
   var dashAvatarPh = document.getElementById("dashboard-avatar-placeholder");
@@ -40,12 +39,8 @@
       "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
-  function authHeaders() {
-    var h = { "Content-Type": "application/json" };
-    if (token) {
-      h.Authorization = "Bearer " + token;
-    }
-    return h;
+  function jsonAuthHeaders() {
+    return window.synodosAuth.authHeaders({ json: true });
   }
 
   async function loadMe() {
@@ -54,21 +49,31 @@
       window.location.href = "login.html";
       return false;
     }
-    var res = await fetch(API_BASE + "/api/me", {
-      headers: { Authorization: "Bearer " + token },
-    });
+    var cached = window.synodosAuth.getCachedMe();
+    if (cached && displayNameEl) {
+      var pub0 = String(cached.public_display_label || "").trim();
+      var dn0 = String(cached.display_name || "").trim();
+      displayNameEl.textContent = pub0 || dn0 || "Welcome back";
+    }
+    if (cached) {
+      setDashboardAvatar(cached);
+    }
+    var result = await window.synodosAuth.apiFetch("/api/me", {});
+    if (!result) {
+      return false;
+    }
+    var res = result.res;
+    var data = result.data;
     if (!res.ok) {
-      if (res.status === 401) {
-        window.synodosAuth.handleUnauthorized();
-        return false;
-      }
       showMsg("Could not load your account. Please try again.", true);
       return false;
     }
-    var data = await res.json();
     if (data.user && !data.user.profile_complete) {
       window.location.href = "profile-setup.html";
       return false;
+    }
+    if (data.user) {
+      window.synodosAuth.setCachedMe(data.user);
     }
     userId = data.user && data.user.id;
     if (displayNameEl && data.user) {
@@ -83,13 +88,14 @@
   }
 
   async function fetchProjects() {
-    var res = await fetch(API_BASE + "/api/projects", {
-      headers: token ? { Authorization: "Bearer " + token } : {},
-    });
-    if (!res.ok) {
+    var result = await window.synodosAuth.apiFetch("/api/projects", {});
+    if (!result) {
+      return null;
+    }
+    if (!result.res.ok) {
       throw new Error("Could not load projects");
     }
-    return res.json();
+    return result.data;
   }
 
   function isOwner(project) {
@@ -312,6 +318,9 @@
     showMsg("", false);
     try {
       var data = await fetchProjects();
+      if (data === null) {
+        return;
+      }
       renderProjects(data);
     } catch (err) {
       showMsg(
@@ -397,11 +406,16 @@
   async function loadInbox() {
     if (!inboxSection || !inboxRoot || !token) return;
     try {
-      var res = await fetch(API_BASE + "/api/me/project-requests-inbox", {
-        headers: { Authorization: "Bearer " + token },
-      });
+      var inboxResult = await window.synodosAuth.apiFetch(
+        "/api/me/project-requests-inbox",
+        {}
+      );
+      if (!inboxResult) {
+        return;
+      }
+      var res = inboxResult.res;
+      var data = inboxResult.data;
       if (!res.ok) return;
-      var data = await res.json();
       var list = data.requests || [];
       inboxSection.hidden = list.length === 0;
       inboxRoot.innerHTML = "";
@@ -416,21 +430,22 @@
   async function resolveInboxRequest(projectId, requestId, status) {
     showMsg("", false);
     try {
-      var res = await fetch(
-        API_BASE +
-          "/api/projects/" +
+      var joinResult = await window.synodosAuth.apiFetch(
+        "/api/projects/" +
           projectId +
           "/join-requests/" +
           requestId,
         {
           method: "PATCH",
-          headers: authHeaders(),
+          headers: jsonAuthHeaders(),
           body: JSON.stringify({ status: status }),
         }
       );
-      var data = await res.json().catch(function () {
-        return {};
-      });
+      if (!joinResult) {
+        return;
+      }
+      var res = joinResult.res;
+      var data = joinResult.data;
       if (!res.ok) {
         showMsg(data.error || "Could not update request", true);
         return;
@@ -445,17 +460,19 @@
   async function addRole(projectId, body) {
     showMsg("", false);
     try {
-      var res = await fetch(
-        API_BASE + "/api/projects/" + projectId + "/roles",
+      var roleResult = await window.synodosAuth.apiFetch(
+        "/api/projects/" + projectId + "/roles",
         {
           method: "POST",
-          headers: authHeaders(),
+          headers: jsonAuthHeaders(),
           body: JSON.stringify(body),
         }
       );
-      var data = await res.json().catch(function () {
-        return {};
-      });
+      if (!roleResult) {
+        return;
+      }
+      var res = roleResult.res;
+      var data = roleResult.data;
       if (!res.ok) {
         showMsg(data.error || "Could not add role", true);
         return;
@@ -469,18 +486,19 @@
   async function deleteRole(projectId, roleId) {
     showMsg("", false);
     try {
-      var res = await fetch(
-        API_BASE +
-          "/api/projects/" +
+      var delRoleResult = await window.synodosAuth.apiFetch(
+        "/api/projects/" +
           projectId +
           "/roles/" +
           roleId,
-        { method: "DELETE", headers: authHeaders() }
+        { method: "DELETE" }
       );
+      if (!delRoleResult) {
+        return;
+      }
+      var res = delRoleResult.res;
       if (!res.ok) {
-        var data = await res.json().catch(function () {
-          return {};
-        });
+        var data = delRoleResult.data;
         showMsg(data.error || "Could not remove role", true);
         return;
       }
@@ -493,14 +511,16 @@
   async function deleteProject(projectId) {
     showMsg("", false);
     try {
-      var res = await fetch(API_BASE + "/api/projects/" + projectId, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
+      var delProjResult = await window.synodosAuth.apiFetch(
+        "/api/projects/" + projectId,
+        { method: "DELETE" }
+      );
+      if (!delProjResult) {
+        return;
+      }
+      var res = delProjResult.res;
       if (!res.ok && res.status !== 204) {
-        var data = await res.json().catch(function () {
-          return {};
-        });
+        var data = delProjResult.data;
         showMsg(data.error || "Could not delete project", true);
         return;
       }
@@ -541,14 +561,16 @@
           description: fd.get("description") || "",
         };
         try {
-          var res = await fetch(API_BASE + "/api/projects", {
+          var createResult = await window.synodosAuth.apiFetch("/api/projects", {
             method: "POST",
-            headers: authHeaders(),
+            headers: jsonAuthHeaders(),
             body: JSON.stringify(payload),
           });
-          var data = await res.json().catch(function () {
-            return {};
-          });
+          if (!createResult) {
+            return;
+          }
+          var res = createResult.res;
+          var data = createResult.data;
           if (!res.ok) {
             showMsg(data.error || "Could not create project", true);
             return;

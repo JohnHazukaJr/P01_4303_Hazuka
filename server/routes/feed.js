@@ -1,10 +1,6 @@
 const express = require("express");
 const { publicDisplayLabel } = require("../displayLabel");
-
-function parseCursor(raw) {
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
+const { parseCursor } = require("../routeUtils");
 
 /**
  * @param {{ db: object, requireAuth: function }} deps

@@ -120,40 +120,21 @@
     }
   }
 
-  function fetchNotifyCount() {
+  async function fetchNotifyCount() {
     if (!window.synodosAuth || !isAuthed()) return;
-    var token = window.synodosAuth.getToken();
-    if (!token) return;
-    var base = window.synodosAuth.apiBase || "http://localhost:8080";
-    fetch(base + "/api/me/notifications/unread-count", {
-      headers: { Authorization: "Bearer " + token },
-    })
-      .then(function (res) {
-        if (res.status === 401) {
-          if (window.synodosAuth && window.synodosAuth.handleUnauthorized) {
-            window.synodosAuth.handleUnauthorized();
-          }
-          return null;
-        }
-        if (!res.ok) {
-          if (typeof console !== "undefined" && console.warn) {
-            console.warn("[synodos] unread-count fetch failed", res.status);
-          }
-          return null;
-        }
-        return res.json();
-      })
-      .then(function (data) {
-        if (!data) return;
-        var n = Number(data.unread_count);
-        applyBadgeCount(Number.isFinite(n) ? n : 0);
-        if (menuOpen) loadDropdown();
-      })
-      .catch(function (e) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("[synodos] unread-count request failed", e);
-        }
-      });
+    if (!window.synodosAuth.getToken()) return;
+    try {
+      var result = await window.synodosAuth.apiFetch(
+        "/api/me/notifications/unread-count",
+        {}
+      );
+      if (!result || !result.res.ok) return;
+      var n = Number(result.data.unread_count);
+      applyBadgeCount(Number.isFinite(n) ? n : 0);
+      if (menuOpen) loadDropdown();
+    } catch (e) {
+      /* network */
+    }
   }
 
   function startPolling() {
@@ -177,16 +158,11 @@
 
   function markNotifRead(id) {
     if (!window.synodosAuth || !isAuthed()) return Promise.resolve();
-    var base = window.synodosAuth.apiBase || "http://localhost:8080";
-    var token = window.synodosAuth.getToken();
-    return fetch(base + "/api/me/notifications/" + id + "/read", {
-      method: "PATCH",
-      headers: { Authorization: "Bearer " + token },
-    }).catch(function (e) {
-      if (typeof console !== "undefined" && console.warn) {
-        console.warn("[synodos] mark notification read failed", e);
-      }
-    });
+    return window.synodosAuth
+      .apiFetch("/api/me/notifications/" + id + "/read", {
+        method: "PATCH",
+      })
+      .catch(function () {});
   }
 
   function renderNotifItem(n) {
@@ -223,7 +199,7 @@
     return item;
   }
 
-  function renderInviteItem(inv, base, token) {
+  function renderInviteItem(inv) {
     var row = document.createElement("div");
     row.className = "notify-menu__invite";
     var title = document.createElement("p");
@@ -244,14 +220,14 @@
     var actions = document.createElement("div");
     actions.className = "notify-menu__invite-actions";
     function patch(status) {
-      return fetch(base + "/api/me/project-invitations/" + inv.id, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
-        body: JSON.stringify({ status: status }),
-      });
+      return window.synodosAuth.apiFetch(
+        "/api/me/project-invitations/" + inv.id,
+        {
+          method: "PATCH",
+          headers: window.synodosAuth.authHeaders({ json: true }),
+          body: JSON.stringify({ status: status }),
+        }
+      );
     }
     var acc = document.createElement("button");
     acc.type = "button";
@@ -264,7 +240,7 @@
     acc.addEventListener("click", function (e) {
       e.stopPropagation();
       patch("accepted").then(function (r) {
-        if (r.ok) {
+        if (r && r.res && r.res.ok) {
           fetchNotifyCount();
           loadDropdown();
           document.dispatchEvent(new CustomEvent("synodos:notifications-refresh"));
@@ -274,7 +250,7 @@
     dec.addEventListener("click", function (e) {
       e.stopPropagation();
       patch("declined").then(function (r) {
-        if (r.ok) {
+        if (r && r.res && r.res.ok) {
           fetchNotifyCount();
           loadDropdown();
           document.dispatchEvent(new CustomEvent("synodos:notifications-refresh"));
@@ -315,9 +291,6 @@
 
   async function loadDropdown() {
     if (!window.synodosAuth || !isAuthed()) return;
-    var base = window.synodosAuth.apiBase || "http://localhost:8080";
-    var token = window.synodosAuth.getToken();
-    var headers = { Authorization: "Bearer " + token };
 
     var invWrap = document.getElementById("synodos-notify-invites-wrap");
     var invRoot = document.getElementById("synodos-notify-invites");
@@ -330,24 +303,22 @@
     var invFailed = false;
 
     try {
-      var res = await fetch(base + "/api/me/notifications?limit=50", { headers: headers });
-      if (res.status === 401) {
-        if (window.synodosAuth && window.synodosAuth.handleUnauthorized) {
-          window.synodosAuth.handleUnauthorized();
-        }
+      var nResult = await window.synodosAuth.apiFetch(
+        "/api/me/notifications?limit=50",
+        {}
+      );
+      if (!nResult) {
         return;
       }
+      var res = nResult.res;
       if (!res.ok) {
         notifFailed = true;
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("[synodos] notifications dropdown list failed", res.status);
-        }
         if (newRoot) newRoot.innerHTML = "";
         if (earlierRoot) earlierRoot.innerHTML = "";
         if (newEmpty) newEmpty.setAttribute("hidden", "");
         if (earlierEmpty) earlierEmpty.setAttribute("hidden", "");
       } else {
-        var data = await res.json();
+        var data = nResult.data;
         var list = (data && data.notifications) || [];
         var unread = list.filter(function (n) { return !n.read_at; });
         var read = list.filter(function (n) { return !!n.read_at; }).slice(0, 20);
@@ -366,40 +337,33 @@
       }
     } catch (e) {
       notifFailed = true;
-      if (typeof console !== "undefined" && console.warn) {
-        console.warn("[synodos] notifications dropdown", e);
-      }
     }
 
     try {
-      var invRes = await fetch(base + "/api/me/project-invitations", { headers: headers });
-      if (invRes.status === 401) {
-        if (window.synodosAuth && window.synodosAuth.handleUnauthorized) {
-          window.synodosAuth.handleUnauthorized();
-        }
+      var invFetch = await window.synodosAuth.apiFetch(
+        "/api/me/project-invitations",
+        {}
+      );
+      if (!invFetch) {
         return;
       }
+      var invRes = invFetch.res;
       if (!invRes.ok) {
         invFailed = true;
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("[synodos] project-invitations fetch failed", invRes.status);
-        }
         if (invWrap) invWrap.hidden = true;
         if (invRoot) invRoot.innerHTML = "";
       } else {
-        var invData = await invRes.json();
+        var invData = invFetch.data;
         var invs = (invData && invData.invitations) || [];
         if (invWrap && invRoot) {
           invRoot.innerHTML = "";
           invWrap.hidden = invs.length === 0;
-          for (var k = 0; k < invs.length; k++) invRoot.appendChild(renderInviteItem(invs[k], base, token));
+          for (var k = 0; k < invs.length; k++)
+            invRoot.appendChild(renderInviteItem(invs[k]));
         }
       }
     } catch (e2) {
       invFailed = true;
-      if (typeof console !== "undefined" && console.warn) {
-        console.warn("[synodos] project-invitations", e2);
-      }
       if (invWrap) invWrap.hidden = true;
     }
 
@@ -412,12 +376,9 @@
 
   async function markAllRead() {
     if (!window.synodosAuth || !isAuthed()) return;
-    var base = window.synodosAuth.apiBase || "http://localhost:8080";
-    var token = window.synodosAuth.getToken();
     try {
-      await fetch(base + "/api/me/notifications/read-all", {
+      await window.synodosAuth.apiFetch("/api/me/notifications/read-all", {
         method: "POST",
-        headers: { Authorization: "Bearer " + token },
       });
     } catch (_) {}
     fetchNotifyCount();

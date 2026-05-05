@@ -10,7 +10,6 @@
     return;
   }
 
-  var API_BASE = window.synodosAuth.apiBase;
   var AVATAR_MAX_BYTES = 512 * 1024;
   var WORK_TAGS_MAX = 12;
 
@@ -372,32 +371,39 @@
         return;
       }
       try {
-        var resMe = await fetch(API_BASE + "/api/me", {
-          headers: { Authorization: "Bearer " + token },
-        });
-        if (!resMe.ok) {
-          if (resMe.status === 401) {
-            window.synodosAuth.handleUnauthorized();
-            return;
+        var primed = window.synodosAuth.getCachedMe();
+        if (primed) {
+          if (displayInput && primed.display_name) {
+            displayInput.value = primed.display_name;
           }
+          if (bioInput && primed.bio != null) {
+            bioInput.value = primed.bio;
+          }
+          var pdaPrime = String(primed.public_display_as || "username").toLowerCase();
+          var pdaRadiosPrime = form.querySelectorAll(
+            'input[name="public_display_as"]'
+          );
+          for (var pq = 0; pq < pdaRadiosPrime.length; pq++) {
+            pdaRadiosPrime[pq].checked =
+              pdaRadiosPrime[pq].value === pdaPrime;
+          }
+        }
+
+        var meR = await window.synodosAuth.apiFetch("/api/me", {});
+        if (!meR) {
+          return;
+        }
+        if (!meR.res.ok) {
           window.alert("Could not load your profile. Please try again.");
           return;
         }
-        var resFields = await fetch(API_BASE + "/api/profile-fields");
-        if (!resFields.ok) {
+        var fieldsR = await window.synodosAuth.apiFetch("/api/profile-fields", {});
+        if (!fieldsR || !fieldsR.res.ok) {
           window.alert("Could not load profile options from the server.");
           return;
         }
-        var meData;
-        var fieldsPayload;
-        try {
-          var parsed = await Promise.all([resMe.json(), resFields.json()]);
-          meData = parsed[0];
-          fieldsPayload = parsed[1];
-        } catch (parseErr) {
-          window.alert("Invalid response from the server. Is the API URL correct (see SYNODOS_API_BASE)?");
-          return;
-        }
+        var meData = meR.data;
+        var fieldsPayload = fieldsR.data;
         if (
           !fieldsPayload ||
           typeof fieldsPayload.fields !== "object" ||
@@ -417,6 +423,9 @@
 
         var u = meData.user || {};
         meSnapshot = u;
+        if (u && u.id != null) {
+          window.synodosAuth.setCachedMe(u);
+        }
         accountUsername = u.username ? String(u.username).trim() : "";
         if (displayInput && u.display_name) {
           displayInput.value = u.display_name;
@@ -460,9 +469,6 @@
         if (workTagsAddBtn) workTagsAddBtn.disabled = false;
         updateAddButtonState();
       } catch (err) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("Could not load profile.", err);
-        }
         window.alert(
           "Could not reach the server. Please try again."
         );
@@ -512,20 +518,22 @@
       if (submitBtn) submitBtn.disabled = true;
 
       try {
-        var res = await fetch(API_BASE + "/api/me", {
+        var patchR = await window.synodosAuth.apiFetch("/api/me", {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token,
-          },
+          headers: window.synodosAuth.authHeaders({ json: true }),
           body: JSON.stringify(payload),
         });
-        var data = await res.json().catch(function () {
-          return {};
-        });
+        if (!patchR) {
+          return;
+        }
+        var res = patchR.res;
+        var data = patchR.data;
         if (!res.ok) {
           showSaveStatus(false, data.error || res.statusText || "Could not save profile");
           return;
+        }
+        if (data.user) {
+          window.synodosAuth.setCachedMe(data.user);
         }
 
         if (flow === "setup") {
@@ -553,9 +561,6 @@
           showSaveStatus(true, "Profile saved. Your space is up to date.");
         }
       } catch (err) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("Backend not reachable.", err);
-        }
         window.alert(
           "Could not reach the server. Please try again."
         );
