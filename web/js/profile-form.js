@@ -48,57 +48,31 @@
     var avatarResetRequested = false;
     var tagRowCounter = 0;
     var accountUsername = "";
-
-    function showSvgPlaceholder() {
-      if (avatarImg) {
-        avatarImg.hidden = true;
-        avatarImg.removeAttribute("src");
-      }
-      if (avatarPh) avatarPh.hidden = false;
-      syncPreviewAvatarFromMain();
-    }
+    /** Last loaded `/api/me` user — used when resetting avatar before save. */
+    var meSnapshot = null;
 
     function showDefaultAvatar() {
       if (!avatarImg || !avatarPh) return;
-      var def = window.synodosAuth.getDefaultAvatarUrl();
-      function revealMainAvatar() {
-        avatarImg.hidden = false;
-        avatarPh.hidden = true;
-        syncPreviewAvatarFromMain();
-      }
-      avatarImg.onload = function () {
-        revealMainAvatar();
-      };
-      avatarImg.onerror = function () {
-        showSvgPlaceholder();
-      };
-      avatarImg.src = def;
-      if (avatarImg.complete && avatarImg.naturalWidth > 0) {
-        revealMainAvatar();
-      } else if (typeof avatarImg.decode === "function") {
-        avatarImg.decode().then(revealMainAvatar).catch(function () {});
-      }
+      var snap =
+        meSnapshot && typeof meSnapshot === "object"
+          ? meSnapshot
+          : { id: window.synodosAuth.getTokenUserId() };
+      window.synodosAuth.applyUserAvatar(
+        avatarImg,
+        avatarPh,
+        Object.assign({}, snap, { avatar_url: "" })
+      );
     }
 
-    function showImageSrc(src) {
+    function showLocalPickedAvatar(dataUrl) {
       if (!avatarImg || !avatarPh) return;
-      function revealMainAvatar() {
-        avatarImg.hidden = false;
-        avatarPh.hidden = true;
-        syncPreviewAvatarFromMain();
-      }
-      avatarImg.onload = function () {
-        revealMainAvatar();
-      };
-      avatarImg.onerror = function () {
-        showDefaultAvatar();
-      };
-      avatarImg.src = src;
-      if (avatarImg.complete && avatarImg.naturalWidth > 0) {
-        revealMainAvatar();
-      } else if (typeof avatarImg.decode === "function") {
-        avatarImg.decode().then(revealMainAvatar).catch(function () {});
-      }
+      window.synodosAuth.applyUserAvatar(
+        avatarImg,
+        avatarPh,
+        { avatar_url: String(dataUrl || "") },
+        { skipCacheWrite: true }
+      );
+      syncPreviewAvatarFromMain();
     }
 
     function syncPreviewAvatarFromMain() {
@@ -344,7 +318,7 @@
           if (typeof dataUrl !== "string") return;
           pendingAvatarDataUrl = dataUrl;
           avatarResetRequested = false;
-          showImageSrc(dataUrl);
+          showLocalPickedAvatar(dataUrl);
         };
         reader.readAsDataURL(f);
       });
@@ -356,6 +330,7 @@
         pendingAvatarDataUrl = null;
         avatarResetRequested = true;
         showDefaultAvatar();
+        syncPreviewAvatarFromMain();
       });
     }
 
@@ -441,6 +416,7 @@
         }
 
         var u = meData.user || {};
+        meSnapshot = u;
         accountUsername = u.username ? String(u.username).trim() : "";
         if (displayInput && u.display_name) {
           displayInput.value = u.display_name;
@@ -455,12 +431,13 @@
         }
 
         if (u.avatar_url && String(u.avatar_url).length > 0) {
-          showImageSrc(window.synodosAuth.assetUrl(String(u.avatar_url)));
+          window.synodosAuth.applyUserAvatar(avatarImg, avatarPh, u);
           avatarResetRequested = false;
           pendingAvatarDataUrl = null;
         } else {
           showDefaultAvatar();
         }
+        syncPreviewAvatarFromMain();
 
         clearWorkTagRows();
         var wtags = u.work_tags;
@@ -556,10 +533,14 @@
         } else {
           pendingAvatarDataUrl = null;
           avatarResetRequested = false;
-          if (data.user && data.user.avatar_url) {
-            showImageSrc(window.synodosAuth.assetUrl(String(data.user.avatar_url)));
-          } else {
-            showDefaultAvatar();
+          if (data.user) {
+            meSnapshot = data.user;
+            if (data.user.avatar_url) {
+              window.synodosAuth.applyUserAvatar(avatarImg, avatarPh, data.user);
+            } else {
+              showDefaultAvatar();
+            }
+            syncPreviewAvatarFromMain();
           }
           if (data.user && data.user.work_tags) {
             clearWorkTagRows();
@@ -583,6 +564,9 @@
       }
     });
 
+    if (avatarImg && avatarPh) {
+      window.synodosAuth.primeUserAvatar(avatarImg, avatarPh, {});
+    }
     load();
   }
 
