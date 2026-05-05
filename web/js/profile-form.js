@@ -11,7 +11,77 @@
   }
 
   var AVATAR_MAX_BYTES = 512 * 1024;
+  /** Max width/height before scaling down (keeps uploads small for the 512 KB cap). */
+  var AVATAR_MAX_EDGE = 1280;
   var WORK_TAGS_MAX = 12;
+
+  function dataUrlDecodedLength(dataUrl) {
+    var comma = dataUrl.indexOf(",");
+    if (comma < 0) return Infinity;
+    var b64 = dataUrl.slice(comma + 1);
+    var len = b64.length;
+    var pad = 0;
+    if (b64.endsWith("==")) pad = 2;
+    else if (b64.endsWith("=")) pad = 1;
+    return Math.floor((len * 3) / 4) - pad;
+  }
+
+  /**
+   * Resize and re-encode as JPEG so decoded size is <= maxBytes (for huge photos / PNGs).
+   * @param {File} file
+   * @param {number} maxEdge
+   * @param {number} maxBytes
+   * @param {function(string|null, string|null)} done — (err, dataUrl)
+   */
+  function compressImageFileToJpegDataUrl(file, maxEdge, maxBytes, done) {
+    var objUrl = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      URL.revokeObjectURL(objUrl);
+      var w = img.naturalWidth;
+      var h = img.naturalHeight;
+      if (!w || !h) {
+        done("Could not read image dimensions.", null);
+        return;
+      }
+      var scale = Math.min(1, maxEdge / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement("canvas");
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext("2d");
+      if (!ctx) {
+        done("Your browser cannot process this image.", null);
+        return;
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(img, 0, 0, cw, ch);
+      var q = 0.9;
+      var dataUrl = null;
+      for (var tries = 0; tries < 14; tries++) {
+        dataUrl = canvas.toDataURL("image/jpeg", q);
+        if (dataUrlDecodedLength(dataUrl) <= maxBytes) {
+          done(null, dataUrl);
+          return;
+        }
+        q -= 0.06;
+      }
+      done(
+        "This image is still too large after resizing (512 KB max). Try a smaller file.",
+        null
+      );
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(objUrl);
+      done(
+        "Could not read this image. Use JPEG, PNG, GIF, or WebP (not HEIC/SVG).",
+        null
+      );
+    };
+    img.src = objUrl;
+  }
 
   function getForm() {
     return document.getElementById("synodos-profile-form");
@@ -295,20 +365,71 @@
       avatarFile.addEventListener("change", function () {
         var f = avatarFile.files && avatarFile.files[0];
         if (!f) return;
-        if (f.size > AVATAR_MAX_BYTES) {
-          window.alert("Image must be at most 512 KB.");
+        var mime = (f.type || "").toLowerCase();
+        if (!mime.startsWith("image/")) {
+          window.alert("Choose an image file (JPEG, PNG, GIF, or WebP).");
           avatarFile.value = "";
           return;
         }
-        var reader = new FileReader();
-        reader.onload = function () {
-          var dataUrl = reader.result;
-          if (typeof dataUrl !== "string") return;
+        if (mime === "image/svg+xml") {
+          window.alert("SVG is not supported for profile photos. Use JPEG or PNG.");
+          avatarFile.value = "";
+          return;
+        }
+
+        function applyPick(dataUrl) {
+          if (dataUrlDecodedLength(dataUrl) > AVATAR_MAX_BYTES) {
+            window.alert(
+              "Image is still over 512 KB after processing. Try another file."
+            );
+            avatarFile.value = "";
+            return;
+          }
           pendingAvatarDataUrl = dataUrl;
           avatarResetRequested = false;
           showLocalPickedAvatar(dataUrl);
-        };
-        reader.readAsDataURL(f);
+        }
+
+        if (f.size <= AVATAR_MAX_BYTES) {
+          var reader = new FileReader();
+          reader.onload = function () {
+            var dataUrl = reader.result;
+            if (typeof dataUrl !== "string") return;
+            if (dataUrlDecodedLength(dataUrl) <= AVATAR_MAX_BYTES) {
+              applyPick(dataUrl);
+            } else {
+              compressImageFileToJpegDataUrl(
+                f,
+                AVATAR_MAX_EDGE,
+                AVATAR_MAX_BYTES,
+                function (err, out) {
+                  if (err) {
+                    window.alert(err);
+                    avatarFile.value = "";
+                    return;
+                  }
+                  applyPick(out);
+                }
+              );
+            }
+          };
+          reader.readAsDataURL(f);
+          return;
+        }
+
+        compressImageFileToJpegDataUrl(
+          f,
+          AVATAR_MAX_EDGE,
+          AVATAR_MAX_BYTES,
+          function (err, dataUrl) {
+            if (err) {
+              window.alert(err);
+              avatarFile.value = "";
+              return;
+            }
+            applyPick(dataUrl);
+          }
+        );
       });
     }
 
