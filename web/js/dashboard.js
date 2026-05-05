@@ -29,47 +29,7 @@
 
   function setDashboardAvatar(user) {
     if (!dashAvatarImg || !dashAvatarPh) return;
-    var pub =
-      user && user.public_display_label != null
-        ? String(user.public_display_label).trim()
-        : "";
-    var url = user && user.avatar_url ? String(user.avatar_url).trim() : "";
-    var alt = pub
-      ? "Avatar for " + pub
-      : user && user.display_name
-        ? "Avatar for " + String(user.display_name).trim()
-        : "Profile photo";
-    dashAvatarImg.alt = alt;
-    var tryUploadedFirst = url.length > 0;
-    function revealDashAvatar() {
-      dashAvatarImg.hidden = false;
-      dashAvatarPh.hidden = true;
-    }
-    function showDashSvgPlaceholder() {
-      dashAvatarImg.hidden = true;
-      dashAvatarImg.removeAttribute("src");
-      dashAvatarPh.hidden = false;
-    }
-    dashAvatarImg.onload = function () {
-      revealDashAvatar();
-    };
-    dashAvatarImg.onerror = function () {
-      if (tryUploadedFirst) {
-        tryUploadedFirst = false;
-        dashAvatarImg.src = window.synodosAuth.getDefaultAvatarUrl();
-      } else {
-        showDashSvgPlaceholder();
-      }
-    };
-    dashAvatarImg.src = tryUploadedFirst
-      ? window.synodosAuth.assetUrl(url)
-      : window.synodosAuth.getDefaultAvatarUrl();
-    /* Cached images may skip `load`; reveal when pixels are ready (`decode` or sync dimensions). */
-    if (dashAvatarImg.complete && dashAvatarImg.naturalWidth > 0) {
-      revealDashAvatar();
-    } else if (typeof dashAvatarImg.decode === "function") {
-      dashAvatarImg.decode().then(revealDashAvatar).catch(function () {});
-    }
+    window.synodosAuth.applyUserAvatar(dashAvatarImg, dashAvatarPh, user || {});
   }
 
   function showMsg(text, isError) {
@@ -551,6 +511,9 @@
   }
 
   async function init() {
+    if (dashAvatarImg && dashAvatarPh) {
+      window.synodosAuth.primeUserAvatar(dashAvatarImg, dashAvatarPh, {});
+    }
     var ok = await loadMe();
     if (!ok) return;
 

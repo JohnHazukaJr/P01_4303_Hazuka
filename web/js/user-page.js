@@ -28,44 +28,6 @@
       "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
-  function setAvatar(img, ph, user) {
-    if (!img || !ph) return;
-    var url = user && user.avatar_url ? String(user.avatar_url).trim() : "";
-    var alt =
-      user && user.public_display_label
-        ? "Avatar for " + user.public_display_label
-        : "Profile photo";
-    img.alt = alt;
-    var tryUploaded = url.length > 0;
-    function reveal() {
-      img.hidden = false;
-      ph.hidden = true;
-    }
-    function placeholder() {
-      img.hidden = true;
-      img.removeAttribute("src");
-      ph.hidden = false;
-    }
-    img.onload = function () {
-      reveal();
-    };
-    img.onerror = function () {
-      if (tryUploaded) {
-        tryUploaded = false;
-        img.src = window.synodosAuth.getDefaultAvatarUrl();
-      } else {
-        placeholder();
-      }
-    };
-    img.src = tryUploaded
-      ? window.synodosAuth.assetUrl(url)
-      : window.synodosAuth.getDefaultAvatarUrl();
-    if (img.complete && img.naturalWidth > 0) reveal();
-    else if (typeof img.decode === "function") {
-      img.decode().then(reveal).catch(function () {});
-    }
-  }
-
   async function openOrGetConversation(username) {
     var token = window.synodosAuth.getToken();
     if (!token) return null;
@@ -105,6 +67,14 @@
       if (loadingEl) loadingEl.hidden = true;
       showMsg(msgEl, "No user specified. Add ?u=username to the URL.", true);
       return;
+    }
+
+    var avatarImg = document.getElementById("user-page-avatar-img");
+    var avatarPh = document.getElementById("user-page-avatar-ph");
+    if (avatarImg && avatarPh) {
+      window.synodosAuth.primeUserAvatar(avatarImg, avatarPh, {
+        username: uname,
+      });
     }
 
     var meId = null;
@@ -203,11 +173,9 @@
       }
     }
 
-    setAvatar(
-      document.getElementById("user-page-avatar-img"),
-      document.getElementById("user-page-avatar-ph"),
-      user
-    );
+    if (avatarImg && avatarPh) {
+      window.synodosAuth.applyUserAvatar(avatarImg, avatarPh, user);
+    }
 
     var isSelf = meId != null && Number(user.id) === meId;
     var token = window.synodosAuth.getToken();

@@ -69,36 +69,6 @@ if (!process.env.JWT_SECRET) {
   );
 }
 
-// #region agent log
-const fs = require("fs");
-const DEBUG_SESSION = "374fbb";
-const DEBUG_LOG_FILE = path.join(__dirname, "..", "debug-374fbb.log");
-const DEBUG_INGEST =
-  "http://127.0.0.1:7727/ingest/2e0e05ed-2293-4597-b6c6-1abe56458da5";
-function agentDebug(entry) {
-  const payload = {
-    sessionId: DEBUG_SESSION,
-    timestamp: Date.now(),
-    ...entry,
-  };
-  const line = JSON.stringify(payload);
-  console.error("[debug-374fbb]", line);
-  try {
-    fs.appendFileSync(DEBUG_LOG_FILE, line + "\n", "utf8");
-  } catch (_) {}
-  try {
-    fetch(DEBUG_INGEST, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": DEBUG_SESSION,
-      },
-      body: line,
-    }).catch(() => {});
-  } catch (_) {}
-}
-// #endregion
-
 const requireAuth = createRequireAuth(db, JWT_SECRET);
 const optionalAuth = createOptionalAuth(db, JWT_SECRET);
 const isAdminUser = createIsAdmin(db);
@@ -175,14 +145,6 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, res) => {
-    // #region agent log
-    agentDebug({
-      hypothesisId: "H4",
-      location: "server/index.js:authLimiter",
-      message: "auth_rate_limited",
-      data: { path: _req.path },
-    });
-    // #endregion
     res.status(429).json({
       error: "Too many attempts. Try again in a few minutes.",
     });
@@ -335,19 +297,9 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
     return res.status(400).json({ error: "Password is required" });
   }
 
-  const loginByEmail = looksLikeEmail(raw);
-  // #region agent log
-  agentDebug({
-    hypothesisId: "H2",
-    location: "server/index.js:login",
-    message: "login_enter",
-    data: { idLen: raw.length, loginByEmail },
-  });
-  // #endregion
-
   try {
     var row;
-    if (loginByEmail) {
+    if (looksLikeEmail(raw)) {
       row = await db.get(
         "SELECT id, email, password_hash FROM users WHERE email = $1",
         [normalizeEmail(raw)]
@@ -359,31 +311,11 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
       );
     }
 
-    // #region agent log
-    agentDebug({
-      hypothesisId: "H3",
-      location: "server/index.js:login",
-      message: "login_lookup",
-      data: {
-        rowFound: !!row,
-        hasHash: !!(row && row.password_hash),
-      },
-    });
-    // #endregion
-
     if (
       !row ||
       row.password_hash == null ||
       String(row.password_hash).trim() === ""
     ) {
-      // #region agent log
-      agentDebug({
-        hypothesisId: "H3",
-        location: "server/index.js:login",
-        message: "login_outcome",
-        data: { status: 401, reason: "no_row_or_empty_hash" },
-      });
-      // #endregion
       return res
         .status(401)
         .json({ error: "Invalid email, username, or password" });
@@ -400,45 +332,18 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
       passwordOk = false;
     }
     if (!passwordOk) {
-      // #region agent log
-      agentDebug({
-        hypothesisId: "H3",
-        location: "server/index.js:login",
-        message: "login_outcome",
-        data: { status: 401, reason: "bad_password" },
-      });
-      // #endregion
       return res
         .status(401)
         .json({ error: "Invalid email, username, or password" });
     }
 
     const token = signUserToken(Number(row.id), row.email);
-    // #region agent log
-    agentDebug({
-      hypothesisId: "H5",
-      location: "server/index.js:login",
-      message: "login_outcome",
-      data: { status: 200, reason: "success" },
-    });
-    // #endregion
     return res.json({
       token,
       message: "Signed in.",
     });
   } catch (e) {
     console.error("[synodos] POST /api/auth/login failed", e);
-    // #region agent log
-    agentDebug({
-      hypothesisId: "H5",
-      location: "server/index.js:login",
-      message: "login_exception",
-      data: {
-        code: e && e.code,
-        connectivity: isDatabaseConnectivityError(e),
-      },
-    });
-    // #endregion
     if (isDatabaseConnectivityError(e)) {
       return res.status(503).json({
         error:
