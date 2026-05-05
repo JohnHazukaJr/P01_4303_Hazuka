@@ -34,12 +34,23 @@
    * @param {function(string|null, string|null)} done — (err, dataUrl)
    */
   function compressImageFileToJpegDataUrl(file, maxEdge, maxBytes, done) {
-    var objUrl = URL.createObjectURL(file);
-    var img = new Image();
-    img.onload = function () {
-      URL.revokeObjectURL(objUrl);
-      var w = img.naturalWidth;
-      var h = img.naturalHeight;
+    function finishCanvas(canvas) {
+      var q = 0.9;
+      for (var tries = 0; tries < 18; tries++) {
+        var dataUrl = canvas.toDataURL("image/jpeg", q);
+        if (dataUrlDecodedLength(dataUrl) <= maxBytes) {
+          done(null, dataUrl);
+          return;
+        }
+        q -= 0.05;
+      }
+      done(
+        "This image is still too large after resizing (512 KB max). Try a smaller file.",
+        null
+      );
+    }
+
+    function runWithDims(w, h, draw) {
       if (!w || !h) {
         done("Could not read image dimensions.", null);
         return;
@@ -57,30 +68,56 @@
       }
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, cw, ch);
-      ctx.drawImage(img, 0, 0, cw, ch);
-      var q = 0.9;
-      var dataUrl = null;
-      for (var tries = 0; tries < 14; tries++) {
-        dataUrl = canvas.toDataURL("image/jpeg", q);
-        if (dataUrlDecodedLength(dataUrl) <= maxBytes) {
-          done(null, dataUrl);
-          return;
-        }
-        q -= 0.06;
-      }
-      done(
-        "This image is still too large after resizing (512 KB max). Try a smaller file.",
-        null
-      );
-    };
-    img.onerror = function () {
-      URL.revokeObjectURL(objUrl);
-      done(
-        "Could not read this image. Use JPEG, PNG, GIF, or WebP (not HEIC/SVG).",
-        null
-      );
-    };
-    img.src = objUrl;
+      draw(ctx, cw, ch);
+      finishCanvas(canvas);
+    }
+
+    function loadWithImageElement() {
+      var objUrl = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(objUrl);
+        runWithDims(img.naturalWidth, img.naturalHeight, function (ctx, cw, ch) {
+          ctx.drawImage(img, 0, 0, cw, ch);
+        });
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(objUrl);
+        done(
+          "Could not read this image. Try JPEG or PNG, or convert HEIC to JPEG.",
+          null
+        );
+      };
+      img.src = objUrl;
+    }
+
+    /* Prefer createImageBitmap — decodes more reliably than Image() on some Windows/Edge paths. */
+    if (typeof createImageBitmap === "function") {
+      createImageBitmap(file)
+        .then(function (bitmap) {
+          try {
+            runWithDims(bitmap.width, bitmap.height, function (ctx, cw, ch) {
+              ctx.drawImage(bitmap, 0, 0, cw, ch);
+            });
+          } finally {
+            try {
+              bitmap.close();
+            } catch (_) {}
+          }
+        })
+        .catch(function () {
+          loadWithImageElement();
+        });
+      return;
+    }
+    loadWithImageElement();
+  }
+
+  function fileLooksLikeRasterImage(f) {
+    var mime = (f.type || "").toLowerCase();
+    if (mime.startsWith("image/")) return true;
+    /* Windows often leaves type empty; use extension. */
+    return /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i.test(f.name || "");
   }
 
   function getForm() {
@@ -366,12 +403,14 @@
         var f = avatarFile.files && avatarFile.files[0];
         if (!f) return;
         var mime = (f.type || "").toLowerCase();
-        if (!mime.startsWith("image/")) {
-          window.alert("Choose an image file (JPEG, PNG, GIF, or WebP).");
+        if (!fileLooksLikeRasterImage(f)) {
+          window.alert(
+            "Choose an image file (JPEG, PNG, GIF, or WebP). If you already did, try renaming to .jpg or convert the file — Windows sometimes hides the real type."
+          );
           avatarFile.value = "";
           return;
         }
-        if (mime === "image/svg+xml") {
+        if (mime === "image/svg+xml" || /\.svg$/i.test(f.name || "")) {
           window.alert("SVG is not supported for profile photos. Use JPEG or PNG.");
           avatarFile.value = "";
           return;
@@ -641,7 +680,18 @@
         var res = patchR.res;
         var data = patchR.data;
         if (!res.ok) {
-          showSaveStatus(false, data.error || res.statusText || "Could not save profile");
+          var saveErr = data && data.error;
+          if (!saveErr && res.status === 413) {
+            saveErr =
+              "Save request was too large. Try again with a smaller photo or compress the image first.";
+          }
+          if (!saveErr && res.status >= 500) {
+            saveErr = "Server error while saving. Check the API logs and your Supabase storage settings.";
+          }
+          showSaveStatus(
+            false,
+            saveErr || res.statusText || "Could not save profile"
+          );
           return;
         }
         if (data.user) {

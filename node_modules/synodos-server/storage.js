@@ -24,7 +24,62 @@ const AVATAR_MAX_BYTES = 512 * 1024;
 let cachedClient = null;
 
 function getBucket() {
-  return String(process.env.SUPABASE_AVATAR_BUCKET || "avatars");
+  return String(process.env.SUPABASE_AVATAR_BUCKET || "avatars").trim();
+}
+
+/**
+ * Ensure the avatar bucket exists (create public bucket if missing).
+ * Service-role clients can usually create buckets; some org policies block this — then the user must create it in the dashboard.
+ * @returns {Promise<{ ok: true } | { ok: false, error: string }>}
+ */
+async function ensureAvatarBucket(client, bucketName) {
+  const { data: buckets, error: listErr } = await client.storage.listBuckets();
+  if (listErr) {
+    return {
+      ok: false,
+      error:
+        (listErr.message || "Could not access Storage") +
+        " — Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (Settings → API → service_role).",
+    };
+  }
+  const exists = (buckets || []).some(function (b) {
+    return b && b.name === bucketName;
+  });
+  if (exists) {
+    return { ok: true };
+  }
+
+  const { error: createErr } = await client.storage.createBucket(bucketName, {
+    public: true,
+  });
+  if (!createErr) {
+    return { ok: true };
+  }
+  const msg = String(createErr.message || "");
+  if (/already exists|duplicate/i.test(msg)) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    error:
+      msg +
+      ' — In Supabase: open **Storage** → **New bucket** → name it **' +
+      bucketName +
+      "** → enable **Public bucket** → Create. Or set `SUPABASE_AVATAR_BUCKET` in `.env` to a bucket you already created.",
+  };
+}
+
+function formatStorageError(bucket, upErr) {
+  const raw = (upErr && upErr.message) || "Avatar upload failed";
+  if (/bucket not found|not found|does not exist/i.test(raw)) {
+    return (
+      raw +
+      ' — Create a **public** Storage bucket named **' +
+      bucket +
+      "** (Supabase dashboard → Storage → New bucket), or set `SUPABASE_AVATAR_BUCKET` to match your bucket name, then restart the API."
+    );
+  }
+  return raw;
 }
 
 function getClient() {
@@ -79,6 +134,19 @@ async function uploadAvatar(userId, buffer, mime) {
   }
 
   const bucket = getBucket();
+  if (!bucket) {
+    return {
+      ok: false,
+      error:
+        "SUPABASE_AVATAR_BUCKET is empty. Set it in server/.env (e.g. SUPABASE_AVATAR_BUCKET=avatars).",
+    };
+  }
+
+  const ensured = await ensureAvatarBucket(client, bucket);
+  if (!ensured.ok) {
+    return { ok: false, error: ensured.error };
+  }
+
   const newKey = avatarKey(userId, ext);
 
   const stalePeers = allAvatarKeys(userId).filter(function (k) {
@@ -102,7 +170,7 @@ async function uploadAvatar(userId, buffer, mime) {
   if (upErr) {
     return {
       ok: false,
-      error: upErr.message || "Avatar upload failed",
+      error: formatStorageError(bucket, upErr),
     };
   }
 
