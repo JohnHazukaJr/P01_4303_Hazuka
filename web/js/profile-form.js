@@ -34,13 +34,11 @@
     var avatarChoose = document.getElementById("avatar_choose");
     var avatarDefault = document.getElementById("avatar_default");
     var avatarImg = document.getElementById("profile-avatar-img");
-    var avatarPh = document.getElementById("profile-avatar-placeholder");
     var saveStatus = document.getElementById("profile-save-status");
     var previewName = document.getElementById("preview-display-name");
     var previewBio = document.getElementById("preview-bio");
     var previewTagsList = document.getElementById("preview-tags-list");
     var previewAvatarImg = document.getElementById("preview-avatar-img");
-    var previewAvatarPh = document.getElementById("preview-avatar-placeholder");
 
     var fieldsCatalog = null;
     var pendingAvatarDataUrl = null;
@@ -51,23 +49,23 @@
     var meSnapshot = null;
 
     function showDefaultAvatar() {
-      if (!avatarImg || !avatarPh) return;
+      if (!avatarImg) return;
       var snap =
         meSnapshot && typeof meSnapshot === "object"
           ? meSnapshot
           : { id: window.synodosAuth.getTokenUserId() };
       window.synodosAuth.applyUserAvatar(
         avatarImg,
-        avatarPh,
+        null,
         Object.assign({}, snap, { avatar_url: "" })
       );
     }
 
     function showLocalPickedAvatar(dataUrl) {
-      if (!avatarImg || !avatarPh) return;
+      if (!avatarImg) return;
       window.synodosAuth.applyUserAvatar(
         avatarImg,
-        avatarPh,
+        null,
         { avatar_url: String(dataUrl || "") },
         { skipCacheWrite: true }
       );
@@ -75,28 +73,19 @@
     }
 
     function syncPreviewAvatarFromMain() {
-      if (!previewAvatarImg || !previewAvatarPh) return;
-      /* Mirror main whenever it has a src. Do not require main to be visible: while the
-       * image is still loading it may stay `hidden`; the old `!hidden` check combined with
-       * updateLivePreview() reset the preview to the default icon on every keystroke. */
+      if (!previewAvatarImg) return;
       if (avatarImg && avatarImg.getAttribute("src")) {
-        function revealPreviewAvatar() {
-          previewAvatarImg.hidden = false;
-          previewAvatarPh.hidden = true;
-        }
-        previewAvatarImg.onload = function () {
-          revealPreviewAvatar();
-        };
+        previewAvatarImg.onload = function () {};
         previewAvatarImg.src = avatarImg.src;
+        previewAvatarImg.removeAttribute("hidden");
         if (previewAvatarImg.complete && previewAvatarImg.naturalWidth > 0) {
-          revealPreviewAvatar();
+          /* ok */
         } else if (typeof previewAvatarImg.decode === "function") {
-          previewAvatarImg.decode().then(revealPreviewAvatar).catch(function () {});
+          previewAvatarImg.decode().catch(function () {});
         }
       } else {
-        previewAvatarImg.hidden = true;
-        previewAvatarImg.removeAttribute("src");
-        previewAvatarPh.hidden = false;
+        previewAvatarImg.src = window.synodosAuth.getDefaultAvatarUrl();
+        previewAvatarImg.removeAttribute("hidden");
       }
     }
 
@@ -440,7 +429,7 @@
         }
 
         if (u.avatar_url && String(u.avatar_url).length > 0) {
-          window.synodosAuth.applyUserAvatar(avatarImg, avatarPh, u);
+          window.synodosAuth.applyUserAvatar(avatarImg, null, u);
           avatarResetRequested = false;
           pendingAvatarDataUrl = null;
         } else {
@@ -544,7 +533,7 @@
           if (data.user) {
             meSnapshot = data.user;
             if (data.user.avatar_url) {
-              window.synodosAuth.applyUserAvatar(avatarImg, avatarPh, data.user);
+              window.synodosAuth.applyUserAvatar(avatarImg, null, data.user);
             } else {
               showDefaultAvatar();
             }
@@ -569,8 +558,8 @@
       }
     });
 
-    if (avatarImg && avatarPh) {
-      window.synodosAuth.primeUserAvatar(avatarImg, avatarPh, {});
+    if (avatarImg) {
+      window.synodosAuth.primeUserAvatar(avatarImg, null, {});
     }
     load();
   }

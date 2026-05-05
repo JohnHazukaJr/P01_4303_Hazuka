@@ -50,9 +50,8 @@
     }
 
     var avatarImg = document.getElementById("user-page-avatar-img");
-    var avatarPh = document.getElementById("user-page-avatar-ph");
-    if (avatarImg && avatarPh) {
-      window.synodosAuth.primeUserAvatar(avatarImg, avatarPh, {
+    if (avatarImg) {
+      window.synodosAuth.primeUserAvatar(avatarImg, null, {
         username: uname,
       });
     }
@@ -153,8 +152,8 @@
       }
     }
 
-    if (avatarImg && avatarPh) {
-      window.synodosAuth.applyUserAvatar(avatarImg, avatarPh, user);
+    if (avatarImg) {
+      window.synodosAuth.applyUserAvatar(avatarImg, null, user);
     }
 
     var isSelf = meId != null && Number(user.id) === meId;

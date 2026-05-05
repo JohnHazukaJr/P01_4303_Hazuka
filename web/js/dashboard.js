@@ -11,7 +11,10 @@
 
   var displayNameEl = document.getElementById("dashboard-display-name");
   var dashAvatarImg = document.getElementById("dashboard-avatar-img");
-  var dashAvatarPh = document.getElementById("dashboard-avatar-placeholder");
+  var dashMenuAvatarImg = document.getElementById("dashboard-menu-avatar-img");
+  var userMenuBtn = document.getElementById("dashboard-user-menu-btn");
+  var userMenuDropdown = document.getElementById("dashboard-user-menu-dropdown");
+  var userMenuOpen = false;
   var outBtn = document.getElementById("dashboard-sign-out");
   var projectsRoot = document.getElementById("projects-root");
   var projectsEmpty = document.getElementById("projects-empty");
@@ -27,8 +30,40 @@
   var cachedProjects = [];
 
   function setDashboardAvatar(user) {
-    if (!dashAvatarImg || !dashAvatarPh) return;
-    window.synodosAuth.applyUserAvatar(dashAvatarImg, dashAvatarPh, user || {});
+    if (dashAvatarImg) {
+      window.synodosAuth.applyUserAvatar(dashAvatarImg, null, user || {});
+    }
+    if (dashMenuAvatarImg) {
+      window.synodosAuth.applyUserAvatar(dashMenuAvatarImg, null, user || {});
+    }
+  }
+
+  function setUserMenuOpen(open) {
+    userMenuOpen = open;
+    if (userMenuDropdown) {
+      userMenuDropdown.hidden = !open;
+    }
+    if (userMenuBtn) {
+      userMenuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+  }
+
+  function bindUserMenu() {
+    if (!userMenuBtn || !userMenuDropdown) return;
+    userMenuBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      setUserMenuOpen(!userMenuOpen);
+    });
+    userMenuDropdown.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+    document.addEventListener("click", function () {
+      if (userMenuOpen) setUserMenuOpen(false);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && userMenuOpen) setUserMenuOpen(false);
+    });
   }
 
   function showMsg(text, isError) {
@@ -531,8 +566,12 @@
   }
 
   async function init() {
-    if (dashAvatarImg && dashAvatarPh) {
-      window.synodosAuth.primeUserAvatar(dashAvatarImg, dashAvatarPh, {});
+    bindUserMenu();
+    if (dashAvatarImg) {
+      window.synodosAuth.primeUserAvatar(dashAvatarImg, null, {});
+    }
+    if (dashMenuAvatarImg) {
+      window.synodosAuth.primeUserAvatar(dashMenuAvatarImg, null, {});
     }
     var ok = await loadMe();
     if (!ok) return;
