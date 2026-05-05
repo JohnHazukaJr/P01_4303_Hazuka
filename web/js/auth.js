@@ -11,6 +11,25 @@
     String(win.SYNODOS_API_BASE).trim();
 
   var AVATAR_MAP_KEY = "synodos_avatar_url_map";
+  var ME_CACHE_KEY = "synodos_me_v1";
+
+  function clearMeCache() {
+    try {
+      sessionStorage.removeItem(ME_CACHE_KEY);
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function readMeCacheRaw() {
+    try {
+      var raw = sessionStorage.getItem(ME_CACHE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
 
   function readAvatarMap() {
     try {
@@ -147,6 +166,7 @@
         /* ignore */
       }
       clearAvatarSessionMap();
+      clearMeCache();
     },
     touchActivity: function () {
       try {
@@ -178,6 +198,111 @@
       if (win && win.location) {
         win.location.href = "login.html";
       }
+    },
+    /**
+     * Headers for JSON APIs. Pass `{ json: true }` for `Content-Type: application/json`.
+     */
+    authHeaders: function (opts) {
+      opts = opts || {};
+      var h = {};
+      var t = this.getToken();
+      if (t) {
+        h.Authorization = "Bearer " + t;
+      }
+      if (opts.json) {
+        h["Content-Type"] = "application/json";
+      }
+      return h;
+    },
+    /**
+     * `fetch(apiBase + path)` with safe JSON body parse.
+     * On 401, calls `handleUnauthorized()` and returns `null` unless `skipUnauthorized: true`.
+     * Use `skipAuth: true` for unauthenticated requests.
+     */
+    apiFetch: async function (path, opts) {
+      var auth = this;
+      opts = opts || {};
+      var base = String(auth.apiBase || "").trim();
+      if (!base) {
+        base = "http://localhost:8080";
+      }
+      var p = String(path || "");
+      if (!p.startsWith("/")) {
+        p = "/" + p;
+      }
+      var url = base.replace(/\/+$/, "") + p;
+      var headers = Object.assign({}, opts.headers || {});
+      if (!opts.skipAuth) {
+        var tok = auth.getToken();
+        if (tok) {
+          headers.Authorization = "Bearer " + tok;
+        }
+      }
+      var fetchOpts = {
+        method: opts.method || "GET",
+        headers: headers,
+        body: opts.body,
+        credentials: opts.credentials,
+        signal: opts.signal,
+      };
+      var res = await fetch(url, fetchOpts);
+      var data = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        data = {};
+      }
+      if (
+        res.status === 401 &&
+        !opts.skipUnauthorized &&
+        typeof auth.handleUnauthorized === "function"
+      ) {
+        auth.handleUnauthorized();
+        return null;
+      }
+      return { res: res, data: data };
+    },
+    /** Cached `/api/me` user for this JWT (same-tab session); null if stale or missing. */
+    getCachedMe: function () {
+      var token = this.getToken();
+      if (!token) return null;
+      var sub = this.getTokenUserId();
+      if (sub == null) return null;
+      var row = readMeCacheRaw();
+      if (!row || !row.user || row.user.id == null) return null;
+      if (Number(row.user.id) !== Number(sub)) return null;
+      return row.user;
+    },
+    /** Store a subset of `user` from GET/PATCH `/api/me` for instant paint on next navigation. */
+    setCachedMe: function (user) {
+      if (!user || user.id == null) return;
+      try {
+        sessionStorage.setItem(
+          ME_CACHE_KEY,
+          JSON.stringify({
+            user: {
+              id: user.id,
+              username: user.username,
+              display_name: user.display_name,
+              public_display_label: user.public_display_label,
+              public_display_as: user.public_display_as,
+              profile_complete: user.profile_complete,
+              work_tags: user.work_tags,
+              avatar_url: user.avatar_url,
+              bio: user.bio,
+            },
+          })
+        );
+      } catch (e) {
+        /* ignore */
+      }
+    },
+    clearCachedMe: function () {
+      clearMeCache();
+    },
+    /** Alias for `getCachedMe()` — synchronous “prime” before fetch completes. */
+    primeMe: function () {
+      return this.getCachedMe();
     },
     /**
      * Show the correct avatar on an <img> + placeholder pair; update session avatar cache

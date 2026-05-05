@@ -92,24 +92,12 @@
                 <span class="profile-section__step" aria-hidden="true">2</span>
                 <h2 id="sec-photo" class="profile-section__title">Photo</h2>
               </div>
-              <p class="profile-section__help">Optional. Add a photo or keep the default classical avatar (olive wreath).</p>
+              <p class="profile-section__help">Optional. Add a photo or use the default profile image.</p>
               <fieldset class="profile-avatar-fieldset">
                 <legend class="visually-hidden">Profile photo</legend>
                 <div class="profile-avatar-row">
                   <div class="profile-avatar-preview" id="profile-avatar-preview-wrap" aria-live="polite">
-                    <img class="profile-avatar-img" id="profile-avatar-img" alt="" width="96" height="96" hidden>
-                    <span class="profile-avatar-placeholder" id="profile-avatar-placeholder" aria-hidden="true">
-                      <svg class="profile-avatar-default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M14 30c10-18 42-18 52 0" />
-                        <path d="M18 28c8-12 36-12 44 0" />
-                        <path d="M16 26l-6-8M24 21l-3-9M40 20v-9M56 21l3-9M64 26l6-8" />
-                        <circle cx="28" cy="26" r="2.8" fill="currentColor" stroke="none" />
-                        <circle cx="40" cy="22" r="2.8" fill="currentColor" stroke="none" />
-                        <circle cx="52" cy="26" r="2.8" fill="currentColor" stroke="none" />
-                        <ellipse cx="40" cy="48" rx="15" ry="17" />
-                        <path d="M22 62c2 12 36 12 38 0" />
-                      </svg>
-                    </span>
+                    <img class="profile-avatar-img" id="profile-avatar-img" alt="" width="96" height="96" src="images/default-avatar.png">
                   </div>
                   <div class="profile-avatar-actions">
                     <input type="file" id="avatar_file" class="visually-hidden" accept="image/jpeg,image/png,image/gif,image/webp" tabindex="-1" aria-label="Choose profile photo file">
@@ -169,19 +157,7 @@
             <p class="synodos-space-card__hint">Updates as you type — this is how others roughly see your card.</p>
             <div class="synodos-space-card__hero">
               <div class="profile-avatar-preview profile-avatar-preview--lg" aria-hidden="true">
-                <img class="profile-avatar-img" id="preview-avatar-img" alt="" width="120" height="120" hidden>
-                <span class="profile-avatar-placeholder" id="preview-avatar-placeholder" aria-hidden="true">
-                  <svg class="profile-avatar-default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M14 30c10-18 42-18 52 0" />
-                    <path d="M18 28c8-12 36-12 44 0" />
-                    <path d="M16 26l-6-8M24 21l-3-9M40 20v-9M56 21l3-9M64 26l6-8" />
-                    <circle cx="28" cy="26" r="2.8" fill="currentColor" stroke="none" />
-                    <circle cx="40" cy="22" r="2.8" fill="currentColor" stroke="none" />
-                    <circle cx="52" cy="26" r="2.8" fill="currentColor" stroke="none" />
-                    <ellipse cx="40" cy="48" rx="15" ry="17" />
-                    <path d="M22 62c2 12 36 12 38 0" />
-                  </svg>
-                </span>
+                <img class="profile-avatar-img" id="preview-avatar-img" alt="" width="120" height="120" src="images/default-avatar.png">
               </div>
               <h3 class="synodos-space-card__name" id="preview-display-name">Your name</h3>
               <ul class="synodos-space-card__tags synodos-space-card__tags--list" id="preview-tags-list" aria-label="Your fields"></ul>

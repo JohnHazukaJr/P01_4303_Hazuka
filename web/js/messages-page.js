@@ -1,10 +1,5 @@
 /** DM inbox. Requires auth.js. */
 (function () {
-  var API_BASE =
-    window.synodosAuth && window.synodosAuth.apiBase
-      ? window.synodosAuth.apiBase
-      : "http://localhost:8080";
-
   var token = null;
   var myUserId = null;
   var activeConvId = null;
@@ -16,13 +11,6 @@
     msgEl.hidden = !text;
     msgEl.className =
       "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
-  }
-
-  function authHeaders(json) {
-    var h = {};
-    if (json) h["Content-Type"] = "application/json";
-    if (token) h.Authorization = "Bearer " + token;
-    return h;
   }
 
   function parseConvIdFromQuery() {
@@ -39,21 +27,29 @@
   }
 
   async function loadMe() {
-    var res = await fetch(API_BASE + "/api/me", {
-      headers: authHeaders(false),
-    });
-    if (!res.ok) {
-      if (res.status === 401) {
-        window.synodosAuth.handleUnauthorized();
-        return false;
-      }
+    var cached = window.synodosAuth.getCachedMe();
+    if (cached && cached.profile_complete === false) {
+      window.location.href = "profile-setup.html";
+      return false;
+    }
+    if (cached && cached.id != null) {
+      myUserId = Number(cached.id);
+    }
+    var result = await window.synodosAuth.apiFetch("/api/me", {});
+    if (!result) {
+      return false;
+    }
+    if (!result.res.ok) {
       showMsg("Could not load your account. Please try again.", true);
       return false;
     }
-    var data = await res.json();
+    var data = result.data;
     if (data.user && !data.user.profile_complete) {
       window.location.href = "profile-setup.html";
       return false;
+    }
+    if (data.user) {
+      window.synodosAuth.setCachedMe(data.user);
     }
     myUserId = data.user && data.user.id != null ? Number(data.user.id) : null;
     return true;
@@ -86,19 +82,17 @@
     var listEl = document.getElementById("messages-conv-list");
     var emptyEl = document.getElementById("messages-conv-empty");
     if (!listEl) return [];
-    var res = await fetch(API_BASE + "/api/conversations", {
-      headers: authHeaders(false),
-    });
+    var convResult = await window.synodosAuth.apiFetch("/api/conversations", {});
+    if (!convResult) {
+      return [];
+    }
+    var res = convResult.res;
+    var data = convResult.data;
     if (!res.ok) {
-      if (res.status === 401) {
-        window.synodosAuth.handleUnauthorized();
-        return [];
-      }
       showMsg("Could not load conversations. Please refresh.", true);
       if (emptyEl) emptyEl.hidden = true;
       return [];
     }
-    var data = await res.json();
     var convs = data.conversations || [];
     listEl.innerHTML = "";
     if (emptyEl) emptyEl.hidden = convs.length > 0;
@@ -133,16 +127,17 @@
     var wrap = document.getElementById("messages-bubble-wrap");
     if (!wrap) return;
     wrap.innerHTML = "";
-    var res = await fetch(
-      API_BASE +
-        "/api/conversations/" +
+    var msgResult = await window.synodosAuth.apiFetch(
+      "/api/conversations/" +
         encodeURIComponent(String(convId)) +
         "/messages?limit=80",
-      { headers: authHeaders(false) }
+      {}
     );
-    var data = await res.json().catch(function () {
-      return {};
-    });
+    if (!msgResult) {
+      return;
+    }
+    var res = msgResult.res;
+    var data = msgResult.data;
     if (!res.ok) {
       showMsg(data.error || "Could not load messages", true);
       return;
@@ -207,20 +202,21 @@
         var body = ta ? String(ta.value || "").trim() : "";
         if (!body) return;
         showMsg("", false);
-        var res = await fetch(
-          API_BASE +
-            "/api/conversations/" +
+        var sendResult = await window.synodosAuth.apiFetch(
+          "/api/conversations/" +
             encodeURIComponent(String(activeConvId)) +
             "/messages",
           {
             method: "POST",
-            headers: authHeaders(true),
+            headers: window.synodosAuth.authHeaders({ json: true }),
             body: JSON.stringify({ body: body }),
           }
         );
-        var data = await res.json().catch(function () {
-          return {};
-        });
+        if (!sendResult) {
+          return;
+        }
+        var res = sendResult.res;
+        var data = sendResult.data;
         if (!res.ok) {
           showMsg(data.error || "Could not send", true);
           return;

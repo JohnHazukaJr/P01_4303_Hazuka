@@ -50,10 +50,14 @@ const {
   isValidWorkField,
   isValidWorkSubfield,
   profileFieldsPayload,
-  enrichTag,
 } = require("./profileFields");
 const { publicDisplayLabel } = require("./displayLabel");
 const { registerAdminRoutes, createIsAdmin } = require("./routes/admin");
+const {
+  loadUserProfileRow,
+  loadUserWorkTags,
+  profileCompleteFromRow,
+} = require("./userQueries");
 
 const app = express();
 /* Respect X-Forwarded-For when behind Render/reverse proxy (rate limit + logs). */
@@ -75,18 +79,6 @@ const isAdminUser = createIsAdmin(db);
 
 const WORK_TAGS_MIN = 1;
 const WORK_TAGS_MAX = 12;
-
-async function loadUserWorkTags(userId) {
-  var rows = await db.all(
-    "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = $1 ORDER BY id ASC",
-    [userId]
-  );
-  var out = [];
-  for (var i = 0; i < rows.length; i++) {
-    out.push(enrichTag(rows[i].work_field, rows[i].work_subfield));
-  }
-  return out;
-}
 
 function signUserToken(userId, email) {
   return jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: "7d" });
@@ -277,6 +269,12 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
         .json({ error: "That email or username is already registered" });
     }
     console.error(e);
+    if (isDatabaseConnectivityError(e)) {
+      return res.status(503).json({
+        error:
+          "The server could not reach the database. On the host, check DATABASE_URL (use Supabase transaction pooler, port 6543, and the real DB password).",
+      });
+    }
     return res.status(500).json({ error: "Could not create account" });
   }
 });
@@ -384,30 +382,6 @@ async function saveAvatarFromDataUrl(userId, dataUrl) {
   return { ok: true, url: saved.url + "?v=" + Date.now() };
 }
 
-function profileCompleteFromRow(row, tags) {
-  var dnOk = String(row.display_name || "").trim().length >= 2;
-  if (!dnOk) return false;
-  if (tags && tags.length > 0) {
-    for (var i = 0; i < tags.length; i++) {
-      var t = tags[i];
-      if (
-        isValidWorkField(t.work_field) &&
-        isValidWorkSubfield(t.work_field, t.work_subfield)
-      ) {
-        return true;
-      }
-    }
-  }
-  var wf = String(row.work_field || "").trim();
-  var ws = String(row.work_subfield || "").trim();
-  return (
-    wf.length > 0 &&
-    ws.length > 0 &&
-    isValidWorkField(wf) &&
-    isValidWorkSubfield(wf, ws)
-  );
-}
-
 function userPayload(row, tags) {
   tags = tags || [];
   var displayName = row.display_name != null ? String(row.display_name) : "";
@@ -447,14 +421,11 @@ app.get("/api/profile-fields", (_req, res) => {
 });
 
 app.get("/api/me", requireAuth, async (req, res) => {
-  var row = await db.get(
-    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account FROM users WHERE id = $1",
-    [req.user.id]
-  );
+  var row = await loadUserProfileRow(db, req.user.id);
   if (!row) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  var tags = await loadUserWorkTags(req.user.id);
+  var tags = await loadUserWorkTags(db, req.user.id);
   res.json({ user: userPayload(row, tags) });
 });
 
@@ -575,10 +546,7 @@ app.patch("/api/me", requireAuth, async (req, res) => {
     nextPublicDisplayAs = pda;
   }
 
-  var row = await db.get(
-    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account FROM users WHERE id = $1",
-    [req.user.id]
-  );
+  var row = await loadUserProfileRow(db, req.user.id);
   if (!row) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -636,11 +604,8 @@ app.patch("/api/me", requireAuth, async (req, res) => {
     [nextDisplay, nextBio, nextAvatarUrl, nextWf, nextWs, nextPda, req.user.id]
   );
 
-  var updated = await db.get(
-    "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account FROM users WHERE id = $1",
-    [req.user.id]
-  );
-  var outTags = await loadUserWorkTags(req.user.id);
+  var updated = await loadUserProfileRow(db, req.user.id);
+  var outTags = await loadUserWorkTags(db, req.user.id);
   res.json({ user: userPayload(updated, outTags) });
 });
 

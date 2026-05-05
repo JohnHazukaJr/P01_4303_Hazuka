@@ -1,18 +1,9 @@
 const express = require("express");
 const { normalizeUsername } = require("../db");
 const { publicDisplayLabel } = require("../displayLabel");
+const { parseId, parseCursor } = require("../routeUtils");
 
 const DM_BODY_MAX = 8000;
-
-function parseId(param) {
-  const n = Number(param);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-function parseCursor(raw) {
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
 
 async function findPairConversationId(db, userA, userB) {
   const a = Math.min(userA, userB);

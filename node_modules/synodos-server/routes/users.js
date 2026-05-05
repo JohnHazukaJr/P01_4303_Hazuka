@@ -1,51 +1,12 @@
 const express = require("express");
 const { normalizeUsername } = require("../db");
-const {
-  enrichTag,
-  isValidWorkField,
-  isValidWorkSubfield,
-} = require("../profileFields");
 const { publicDisplayLabel } = require("../displayLabel");
 const { insertFeedEvent, EVENT_TYPES } = require("../feedEvents");
-
-function loadUserWorkTags(db, userId) {
-  return db
-    .all(
-      "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = $1 ORDER BY id ASC",
-      [userId]
-    )
-    .then(function (rows) {
-      const out = [];
-      for (let i = 0; i < rows.length; i++) {
-        out.push(enrichTag(rows[i].work_field, rows[i].work_subfield));
-      }
-      return out;
-    });
-}
-
-function profileCompleteFromRow(row, tags) {
-  const dnOk = String(row.display_name || "").trim().length >= 2;
-  if (!dnOk) return false;
-  if (tags && tags.length > 0) {
-    for (let i = 0; i < tags.length; i++) {
-      const t = tags[i];
-      if (
-        isValidWorkField(t.work_field) &&
-        isValidWorkSubfield(t.work_field, t.work_subfield)
-      ) {
-        return true;
-      }
-    }
-  }
-  const wf = String(row.work_field || "").trim();
-  const ws = String(row.work_subfield || "").trim();
-  return (
-    wf.length > 0 &&
-    ws.length > 0 &&
-    isValidWorkField(wf) &&
-    isValidWorkSubfield(wf, ws)
-  );
-}
+const {
+  loadUserWorkTags,
+  profileCompleteFromRow,
+  sqlSelectUserProfileByUsername,
+} = require("../userQueries");
 
 /**
  * @param {{ db: object, requireAuth: function, optionalAuth: function }} deps
@@ -59,11 +20,7 @@ function createUsersRouter(deps) {
     if (!uname) {
       return res.status(404).json({ error: "Not found" });
     }
-    const row = await db.get(
-      `SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account
-       FROM users WHERE username = $1`,
-      [uname]
-    );
+    const row = await db.get(sqlSelectUserProfileByUsername(), [uname]);
     if (!row) {
       return res.status(404).json({ error: "Not found" });
     }

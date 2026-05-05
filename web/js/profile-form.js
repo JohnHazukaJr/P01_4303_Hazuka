@@ -10,7 +10,6 @@
     return;
   }
 
-  var API_BASE = window.synodosAuth.apiBase;
   var AVATAR_MAX_BYTES = 512 * 1024;
   var WORK_TAGS_MAX = 12;
 
@@ -35,13 +34,11 @@
     var avatarChoose = document.getElementById("avatar_choose");
     var avatarDefault = document.getElementById("avatar_default");
     var avatarImg = document.getElementById("profile-avatar-img");
-    var avatarPh = document.getElementById("profile-avatar-placeholder");
     var saveStatus = document.getElementById("profile-save-status");
     var previewName = document.getElementById("preview-display-name");
     var previewBio = document.getElementById("preview-bio");
     var previewTagsList = document.getElementById("preview-tags-list");
     var previewAvatarImg = document.getElementById("preview-avatar-img");
-    var previewAvatarPh = document.getElementById("preview-avatar-placeholder");
 
     var fieldsCatalog = null;
     var pendingAvatarDataUrl = null;
@@ -52,23 +49,23 @@
     var meSnapshot = null;
 
     function showDefaultAvatar() {
-      if (!avatarImg || !avatarPh) return;
+      if (!avatarImg) return;
       var snap =
         meSnapshot && typeof meSnapshot === "object"
           ? meSnapshot
           : { id: window.synodosAuth.getTokenUserId() };
       window.synodosAuth.applyUserAvatar(
         avatarImg,
-        avatarPh,
+        null,
         Object.assign({}, snap, { avatar_url: "" })
       );
     }
 
     function showLocalPickedAvatar(dataUrl) {
-      if (!avatarImg || !avatarPh) return;
+      if (!avatarImg) return;
       window.synodosAuth.applyUserAvatar(
         avatarImg,
-        avatarPh,
+        null,
         { avatar_url: String(dataUrl || "") },
         { skipCacheWrite: true }
       );
@@ -76,28 +73,19 @@
     }
 
     function syncPreviewAvatarFromMain() {
-      if (!previewAvatarImg || !previewAvatarPh) return;
-      /* Mirror main whenever it has a src. Do not require main to be visible: while the
-       * image is still loading it may stay `hidden`; the old `!hidden` check combined with
-       * updateLivePreview() reset the preview to the default icon on every keystroke. */
+      if (!previewAvatarImg) return;
       if (avatarImg && avatarImg.getAttribute("src")) {
-        function revealPreviewAvatar() {
-          previewAvatarImg.hidden = false;
-          previewAvatarPh.hidden = true;
-        }
-        previewAvatarImg.onload = function () {
-          revealPreviewAvatar();
-        };
+        previewAvatarImg.onload = function () {};
         previewAvatarImg.src = avatarImg.src;
+        previewAvatarImg.removeAttribute("hidden");
         if (previewAvatarImg.complete && previewAvatarImg.naturalWidth > 0) {
-          revealPreviewAvatar();
+          /* ok */
         } else if (typeof previewAvatarImg.decode === "function") {
-          previewAvatarImg.decode().then(revealPreviewAvatar).catch(function () {});
+          previewAvatarImg.decode().catch(function () {});
         }
       } else {
-        previewAvatarImg.hidden = true;
-        previewAvatarImg.removeAttribute("src");
-        previewAvatarPh.hidden = false;
+        previewAvatarImg.src = window.synodosAuth.getDefaultAvatarUrl();
+        previewAvatarImg.removeAttribute("hidden");
       }
     }
 
@@ -372,32 +360,39 @@
         return;
       }
       try {
-        var resMe = await fetch(API_BASE + "/api/me", {
-          headers: { Authorization: "Bearer " + token },
-        });
-        if (!resMe.ok) {
-          if (resMe.status === 401) {
-            window.synodosAuth.handleUnauthorized();
-            return;
+        var primed = window.synodosAuth.getCachedMe();
+        if (primed) {
+          if (displayInput && primed.display_name) {
+            displayInput.value = primed.display_name;
           }
+          if (bioInput && primed.bio != null) {
+            bioInput.value = primed.bio;
+          }
+          var pdaPrime = String(primed.public_display_as || "username").toLowerCase();
+          var pdaRadiosPrime = form.querySelectorAll(
+            'input[name="public_display_as"]'
+          );
+          for (var pq = 0; pq < pdaRadiosPrime.length; pq++) {
+            pdaRadiosPrime[pq].checked =
+              pdaRadiosPrime[pq].value === pdaPrime;
+          }
+        }
+
+        var meR = await window.synodosAuth.apiFetch("/api/me", {});
+        if (!meR) {
+          return;
+        }
+        if (!meR.res.ok) {
           window.alert("Could not load your profile. Please try again.");
           return;
         }
-        var resFields = await fetch(API_BASE + "/api/profile-fields");
-        if (!resFields.ok) {
+        var fieldsR = await window.synodosAuth.apiFetch("/api/profile-fields", {});
+        if (!fieldsR || !fieldsR.res.ok) {
           window.alert("Could not load profile options from the server.");
           return;
         }
-        var meData;
-        var fieldsPayload;
-        try {
-          var parsed = await Promise.all([resMe.json(), resFields.json()]);
-          meData = parsed[0];
-          fieldsPayload = parsed[1];
-        } catch (parseErr) {
-          window.alert("Invalid response from the server. Is the API URL correct (see SYNODOS_API_BASE)?");
-          return;
-        }
+        var meData = meR.data;
+        var fieldsPayload = fieldsR.data;
         if (
           !fieldsPayload ||
           typeof fieldsPayload.fields !== "object" ||
@@ -417,6 +412,9 @@
 
         var u = meData.user || {};
         meSnapshot = u;
+        if (u && u.id != null) {
+          window.synodosAuth.setCachedMe(u);
+        }
         accountUsername = u.username ? String(u.username).trim() : "";
         if (displayInput && u.display_name) {
           displayInput.value = u.display_name;
@@ -431,7 +429,7 @@
         }
 
         if (u.avatar_url && String(u.avatar_url).length > 0) {
-          window.synodosAuth.applyUserAvatar(avatarImg, avatarPh, u);
+          window.synodosAuth.applyUserAvatar(avatarImg, null, u);
           avatarResetRequested = false;
           pendingAvatarDataUrl = null;
         } else {
@@ -460,9 +458,6 @@
         if (workTagsAddBtn) workTagsAddBtn.disabled = false;
         updateAddButtonState();
       } catch (err) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("Could not load profile.", err);
-        }
         window.alert(
           "Could not reach the server. Please try again."
         );
@@ -512,20 +507,22 @@
       if (submitBtn) submitBtn.disabled = true;
 
       try {
-        var res = await fetch(API_BASE + "/api/me", {
+        var patchR = await window.synodosAuth.apiFetch("/api/me", {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token,
-          },
+          headers: window.synodosAuth.authHeaders({ json: true }),
           body: JSON.stringify(payload),
         });
-        var data = await res.json().catch(function () {
-          return {};
-        });
+        if (!patchR) {
+          return;
+        }
+        var res = patchR.res;
+        var data = patchR.data;
         if (!res.ok) {
           showSaveStatus(false, data.error || res.statusText || "Could not save profile");
           return;
+        }
+        if (data.user) {
+          window.synodosAuth.setCachedMe(data.user);
         }
 
         if (flow === "setup") {
@@ -536,7 +533,7 @@
           if (data.user) {
             meSnapshot = data.user;
             if (data.user.avatar_url) {
-              window.synodosAuth.applyUserAvatar(avatarImg, avatarPh, data.user);
+              window.synodosAuth.applyUserAvatar(avatarImg, null, data.user);
             } else {
               showDefaultAvatar();
             }
@@ -553,9 +550,6 @@
           showSaveStatus(true, "Profile saved. Your space is up to date.");
         }
       } catch (err) {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn("Backend not reachable.", err);
-        }
         window.alert(
           "Could not reach the server. Please try again."
         );
@@ -564,8 +558,8 @@
       }
     });
 
-    if (avatarImg && avatarPh) {
-      window.synodosAuth.primeUserAvatar(avatarImg, avatarPh, {});
+    if (avatarImg) {
+      window.synodosAuth.primeUserAvatar(avatarImg, null, {});
     }
     load();
   }

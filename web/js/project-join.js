@@ -38,16 +38,26 @@
       return;
     }
 
-    var API_BASE = window.synodosAuth.apiBase;
-    var meRes = await fetch(API_BASE + "/api/me", {
-      headers: { Authorization: "Bearer " + token },
-    });
-    if (!meRes.ok) {
-      pan.innerHTML =
-        '<p class="dashboard-lead">Could not load your account. Try signing in again.</p>';
-      return;
+    var meUser = null;
+    var cached = window.synodosAuth.getCachedMe();
+    if (cached && cached.profile_complete) {
+      meUser = cached;
+    } else {
+      var meResult = await window.synodosAuth.apiFetch("/api/me", {});
+      if (!meResult || !meResult.res.ok) {
+        if (!meResult) {
+          return;
+        }
+        pan.innerHTML =
+          '<p class="dashboard-lead">Could not load your account. Try signing in again.</p>';
+        return;
+      }
+      meUser = meResult.data.user;
+      if (meUser) {
+        window.synodosAuth.setCachedMe(meUser);
+      }
     }
-    var meData = await meRes.json();
+    var meData = { user: meUser };
     if (meData.user && !meData.user.profile_complete) {
       pan.innerHTML =
         '<p class="dashboard-lead">Finish your profile before requesting to join.</p>' +
@@ -55,15 +65,16 @@
       return;
     }
 
-    var jrRes = await fetch(API_BASE + "/api/me/join-requests", {
-      headers: { Authorization: "Bearer " + token },
-    });
-    if (!jrRes.ok) {
+    var jrResult = await window.synodosAuth.apiFetch("/api/me/join-requests", {});
+    if (!jrResult || !jrResult.res.ok) {
+      if (!jrResult) {
+        return;
+      }
       pan.innerHTML =
         '<p class="dashboard-lead">Could not load your join requests.</p>';
       return;
     }
-    var jrData = await jrRes.json();
+    var jrData = jrResult.data;
     var pid = Number(pg.getProjectId());
     var mine = (jrData.requests || []).filter(function (r) {
       return Number(r.project_id) === pid;
@@ -148,7 +159,6 @@
   }
 
   async function submitJoin(token, pg, form) {
-    var API_BASE = window.synodosAuth.apiBase;
     var fd = new FormData(form);
     var roleVal = fd.get("role_id");
     var body = {
@@ -159,20 +169,19 @@
     }
     pg.showMsg("", false);
     try {
-      var res = await fetch(
-        API_BASE + "/api/projects/" + pg.getProjectId() + "/join-requests",
+      var jrPost = await window.synodosAuth.apiFetch(
+        "/api/projects/" + pg.getProjectId() + "/join-requests",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token,
-          },
+          headers: window.synodosAuth.authHeaders({ json: true }),
           body: JSON.stringify(body),
         }
       );
-      var data = await res.json().catch(function () {
-        return {};
-      });
+      if (!jrPost) {
+        return;
+      }
+      var res = jrPost.res;
+      var data = jrPost.data;
       if (!res.ok) {
         pg.showMsg(data.error || "Could not send request", true);
         return;
@@ -186,21 +195,21 @@
   }
 
   async function withdrawRequest(requestId, token, pg) {
-    var API_BASE = window.synodosAuth.apiBase;
     pg.showMsg("", false);
     try {
-      var res = await fetch(
-        API_BASE +
-          "/api/projects/" +
+      var wd = await window.synodosAuth.apiFetch(
+        "/api/projects/" +
           pg.getProjectId() +
           "/join-requests/" +
           requestId,
-        { method: "DELETE", headers: { Authorization: "Bearer " + token } }
+        { method: "DELETE" }
       );
+      if (!wd) {
+        return;
+      }
+      var res = wd.res;
       if (!res.ok && res.status !== 204) {
-        var data = await res.json().catch(function () {
-          return {};
-        });
+        var data = wd.data;
         pg.showMsg(data.error || "Could not withdraw", true);
         return;
       }

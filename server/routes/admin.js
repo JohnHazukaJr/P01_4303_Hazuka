@@ -1,5 +1,6 @@
 const express = require("express");
 const { normalizeUsername } = require("../db");
+const { loadUserProfileRow } = require("../userQueries");
 
 function parseAdminUserIds() {
   const raw = String(process.env.SYNODOS_ADMIN_USER_IDS || "").trim();
@@ -108,10 +109,7 @@ function registerAdminRoutes(app, deps) {
         ]);
       }
 
-      const row = await db.get(
-        "SELECT id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account FROM users WHERE id = $1",
-        [target.id]
-      );
+      const row = await loadUserProfileRow(db, target.id);
       res.json({
         user: {
           id: row.id,

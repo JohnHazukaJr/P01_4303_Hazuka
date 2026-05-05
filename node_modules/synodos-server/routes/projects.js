@@ -1,10 +1,6 @@
 const express = require("express");
 const { insertFeedEvent, EVENT_TYPES } = require("../feedEvents");
-
-function parseId(param) {
-  const n = Number(param);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
+const { parseId } = require("../routeUtils");
 
 function ownerPublicDisplay(username, displayName, preference) {
   const pref = String(preference || "username").toLowerCase();

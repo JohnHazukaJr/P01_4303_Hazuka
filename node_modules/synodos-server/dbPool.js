@@ -68,5 +68,5 @@ function prepare(sql) {
   };
 }
 
-module.exports = { getPool, query, get, all, run, prepare };
+module.exports = { query, get, all, run, prepare };
 

@@ -53,9 +53,6 @@
       /* Successful signup → profile setup (then dashboard after PATCH /api/me). */
       window.location.replace("profile-setup.html");
     } catch (err) {
-      if (typeof console !== "undefined" && console.warn) {
-        console.warn("Backend not reachable.", err);
-      }
       window.alert("Could not reach the server. Please try again.");
     }
   });

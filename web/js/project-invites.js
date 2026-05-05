@@ -27,23 +27,19 @@
         var note = String(fd.get("note") || "").trim();
         pg.showMsg("", false);
         try {
-          var res = await fetch(
-            window.synodosAuth.apiBase +
-              "/api/projects/" +
-              pid +
-              "/invites",
+          var invRes = await window.synodosAuth.apiFetch(
+            "/api/projects/" + pid + "/invites",
             {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + token,
-              },
+              headers: window.synodosAuth.authHeaders({ json: true }),
               body: JSON.stringify({ username: username, note: note }),
             }
           );
-          var data = await res.json().catch(function () {
-            return {};
-          });
+          if (!invRes) {
+            return;
+          }
+          var res = invRes.res;
+          var data = invRes.data;
           if (!res.ok) {
             pg.showMsg(data.error || "Could not send invitation", true);
             return;

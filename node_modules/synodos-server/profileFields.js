@@ -124,11 +124,8 @@ function profileFieldsPayload() {
 }
 
 module.exports = {
-  WORK_FIELDS,
   isValidWorkField,
   isValidWorkSubfield,
   profileFieldsPayload,
-  getFieldLabel,
-  getSubfieldLabel,
   enrichTag,
 };

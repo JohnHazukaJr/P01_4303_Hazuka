@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="auth-page">
+<body class="auth-page dashboard-page">
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="top">
     <div class="wrap top-inner">
@@ -25,10 +25,21 @@
             <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
           </button>
-          <a class="btn btn-ghost" href="index.html">Home</a>
-          <a class="btn btn-ghost" href="messages.html">Messages</a>
-          <a class="btn btn-ghost" href="profile.html">Your space</a>
-          <button type="button" class="btn btn-ghost" id="dashboard-sign-out">Sign out</button>
+          <a class="btn btn-ghost top-nav-icon-btn" href="messages.html" title="Messages" aria-label="Messages">
+            <svg class="top-nav-icon-btn__svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </a>
+          <div class="top-actions__user-menu" id="dashboard-user-menu">
+            <button type="button" class="btn btn-ghost user-menu__btn" id="dashboard-user-menu-btn"
+              aria-haspopup="menu" aria-expanded="false" aria-controls="dashboard-user-menu-dropdown" aria-label="Open account menu">
+              <span class="profile-avatar-preview profile-avatar-preview--xs">
+                <img class="profile-avatar-img" id="dashboard-menu-avatar-img" alt="" width="32" height="32" src="images/default-avatar.png">
+              </span>
+            </button>
+            <div class="user-menu__dropdown" id="dashboard-user-menu-dropdown" role="menu" hidden>
+              <a class="user-menu__item" href="profile.html" role="menuitem">Your space</a>
+              <button type="button" class="user-menu__item user-menu__item--danger" id="dashboard-sign-out" role="menuitem">Sign out</button>
+            </div>
+          </div>
         </div>
       </nav>
     </div>
@@ -39,41 +50,24 @@
       <p id="dashboard-msg" class="dashboard-msg" hidden></p>
 
       <div class="auth-card dashboard-intro">
-        <p class="auth-eyebrow">Signed in</p>
         <div class="dashboard-user-strip">
           <div class="profile-avatar-preview profile-avatar-preview--sm" id="dashboard-avatar-wrap">
-            <img class="profile-avatar-img" id="dashboard-avatar-img" alt="" width="64" height="64" hidden>
-            <span class="profile-avatar-placeholder" id="dashboard-avatar-placeholder" aria-hidden="true">
-              <svg class="profile-avatar-default-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M14 30c10-18 42-18 52 0" />
-                <path d="M18 28c8-12 36-12 44 0" />
-                <path d="M16 26l-6-8M24 21l-3-9M40 20v-9M56 21l3-9M64 26l6-8" />
-                <circle cx="28" cy="26" r="2.8" fill="currentColor" stroke="none" />
-                <circle cx="40" cy="22" r="2.8" fill="currentColor" stroke="none" />
-                <circle cx="52" cy="26" r="2.8" fill="currentColor" stroke="none" />
-                <ellipse cx="40" cy="48" rx="15" ry="17" />
-                <path d="M22 62c2 12 36 12 38 0" />
-              </svg>
-            </span>
+            <img class="profile-avatar-img" id="dashboard-avatar-img" alt="" width="64" height="64" src="images/default-avatar.png">
           </div>
           <div class="dashboard-user-strip__text">
             <h1 class="auth-title dashboard-user-strip__title" id="dashboard-display-name">Welcome back</h1>
-            <p class="auth-lead dashboard-user-strip__lead" style="margin-bottom: 0;">
-              Your account email is private. Post a project and list open roles so peers can discover how to join.
-            </p>
           </div>
         </div>
       </div>
 
       <section class="dashboard-section" id="dash-requests-inbox-section" aria-labelledby="dash-inbox-title" hidden>
         <h2 id="dash-inbox-title" class="dashboard-heading">Requests on my projects</h2>
-        <p class="dashboard-lead">People who asked to join a project you own. Accept or decline to respond.</p>
+        <p class="dashboard-lead">People asking to join your projects.</p>
         <div id="dash-requests-inbox-root" class="requests-inbox-root"></div>
       </section>
 
       <section class="dashboard-section" aria-labelledby="new-project-title">
         <h2 id="new-project-title" class="dashboard-heading">Start a project</h2>
-        <p class="dashboard-lead">Create a hub for something you are building. You can add open roles after it appears in the list.</p>
         <form class="project-form" id="form-new-project" action="#" method="post" novalidate>
           <div class="field">
             <label for="np-title">Title</label>
@@ -89,7 +83,7 @@
 
       <section class="dashboard-section" aria-labelledby="projects-list-title">
         <h2 id="projects-list-title" class="dashboard-heading">Open projects</h2>
-        <p class="dashboard-lead">Everyone signed in can browse; only owners can delete a project or edit its open roles.</p>
+        <p class="dashboard-lead">Browse all projects. Owners can edit roles.</p>
         <div class="projects-toolbar" role="search">
           <label class="projects-toolbar__search">
             <span class="visually-hidden">Filter projects by title, description, or owner name</span>
