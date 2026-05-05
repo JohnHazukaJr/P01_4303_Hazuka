@@ -129,7 +129,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-app.use(express.json({ limit: "1mb" }));
+/* PATCH /api/me may include base64 avatar_data (~680KB for a 512KB file) plus JSON. */
+app.use(express.json({ limit: "2mb" }));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -363,6 +364,10 @@ async function saveAvatarFromDataUrl(userId, dataUrl) {
     return { ok: false, error: "Invalid image data" };
   }
   var mime = m[1].toLowerCase();
+  /* Some UAs use image/jpg; map to image/jpeg for storage. */
+  if (mime === "image/jpg" || mime === "image/pjpeg") {
+    mime = "image/jpeg";
+  }
   if (!storage.AVATAR_MIME_EXT[mime]) {
     return { ok: false, error: "Use JPEG, PNG, GIF, or WebP" };
   }
