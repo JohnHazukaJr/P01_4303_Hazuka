@@ -428,12 +428,14 @@
           pdaRadios[pi].checked = pdaRadios[pi].value === pda;
         }
 
-        if (u.avatar_url && String(u.avatar_url).length > 0) {
-          window.synodosAuth.applyUserAvatar(avatarImg, null, u);
-          avatarResetRequested = false;
-          pendingAvatarDataUrl = null;
-        } else {
-          showDefaultAvatar();
+        /* Do not overwrite a photo the user already picked or a reset they requested
+         * while this request was in flight (async race with /api/me). */
+        if (!(pendingAvatarDataUrl || avatarResetRequested)) {
+          if (u.avatar_url && String(u.avatar_url).length > 0) {
+            window.synodosAuth.applyUserAvatar(avatarImg, null, u);
+          } else {
+            showDefaultAvatar();
+          }
         }
         syncPreviewAvatarFromMain();
 
