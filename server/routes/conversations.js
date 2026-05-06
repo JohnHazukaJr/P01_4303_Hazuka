@@ -1,7 +1,10 @@
-const express = require("express");
 const { normalizeUsername } = require("../db");
 const { publicDisplayLabel } = require("../displayLabel");
 const { parseId, parseCursor } = require("../routeUtils");
+const {
+  insertNotification,
+  NOTIFICATION_TYPES,
+} = require("../userNotifications");
 
 const DM_BODY_MAX = 8000;
 
@@ -209,6 +212,28 @@ function registerConversationRoutes(app, deps) {
           `SELECT id, sender_user_id, body, created_at FROM dm_messages WHERE id = ?`
         )
         .get(mid);
+      const peer = await otherParticipantRow(db, cid, req.user.id);
+      if (peer && peer.id != null) {
+        const senderRow = await db
+          .prepare(
+            `SELECT username, display_name, public_display_as FROM users WHERE id = ?`
+          )
+          .get(req.user.id);
+        const preview =
+          body.length > 120 ? body.slice(0, 120) + "…" : body;
+        await insertNotification(
+          db,
+          Number(peer.id),
+          NOTIFICATION_TYPES.DM_MESSAGE_RECEIVED,
+          {
+            conversation_id: cid,
+            sender_public_display_label: publicDisplayLabel(
+              senderRow || { username: null, display_name: "", public_display_as: "username" }
+            ),
+            message_preview: preview,
+          }
+        );
+      }
       res.status(201).json({
         message: {
           id: msg.id,

@@ -3,6 +3,14 @@
   var token = null;
   var myUserId = null;
   var activeConvId = null;
+  var threadNewestId = null;
+  var olderCursor = null;
+  var pollTimer = null;
+  var messageIdsInThread = null;
+  var loadingOlder = false;
+
+  var PAGE_LIMIT = 80;
+  var POLL_MS = 12000;
 
   function showMsg(text, isError) {
     var msgEl = document.getElementById("messages-page-msg");
@@ -24,6 +32,53 @@
     if (id) u.searchParams.set("c", String(id));
     else u.searchParams.delete("c");
     window.history.replaceState({}, "", u.pathname + u.search);
+  }
+
+  function clearPoll() {
+    if (pollTimer != null) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  function startPoll() {
+    clearPoll();
+    if (!activeConvId) return;
+    pollTimer = setInterval(pollNewMessages, POLL_MS);
+  }
+
+  function formatMessageDisplayTime(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso);
+
+    var now = Date.now();
+    var diffMs = now - d.getTime();
+    if (diffMs < 0) diffMs = 0;
+    var sec = Math.floor(diffMs / 1000);
+    if (sec < 60) return "Just now";
+    var min = Math.floor(sec / 60);
+    if (min < 60) return min + "m ago";
+    var hr = Math.floor(min / 60);
+    if (hr < 24) return hr + "h ago";
+    var opt = {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    };
+    if (d.getFullYear() !== new Date().getFullYear()) {
+      opt.year = "numeric";
+    }
+    return d.toLocaleString(undefined, opt);
+  }
+
+  function adjustTextareaHeight(ta) {
+    if (!ta) return;
+    ta.style.height = "auto";
+    var maxPx = 200;
+    var next = Math.min(ta.scrollHeight, maxPx);
+    ta.style.height = next + "px";
   }
 
   async function loadMe() {
@@ -110,6 +165,7 @@
     var div = document.createElement("div");
     div.className =
       "messages-bubble" + (mine ? " messages-bubble--mine" : "");
+    div.setAttribute("data-message-id", String(m.id));
     var p = document.createElement("p");
     p.className = "messages-bubble__body";
     p.textContent = m.body || "";
@@ -117,22 +173,106 @@
     div.appendChild(p);
     var t = document.createElement("time");
     t.className = "messages-bubble__time";
-    t.setAttribute("datetime", m.created_at || "");
-    t.textContent = m.created_at || "";
+    var iso = m.created_at || "";
+    t.setAttribute("datetime", iso);
+    t.setAttribute("title", iso ? String(iso) : "");
+    t.textContent = formatMessageDisplayTime(iso);
     div.appendChild(t);
     return div;
   }
 
-  async function loadMessages(convId) {
+  function updateLoadOlderUi() {
+    var wrap = document.getElementById("messages-load-older-wrap");
+    var btn = document.getElementById("messages-load-older");
+    if (!wrap || !btn) return;
+    var show = activeConvId != null && olderCursor != null;
+    wrap.hidden = !show;
+    btn.disabled = loadingOlder;
+  }
+
+  function ingestMessagesArray(messages, mode) {
+    var wrap = document.getElementById("messages-bubble-wrap");
+    if (!wrap || !messageIdsInThread) return;
+
+    if (mode === "replace") {
+      wrap.innerHTML = "";
+      messageIdsInThread = new Set();
+      threadNewestId = null;
+      return;
+    }
+
+    var list = messages || [];
+
+    if (mode === "prepend") {
+      var prevH = wrap.scrollHeight;
+      var prevTop = wrap.scrollTop;
+      for (var i = list.length - 1; i >= 0; i--) {
+        var pm = list[i];
+        var pid = Number(pm.id);
+        if (messageIdsInThread.has(pid)) continue;
+        messageIdsInThread.add(pid);
+        wrap.insertBefore(renderMessageBubble(pm), wrap.firstChild);
+      }
+      wrap.scrollTop = prevTop + (wrap.scrollHeight - prevH);
+      updateLoadOlderUi();
+      return;
+    }
+
+    var maxSeen =
+      threadNewestId != null ? Number(threadNewestId) : null;
+
+    if (mode === "append") {
+      for (var j = 0; j < list.length; j++) {
+        var am = list[j];
+        var aid = Number(am.id);
+        if (messageIdsInThread.has(aid)) continue;
+        messageIdsInThread.add(aid);
+        wrap.appendChild(renderMessageBubble(am));
+        if (maxSeen == null || aid > maxSeen) maxSeen = aid;
+      }
+      threadNewestId = maxSeen;
+      wrap.scrollTop = wrap.scrollHeight;
+      updateLoadOlderUi();
+      return;
+    }
+
+    if (mode === "chronological") {
+      for (var k = list.length - 1; k >= 0; k--) {
+        var rm = list[k];
+        var rid = Number(rm.id);
+        if (messageIdsInThread.has(rid)) continue;
+        messageIdsInThread.add(rid);
+        wrap.appendChild(renderMessageBubble(rm));
+        if (maxSeen == null || rid > maxSeen) maxSeen = rid;
+      }
+      threadNewestId = maxSeen;
+      wrap.scrollTop = wrap.scrollHeight;
+      updateLoadOlderUi();
+    }
+  }
+
+  async function fetchMessagesPage(convId, cursor) {
+    var q =
+      "/api/conversations/" +
+      encodeURIComponent(String(convId)) +
+      "/messages?limit=" +
+      encodeURIComponent(String(PAGE_LIMIT));
+    if (cursor != null) {
+      q += "&cursor=" + encodeURIComponent(String(cursor));
+    }
+    var msgResult = await window.synodosAuth.apiFetch(q, {});
+    if (!msgResult) {
+      return null;
+    }
+    return msgResult;
+  }
+
+  async function loadMessagesInitial(convId) {
     var wrap = document.getElementById("messages-bubble-wrap");
     if (!wrap) return;
-    wrap.innerHTML = "";
-    var msgResult = await window.synodosAuth.apiFetch(
-      "/api/conversations/" +
-        encodeURIComponent(String(convId)) +
-        "/messages?limit=80",
-      {}
-    );
+    ingestMessagesArray([], "replace");
+
+    var msgResult = await fetchMessagesPage(convId, null);
     if (!msgResult) {
       return;
     }
@@ -143,14 +283,60 @@
       return;
     }
     var messages = data.messages || [];
-    for (var i = messages.length - 1; i >= 0; i--) {
-      wrap.appendChild(renderMessageBubble(messages[i]));
+    olderCursor = data.next_cursor != null ? Number(data.next_cursor) : null;
+
+    ingestMessagesArray(messages, "chronological");
+  }
+
+  async function loadOlderMessages() {
+    if (!activeConvId || olderCursor == null || loadingOlder) return;
+    loadingOlder = true;
+    updateLoadOlderUi();
+    var msgResult = await fetchMessagesPage(activeConvId, olderCursor);
+    loadingOlder = false;
+    updateLoadOlderUi();
+    if (!msgResult) {
+      return;
     }
-    wrap.scrollTop = wrap.scrollHeight;
+    var res = msgResult.res;
+    var data = msgResult.data;
+    if (!res.ok) {
+      showMsg(data.error || "Could not load older messages", true);
+      return;
+    }
+    var messages = data.messages || [];
+    olderCursor = data.next_cursor != null ? Number(data.next_cursor) : null;
+    ingestMessagesArray(messages, "prepend");
+  }
+
+  async function pollNewMessages() {
+    if (!activeConvId || document.visibilityState === "hidden") return;
+    var msgResult = await fetchMessagesPage(activeConvId, null);
+    if (!msgResult || !msgResult.res.ok) return;
+    var data = msgResult.data;
+    var list = data.messages || [];
+    if (threadNewestId == null) return;
+    var newest = Number(threadNewestId);
+    var toAdd = [];
+    for (var i = 0; i < list.length; i++) {
+      if (Number(list[i].id) > newest) {
+        toAdd.push(list[i]);
+      }
+    }
+    toAdd.sort(function (a, b) {
+      return Number(a.id) - Number(b.id);
+    });
+    if (toAdd.length) {
+      ingestMessagesArray(toAdd, "append");
+    }
   }
 
   async function selectConversation(convId) {
+    clearPoll();
     activeConvId = convId;
+    messageIdsInThread = new Set();
+    threadNewestId = null;
+    olderCursor = null;
     setUrlConv(convId);
     var header = document.getElementById("messages-thread-header");
     var peerLink = document.getElementById("messages-thread-peer-link");
@@ -177,8 +363,33 @@
       peerLink.textContent = "Conversation";
       peerLink.href = "#";
     }
-    await loadMessages(convId);
+    await loadMessagesInitial(convId);
     showMsg("", false);
+    startPoll();
+  }
+
+  function wireComposer() {
+    var form = document.getElementById("messages-send-form");
+    var ta = document.getElementById("messages-body");
+    if (ta) {
+      ta.addEventListener("input", function () {
+        adjustTextareaHeight(ta);
+      });
+      ta.addEventListener("keydown", function (ev) {
+        if (ev.key !== "Enter") return;
+        if (ev.shiftKey) return;
+        ev.preventDefault();
+        if (form) {
+          if (typeof form.requestSubmit === "function") {
+            form.requestSubmit();
+          } else {
+            form.dispatchEvent(
+              new Event("submit", { cancelable: true, bubbles: true })
+            );
+          }
+        }
+      });
+    }
   }
 
   async function init() {
@@ -192,6 +403,21 @@
     }
     var ok = await loadMe();
     if (!ok) return;
+
+    wireComposer();
+
+    var loadOlderBtn = document.getElementById("messages-load-older");
+    if (loadOlderBtn) {
+      loadOlderBtn.addEventListener("click", function () {
+        loadOlderMessages();
+      });
+    }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible" && activeConvId) {
+        pollNewMessages();
+      }
+    });
 
     var form = document.getElementById("messages-send-form");
     if (form) {
@@ -221,8 +447,13 @@
           showMsg(data.error || "Could not send", true);
           return;
         }
-        if (ta) ta.value = "";
-        await loadMessages(activeConvId);
+        if (ta) {
+          ta.value = "";
+          adjustTextareaHeight(ta);
+        }
+        if (data.message) {
+          ingestMessagesArray([data.message], "append");
+        }
         await loadConversations();
       });
     }

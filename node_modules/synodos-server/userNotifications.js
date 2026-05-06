@@ -7,6 +7,7 @@ const NOTIFICATION_TYPES = {
   PROJECT_INVITE_RECEIVED: "project_invite_received",
   PROJECT_INVITE_ACCEPTED: "project_invite_accepted",
   PROJECT_YOU_WERE_ADDED: "project_you_were_added",
+  DM_MESSAGE_RECEIVED: "dm_message_received",
 };
 
 async function insertNotification(db, userId, type, payload) {
