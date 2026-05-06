@@ -37,21 +37,23 @@
         <p class="auth-eyebrow">Join synodos</p>
         <h1 class="auth-title">Create an account</h1>
         <p class="auth-lead">
-          Choose a username, use a real-looking email, and a password of at least 8 characters. Data is stored locally in <code>server/data/</code>.
+          Choose a username (3–32 characters), use a real-looking email, and a password of at least 8 characters. Usernames are <strong>case-insensitive</strong> and stored in lowercase; each username is unique on the server.
         </p>
 
         <form class="auth-form" id="register-form" action="#" method="post" novalidate>
           <div class="field">
             <label for="username">Username</label>
+            <p class="field-hint" id="username-hint">Letters, numbers, periods, underscores, and hyphens. You can sign in with any capitalization; it will match the same account.</p>
             <input
               id="username"
               name="username"
               type="text"
               autocomplete="username"
               required
-              minlength="5"
+              minlength="3"
               maxlength="32"
               placeholder="Username"
+              aria-describedby="username-hint"
             >
           </div>
           <div class="field">

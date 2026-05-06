@@ -51,6 +51,35 @@ async function main() {
       process.exit(1);
     }
     console.log("[verify-schema] All", EXPECTED.length, "expected tables present.");
+
+    const { rows: cols } = await pool.query(
+      `SELECT column_name, udt_name, data_type
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'users'
+         AND column_name IN ('username', 'email')`
+    );
+    const byName = Object.fromEntries(
+      cols.map((c) => [c.column_name, { udt: c.udt_name, dtype: c.data_type }])
+    );
+    for (const col of ["username", "email"]) {
+      const meta = byName[col];
+      if (!meta) {
+        die("[verify-schema] Missing column users." + col);
+      }
+      const udt = String(meta.udt || "").toLowerCase();
+      if (udt !== "citext") {
+        die(
+          "[verify-schema] users." +
+            col +
+            " must be type citext (found udt_name=" +
+            JSON.stringify(meta.udt) +
+            ", data_type=" +
+            JSON.stringify(meta.dtype) +
+            "). Re-run migrations or alter the column to citext for case-insensitive uniqueness."
+        );
+      }
+    }
+    console.log("[verify-schema] users.username and users.email are citext.");
   } finally {
     await pool.end();
   }

@@ -59,7 +59,14 @@
           <div id="messages-thread-header" class="messages-thread-header" hidden>
             <a class="messages-thread-peer" id="messages-thread-peer-link" href="#">—</a>
           </div>
-          <div id="messages-bubble-wrap" class="messages-bubble-wrap"></div>
+          <div class="messages-thread-body">
+            <div id="messages-load-older-wrap" class="messages-load-older-wrap" hidden>
+              <button type="button" id="messages-load-older" class="btn btn-ghost messages-load-older-btn">
+                Load older messages
+              </button>
+            </div>
+            <div id="messages-bubble-wrap" class="messages-bubble-wrap"></div>
+          </div>
           <form id="messages-send-form" class="messages-send-form" action="#" method="post" hidden>
             <label class="visually-hidden" for="messages-body">Message</label>
             <textarea id="messages-body" name="body" class="messages-body-input" rows="2" maxlength="8000" required placeholder="Write a message…"></textarea>

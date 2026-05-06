@@ -38,6 +38,12 @@
           (p.project_title || "a project") +
           "” from an invitation."
         );
+      case "dm_message_received":
+        return (
+          (p.sender_public_display_label || "Someone") +
+          " messaged you" +
+          (p.message_preview ? ": " + p.message_preview : ".")
+        );
       default:
         return type || "Notification";
     }
@@ -47,6 +53,12 @@
     var p = payload || {};
     if (p.project_id) {
       return "project.html?id=" + encodeURIComponent(String(p.project_id));
+    }
+    if (type === "dm_message_received" && p.conversation_id != null) {
+      return (
+        "messages.html?c=" +
+        encodeURIComponent(String(p.conversation_id))
+      );
     }
     return null;
   }
