@@ -1,4 +1,3 @@
-const express = require("express");
 const { normalizeUsername } = require("../db");
 const { loadUserProfileRow } = require("../userQueries");
 
@@ -22,6 +21,28 @@ function parseAdminUsernames() {
     const u = normalizeUsername(part);
     if (u) out.add(u);
   });
+  return out;
+}
+
+/**
+ * Usernames that may receive official_account=true via PATCH .../badges.
+ * Default allowlist is the platform account `synodos` only.
+ * Set SYNODOS_OFFICIAL_ACCOUNT_USERNAMES to a comma-separated list to add
+ * prominent figures (e.g. synodos,partner_org).
+ */
+function parseOfficialAccountAllowlist() {
+  const raw = String(process.env.SYNODOS_OFFICIAL_ACCOUNT_USERNAMES || "").trim();
+  if (!raw) {
+    return new Set(["synodos"]);
+  }
+  const out = new Set();
+  raw.split(",").forEach(function (part) {
+    const u = normalizeUsername(part);
+    if (u) out.add(u);
+  });
+  if (out.size === 0) {
+    out.add("synodos");
+  }
   return out;
 }
 
@@ -91,6 +112,18 @@ function registerAdminRoutes(app, deps) {
 
       const nextVerified = hasVerified ? body.verified : null;
       const nextOfficial = hasOfficial ? body.official_account : null;
+
+      if (hasOfficial && nextOfficial === true) {
+        const officialOk = parseOfficialAccountAllowlist();
+        if (!officialOk.has(uname)) {
+          return res.status(403).json({
+            error:
+              "official_account may only be granted to allowlisted accounts. " +
+              "Set SYNODOS_OFFICIAL_ACCOUNT_USERNAMES (comma-separated usernames) on the API host, " +
+              "or grant only to usernames on that list (default: synodos).",
+          });
+        }
+      }
 
       if (hasVerified && hasOfficial) {
         await db.run(

@@ -1,0 +1,41 @@
+# Lint + unit tests for the API. Lives independently of the Pages deploy workflow.
+name: API CI
+
+on:
+  push:
+    branches: [main, master, hazuka]
+  pull_request:
+    branches: [main, master, hazuka]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      - name: Install root tooling (eslint, prettier)
+        run: npm install --no-audit --no-fund
+
+      - name: Install API dependencies
+        working-directory: server
+        run: npm ci || npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test

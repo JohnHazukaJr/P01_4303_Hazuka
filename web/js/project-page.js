@@ -106,6 +106,15 @@
         a.className = "project-owner-link";
         a.textContent = proj.owner_display || un;
         metaEl.appendChild(a);
+        if (window.synodosUserBadges) {
+          var ob = document.createElement("span");
+          ob.className = "project-card__owner-badges";
+          metaEl.appendChild(ob);
+          window.synodosUserBadges.renderBadgesOnly(ob, {
+            verified: proj.owner_verified,
+            official_account: proj.owner_official_account,
+          });
+        }
       } else {
         metaEl.appendChild(
           document.createTextNode(proj.owner_display || "—")

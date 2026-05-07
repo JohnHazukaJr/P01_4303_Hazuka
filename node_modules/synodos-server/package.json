@@ -12,7 +12,8 @@
     "migrate-avatars": "node scripts/migrate-avatars-to-supabase.js",
     "check-env": "node scripts/check-supabase-env.js",
     "verify-schema": "node scripts/verify-schema.js",
-    "health-check": "node scripts/dev-health-check.js"
+    "health-check": "node scripts/dev-health-check.js",
+    "test": "node --test test/*.test.js"
   },
   "engines": {
     "node": ">=22.5.0"

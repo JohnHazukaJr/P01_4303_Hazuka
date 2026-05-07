@@ -4,25 +4,25 @@
   <meta charset="utf-8">
   <script src="js/theme-init.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Peer profile on synodos.">
-  <title>Profile — synodos</title>
-  <link rel="canonical" href="https://synodos.netlify.app/user.html">
-  <meta property="og:type" content="profile">
+  <meta name="description" content="Find collaborators on synodos by name, username, bio, or skill.">
+  <title>Find people — synodos</title>
+  <link rel="canonical" href="https://synodos.netlify.app/people.html">
+  <meta property="og:type" content="website">
   <meta property="og:site_name" content="synodos">
-  <meta property="og:title" content="Peer profile — synodos">
-  <meta property="og:description" content="Peer profile on synodos.">
-  <meta property="og:url" content="https://synodos.netlify.app/user.html">
+  <meta property="og:title" content="Find people — synodos">
+  <meta property="og:description" content="Search synodos for collaborators by name, skill, or focus area.">
+  <meta property="og:url" content="https://synodos.netlify.app/people.html">
   <meta property="og:image" content="https://synodos.netlify.app/images/og-card.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Peer profile — synodos">
-  <meta name="twitter:description" content="Peer profile on synodos.">
+  <meta name="twitter:title" content="Find people — synodos">
+  <meta name="twitter:description" content="Search synodos for collaborators by name, skill, or focus area.">
   <meta name="twitter:image" content="https://synodos.netlify.app/images/og-card.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="auth-page user-public-page">
+<body class="auth-page dashboard-page people-page">
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="top auth-top">
     <div class="wrap top-inner">
@@ -54,39 +54,20 @@
 
   <main class="dashboard-main" id="main-content" tabindex="-1">
     <div class="wrap dashboard-wrap">
-      <p id="user-page-msg" class="dashboard-msg" hidden></p>
-      <p id="user-page-loading" class="dashboard-empty">Loading profile…</p>
-      <div id="user-page-root" class="user-public-root" hidden>
-        <p class="project-detail-back">
-          <a class="btn btn-ghost project-detail-back-link" id="user-page-back" href="dashboard.html">← Back</a>
-        </p>
-        <div class="auth-card user-public-card">
-          <div class="user-public-head">
-            <div class="profile-avatar-preview profile-avatar-preview--sm user-public-avatar" id="user-page-avatar-wrap">
-              <img class="profile-avatar-img" id="user-page-avatar-img" alt="" width="64" height="64" src="images/default-avatar.png">
-            </div>
-            <div class="user-public-head__text">
-              <p class="auth-eyebrow">Peer profile</p>
-              <h1 class="auth-title" id="user-page-title">—</h1>
-              <p class="user-public-username" id="user-page-username"></p>
-            </div>
-          </div>
-          <p class="user-public-bio" id="user-page-bio"></p>
-          <div class="user-public-actions" id="user-page-actions" hidden>
-            <button type="button" class="btn btn-primary" id="user-page-follow-btn">Follow</button>
-            <button type="button" class="btn btn-ghost" id="user-page-unfollow-btn" hidden>Unfollow</button>
-            <a class="btn btn-ghost" id="user-page-edit-link" href="profile.html" hidden>Edit profile</a>
-            <button type="button" class="btn btn-ghost" id="user-page-message-btn" hidden>Message</button>
-          </div>
-          <p class="user-page-login-hint dashboard-lead" id="user-page-login-hint" hidden>
-            <a href="login.html">Log in</a> to follow or message this person.
-          </p>
-          <section class="user-public-tags-section" aria-labelledby="user-tags-heading">
-            <h2 id="user-tags-heading" class="dashboard-heading" style="font-size: 1rem;">Skills &amp; fields</h2>
-            <ul class="user-public-tags" id="user-page-tags"></ul>
-          </section>
+      <p id="people-msg" class="dashboard-msg" hidden></p>
+
+      <section class="dashboard-section" aria-labelledby="people-title">
+        <h1 id="people-title" class="dashboard-heading">Find people</h1>
+        <p class="dashboard-lead">Search by username, display name, bio, or skill.</p>
+        <div class="projects-toolbar" role="search">
+          <label class="projects-toolbar__search">
+            <span class="visually-hidden">Search people by username, display name, bio, or skill</span>
+            <input type="search" id="people-search" class="projects-filter-input" placeholder="e.g. backend, design, alex…" autocomplete="off" enterkeyhint="search" minlength="2">
+          </label>
         </div>
-      </div>
+        <div id="people-results" class="projects-grid"></div>
+        <p id="people-empty" class="dashboard-empty" hidden>Type at least 2 characters to search.</p>
+      </section>
     </div>
   </main>
 
@@ -118,6 +99,6 @@
   <script src="js/site-nav.js" defer></script>
   <script src="js/ui-empty-state.js" defer></script>
   <script src="js/user-badges.js" defer></script>
-  <script src="js/user-page.js" defer></script>
+  <script src="js/people-page.js" defer></script>
 </body>
 </html>

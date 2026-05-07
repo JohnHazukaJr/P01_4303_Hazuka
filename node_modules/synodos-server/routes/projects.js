@@ -1,6 +1,21 @@
 const express = require("express");
 const { insertFeedEvent, EVENT_TYPES } = require("../feedEvents");
-const { parseId } = require("../routeUtils");
+const { parseId, parseCursor } = require("../routeUtils");
+
+const MAX_LIST_LIMIT = 50;
+const DEFAULT_LIST_LIMIT = 20;
+const MAX_QUERY_LEN = 100;
+
+function clampLimit(raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return DEFAULT_LIST_LIMIT;
+  return Math.min(MAX_LIST_LIMIT, Math.max(1, Math.floor(n)));
+}
+
+function escapeLikeTerm(s) {
+  /* Escape Postgres ILIKE wildcards in user input. Default escape char is backslash. */
+  return String(s).replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
 
 function ownerPublicDisplay(username, displayName, preference) {
   const pref = String(preference || "username").toLowerCase();
@@ -18,7 +33,9 @@ async function loadProject(db, id) {
       `SELECT p.id, p.owner_user_id, p.title, p.description, p.created_at,
               u.username AS owner_username,
               u.display_name AS owner_display_name,
-              u.public_display_as AS owner_public_display_as
+              u.public_display_as AS owner_public_display_as,
+              u.verified AS owner_verified,
+              u.official_account AS owner_official_account
        FROM projects p
        JOIN users u ON u.id = p.owner_user_id
        WHERE p.id = ?`
@@ -38,6 +55,11 @@ async function loadProject(db, id) {
     ),
     owner_username:
       row.owner_username != null ? String(row.owner_username) : null,
+    owner_verified:
+      row.owner_verified === true || Number(row.owner_verified) === 1,
+    owner_official_account:
+      row.owner_official_account === true ||
+      Number(row.owner_official_account) === 1,
   };
 }
 
@@ -97,26 +119,61 @@ function createProjectsRouter(deps) {
 
   router.get("/", optionalAuth, async (req, res) => {
     try {
-      const projects = await db
-        .prepare(
-          `SELECT p.id, p.title, p.description, p.created_at,
-                  p.owner_user_id,
-                  u.username AS owner_username,
-                  u.display_name AS owner_display_name,
-                  u.public_display_as AS owner_public_display_as,
-                  (SELECT COUNT(*) FROM project_roles r WHERE r.project_id = p.id) AS role_count
-           FROM projects p
-           JOIN users u ON u.id = p.owner_user_id
-           ORDER BY p.created_at DESC`
-        )
-        .all();
+      const limit = clampLimit(req.query.limit);
+      const cursor = parseCursor(req.query.cursor);
+      const qRaw = String(req.query.q || "").trim().slice(0, MAX_QUERY_LEN);
+      const mineOnly =
+        String(req.query.mine || "").trim() === "1" &&
+        req.user &&
+        req.user.id != null;
+
+      const where = [];
+      const params = [];
+      if (qRaw) {
+        const like = "%" + escapeLikeTerm(qRaw) + "%";
+        params.push(like);
+        const i1 = params.length;
+        params.push(like);
+        const i2 = params.length;
+        where.push(`(p.title ILIKE $${i1} OR p.description ILIKE $${i2})`);
+      }
+      if (mineOnly) {
+        params.push(req.user.id);
+        where.push(`p.owner_user_id = $${params.length}`);
+      }
+      if (cursor) {
+        params.push(cursor);
+        where.push(`p.id < $${params.length}`);
+      }
+
+      const whereSql = where.length ? "WHERE " + where.join(" AND ") : "";
+      params.push(limit + 1);
+      const limitIdx = params.length;
+
+      const sql = `
+        SELECT p.id, p.title, p.description, p.created_at,
+               p.owner_user_id,
+               u.username AS owner_username,
+               u.display_name AS owner_display_name,
+               u.public_display_as AS owner_public_display_as,
+               u.verified AS owner_verified,
+               u.official_account AS owner_official_account,
+               (SELECT COUNT(*) FROM project_roles r WHERE r.project_id = p.id) AS role_count
+        FROM projects p
+        JOIN users u ON u.id = p.owner_user_id
+        ${whereSql}
+        ORDER BY p.id DESC
+        LIMIT $${limitIdx}
+      `;
+      const rows = await db.all(sql, params);
+      const hasMore = rows.length > limit;
+      const projects = hasMore ? rows.slice(0, limit) : rows;
 
       const viewerSet =
         req.user && req.user.id != null
           ? await loadUserTagSet(db, req.user.id)
           : null;
-      const personalize =
-        viewerSet != null && viewerSet.size > 0;
+      const personalize = viewerSet != null && viewerSet.size > 0;
 
       for (let i = 0; i < projects.length; i++) {
         const p = projects[i];
@@ -129,6 +186,11 @@ function createProjectsRouter(deps) {
           p.owner_username != null ? String(p.owner_username) : null;
         delete p.owner_display_name;
         delete p.owner_public_display_as;
+        p.owner_verified =
+          p.owner_verified === true || Number(p.owner_verified) === 1;
+        p.owner_official_account =
+          p.owner_official_account === true ||
+          Number(p.owner_official_account) === 1;
         p.roles = await loadRoles(db, p.id);
         if (personalize) {
           const ownerSet = await loadUserTagSet(db, p.owner_user_id);
@@ -138,19 +200,12 @@ function createProjectsRouter(deps) {
         }
       }
 
-      if (personalize) {
-        projects.sort((a, b) => {
-          if (b.feed_match_count !== a.feed_match_count) {
-            return b.feed_match_count - a.feed_match_count;
-          }
-          return (
-            new Date(b.created_at).getTime() -
-            new Date(a.created_at).getTime()
-          );
-        });
-      }
+      const nextCursor =
+        hasMore && projects.length > 0
+          ? Number(projects[projects.length - 1].id)
+          : null;
 
-      res.json({ projects });
+      res.json({ projects, next_cursor: nextCursor });
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: "Could not load projects" });

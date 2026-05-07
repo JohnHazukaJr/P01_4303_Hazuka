@@ -63,11 +63,18 @@ const app = express();
 /* Respect X-Forwarded-For when behind Render/reverse proxy (rate limit + logs). */
 app.set("trust proxy", 1);
 const PORT = Number(process.env.PORT) || 8080;
+const IS_PRODUCTION = String(process.env.NODE_ENV || "").toLowerCase() === "production";
 const JWT_SECRET =
   process.env.JWT_SECRET || "synodos-dev-secret-change-in-production";
 const BCRYPT_ROUNDS = 10;
 
 if (!process.env.JWT_SECRET) {
+  if (IS_PRODUCTION) {
+    console.error(
+      "[synodos] FATAL: JWT_SECRET is required when NODE_ENV=production. Refusing to start."
+    );
+    process.exit(1);
+  }
   console.warn(
     "[synodos] Using default JWT_SECRET. Set JWT_SECRET in production."
   );
@@ -122,6 +129,13 @@ function parseAllowedOrigins() {
 }
 
 const allowedOrigins = parseAllowedOrigins();
+if (IS_PRODUCTION && (!allowedOrigins || allowedOrigins.length === 0)) {
+  console.error(
+    "[synodos] FATAL: ALLOWED_ORIGINS is required when NODE_ENV=production " +
+      "(comma-separated list, e.g. https://synodos.netlify.app). Refusing to start with permissive CORS."
+  );
+  process.exit(1);
+}
 app.use(
   cors({
     origin: allowedOrigins && allowedOrigins.length ? allowedOrigins : true,
@@ -129,8 +143,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-/* PATCH /api/me may include base64 avatar_data + work_tags; allow headroom. */
-app.use(express.json({ limit: "4mb" }));
+/* Default JSON body cap. PATCH /api/me overrides to 4mb below for avatars. */
+app.use(express.json({ limit: "1mb" }));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -143,6 +157,24 @@ const authLimiter = rateLimit({
     });
   },
 });
+
+/**
+ * General rate limiter applied to all /api/* routes. Auth endpoints stack the
+ * stricter authLimiter on top. Limits are intentionally generous so normal use
+ * (dashboard polling, message threads) is unaffected.
+ */
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many requests. Slow down and try again shortly.",
+    });
+  },
+});
+app.use("/api", apiLimiter);
 
 app.get("/", (_req, res) => {
   res.type("html").send(`<!DOCTYPE html>
@@ -158,8 +190,8 @@ app.get("/", (_req, res) => {
     <li><code>GET /api/me</code> — current user + profile (<code>Authorization: Bearer …</code>)</li>
     <li><code>GET /api/profile-fields</code> — work field / subfield options (JSON)</li>
     <li><code>PATCH /api/me</code> — update profile (JSON, auth): <code>work_tags</code> (array of <code>{ work_field, work_subfield }</code>, 1–12), or legacy <code>work_field</code>+<code>work_subfield</code>; plus <code>display_name</code>, <code>public_display_as</code> (<code>full_name</code> or <code>username</code>), <code>bio</code>, optional <code>avatar_data</code>, <code>avatar_reset</code></li>
-    <li><code>PATCH /api/admin/users/:username/badges</code> — set <code>verified</code> and/or <code>official_account</code> (JSON booleans); <strong>admin only</strong> (<code>SYNODOS_ADMIN_USER_IDS</code> and/or <code>SYNODOS_ADMIN_USERNAMES</code> in <code>server/.env</code>)</li>
-    <li><code>GET /api/projects</code> — list projects + open roles; with <code>Authorization: Bearer …</code>, each project includes <code>feed_match_count</code> (tag overlap with you) and list is sorted by match then date</li>
+    <li><code>PATCH /api/admin/users/:username/badges</code> — set <code>verified</code> and/or <code>official_account</code> (JSON booleans); <strong>admin only</strong>. <code>official_account: true</code> only for usernames in <code>SYNODOS_OFFICIAL_ACCOUNT_USERNAMES</code> (defaults to <code>synodos</code>).</li>
+    <li><code>GET /api/projects</code> — list projects + open roles; cursor-paginated (<code>?q=&amp;cursor=&amp;limit=&amp;mine=1</code>, limit cap 50); with <code>Authorization: Bearer …</code> each project includes <code>feed_match_count</code> (tag overlap with you)</li>
     <li><code>POST /api/projects</code> — create project (JSON, auth)</li>
     <li><code>GET /api/projects/:id</code> — project detail</li>
     <li><code>DELETE /api/projects/:id</code> — delete (owner, auth)</li>
@@ -176,6 +208,7 @@ app.get("/", (_req, res) => {
     <li><code>POST /api/projects/:id/invites</code> — invite by username (owner, auth); JSON <code>username</code>, optional <code>note</code></li>
     <li><code>GET /api/me/project-invitations</code> — your pending invites (auth)</li>
     <li><code>PATCH /api/me/project-invitations/:id</code> — accept or decline (auth); JSON <code>status</code></li>
+    <li><code>GET /api/users/search</code> — search people by username, display name, bio, or skill (<code>?q=&amp;cursor=&amp;limit=</code>, q ≥ 2 chars)</li>
     <li><code>GET /api/users/:username</code> — public profile (optional <code>Authorization</code> adds <code>viewer_follows</code>)</li>
     <li><code>POST /api/users/:username/follow</code> / <code>DELETE …/follow</code> — follow or unfollow (auth)</li>
     <li><code>GET /api/feed</code> — activity from you and people you follow (auth); <code>?cursor=</code> <code>&limit=</code></li>
@@ -202,12 +235,17 @@ app.get("/api/health", async (_req, res) => {
 });
 
 /**
- * Optional: set SYNODOS_DEBUG_SURFACE=1 on the host, GET this once, then remove the flag.
- * Returns booleans only (no secret values) so you can confirm Render env names resolved.
+ * Diagnostic endpoint. Requires both:
+ *   - SYNODOS_DEBUG_SURFACE=1 on the host
+ *   - Bearer token of an admin (SYNODOS_ADMIN_USER_IDS / SYNODOS_ADMIN_USERNAMES)
+ * Returns booleans only (no secret values) so admins can confirm env names resolved.
  */
-app.get("/api/debug/env-check", (_req, res) => {
+app.get("/api/debug/env-check", requireAuth, async (req, res) => {
   if (String(process.env.SYNODOS_DEBUG_SURFACE || "").trim() !== "1") {
     return res.status(404).json({ error: "Not found" });
+  }
+  if (!(await isAdminUser(req.user.id))) {
+    return res.status(403).json({ error: "Forbidden" });
   }
   const e = process.env;
   res.json({
@@ -445,7 +483,9 @@ registerConversationRoutes(app, { db, requireAuth });
 const usersRouter = createUsersRouter({ db, requireAuth, optionalAuth });
 app.use("/api/users", usersRouter);
 
-app.patch("/api/me", requireAuth, async (req, res) => {
+/* Override the global 1mb cap: avatar_data is base64 (≤512KB raw → ~684KB encoded) plus body fields. */
+const meBodyParser = express.json({ limit: "4mb" });
+app.patch("/api/me", meBodyParser, requireAuth, async (req, res) => {
   var body = req.body || {};
   var displayNameIn = body.display_name;
   var bioIn = body.bio;
@@ -647,6 +687,22 @@ app.use((err, _req, res, _next) => {
 
 const server = app.listen(PORT, () => {
   console.log(`synodos API listening at http://localhost:${PORT}`);
+  /* Startup env summary — names + presence only, no values. */
+  const e = process.env;
+  const envStatus = {
+    NODE_ENV: e.NODE_ENV || "(unset)",
+    DATABASE_URL: !!(e.DATABASE_URL && String(e.DATABASE_URL).trim()),
+    SUPABASE_URL: !!(e.SUPABASE_URL && String(e.SUPABASE_URL).trim()),
+    SUPABASE_SERVICE_ROLE_KEY: !!(
+      e.SUPABASE_SERVICE_ROLE_KEY && String(e.SUPABASE_SERVICE_ROLE_KEY).trim()
+    ),
+    JWT_SECRET: !!(e.JWT_SECRET && String(e.JWT_SECRET).trim()),
+    ALLOWED_ORIGINS:
+      allowedOrigins && allowedOrigins.length
+        ? allowedOrigins.length + " origin(s)"
+        : "(none — permissive CORS)",
+  };
+  console.log("[synodos] env:", envStatus);
 });
 
 server.on("error", (err) => {

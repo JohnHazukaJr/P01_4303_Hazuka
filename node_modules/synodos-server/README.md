@@ -11,7 +11,7 @@ REST API for the synodos project. Requires **[Node.js 22.5+](https://nodejs.org/
 - **Supabase Storage** via [`@supabase/supabase-js`](https://github.com/supabase/supabase-js) — avatars bucket (CDN-served, survives redeploys)
 - **bcryptjs** — password hashing
 - **jsonwebtoken** — JWT bearer tokens (7-day expiry)
-- **express-rate-limit** — limits `POST /api/auth/login` and `POST /api/auth/register` (abuse / brute-force mitigation)
+- **express-rate-limit** — global limit on `/api/*` (300 req/min per IP) plus a stricter limiter on `POST /api/auth/login` and `POST /api/auth/register` (abuse / brute-force mitigation)
 
 **API errors:** Unhandled route failures return JSON `{ error: "Internal server error" }` via a final Express error handler (with `express-async-errors`, async route throws are included). Unknown `/api/*` paths return **404** `{ error: "Not found" }`.
 
@@ -24,15 +24,17 @@ Copy `.env.example` to `.env` (or set these in your host's dashboard). If you us
 | Variable | Required | Description |
 |---|---|---|
 | `DATABASE_URL` | yes | Supabase **Pooled** connection string (port `6543`). Used by `pg.Pool`. |
-| `JWT_SECRET` | prod | Secret used to sign session JWTs. A default is used for local dev only. |
+| `JWT_SECRET` | prod | Secret used to sign session JWTs. **Required when `NODE_ENV=production` — server refuses to start without it.** A default is used for local dev only. |
+| `NODE_ENV` | prod | Set to `production` on hosted deployments. Makes `JWT_SECRET` and `ALLOWED_ORIGINS` strictly required at boot. |
 | `SUPABASE_URL` | yes | `https://<project-ref>.supabase.co` — used to build avatar public URLs. |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | Service-role key for server-side uploads. **Never** ship to the browser. |
 | `SUPABASE_AVATAR_BUCKET` | no | Storage bucket name. Defaults to `avatars`. |
-| `ALLOWED_ORIGINS` | prod | Comma-separated CORS allowlist (e.g. `https://synodos.netlify.app`). Omit in dev to allow all. |
+| `ALLOWED_ORIGINS` | prod | Comma-separated CORS allowlist (e.g. `https://synodos.netlify.app`). **Required when `NODE_ENV=production`.** Omit in dev to allow all. |
 | `PORT` | no | API port. Defaults to `8080`. |
 | `PGSSLMODE` | no | Set to `disable` for local Postgres without TLS. Otherwise leave unset (Supabase requires TLS). |
 | `SYNODOS_ADMIN_USER_IDS` | no | Comma-separated numeric user IDs allowed to call `PATCH /api/admin/users/:username/badges`. |
 | `SYNODOS_ADMIN_USERNAMES` | no | Comma-separated **usernames** (e.g. `synodos`) — same admin powers as IDs. Easiest if you do not know your numeric id. |
+| `SYNODOS_OFFICIAL_ACCOUNT_USERNAMES` | no | Comma-separated usernames that may be granted `official_account` via `PATCH .../badges`. If unset, defaults to **`synodos` only** (platform account). Add more for prominent partners. |
 
 ## Setup
 
@@ -105,10 +107,10 @@ Copy the full error message. Try `npm install --verbose`.
 | `GET` | `/api/profile-fields` | Work taxonomy — JSON `{ fields: { tech, art, blue_collar: { label, subfields[] } } }` (no auth) |
 | `GET` | `/api/me` | Current user — `Authorization: Bearer <jwt>` — includes `work_tags[]`, `verified` (identity), `official_account` (platform), `avatar_url`, `profile_complete`, etc. |
 | `PATCH` | `/api/me` | Update profile — **auth** — `work_tags`: 1–12 × `{ work_field, work_subfield }`, or legacy single pair; plus `display_name`, `bio?`, optional `avatar_data`, `avatar_reset` |
-| `PATCH` | `/api/admin/users/:username/badges` | **Admin only** (`SYNODOS_ADMIN_USER_IDS` and/or `SYNODOS_ADMIN_USERNAMES` in `.env`) — JSON `{ "verified"?: boolean, "official_account"?: boolean }` |
-| `GET` | `/api/projects` | List projects (`roles[]`, `role_count`). With `Authorization: Bearer <jwt>`, each project has `feed_match_count` (how many of your field/subfield tags match the owner’s); results sorted by match count then recency |
+| `PATCH` | `/api/admin/users/:username/badges` | **Admin only** — JSON `{ "verified"?: boolean, "official_account"?: boolean }`. Granting `official_account: true` is only allowed for usernames in `SYNODOS_OFFICIAL_ACCOUNT_USERNAMES` (default allowlist: `synodos`). |
+| `GET` | `/api/projects` | List projects (`roles[]`, `role_count`, `owner_verified`, `owner_official_account`). Cursor-paginated: `?q=` (substring search across title + description), `?cursor=` (project id from previous page's `next_cursor`), `?limit=` (cap 50, default 20), `?mine=1` (auth — restrict to projects you own). Returns `{ projects, next_cursor }`. With `Authorization: Bearer <jwt>`, each project has `feed_match_count` (how many of your field/subfield tags match the owner’s) |
 | `POST` | `/api/projects` | Create project — JSON `{ "title", "description?" }` — **auth** |
-| `GET` | `/api/projects/:id` | Project detail + roles |
+| `GET` | `/api/projects/:id` | Project detail + roles; `project` includes `owner_verified`, `owner_official_account` |
 | `DELETE` | `/api/projects/:id` | Delete project — **owner, auth** |
 | `POST` | `/api/projects/:id/roles` | Add open role — JSON `{ "title", "skills?", "slots?" }` — **owner, auth** |
 | `DELETE` | `/api/projects/:id/roles/:roleId` | Remove open role — **owner, auth** |
@@ -125,6 +127,7 @@ Copy the full error message. Try `npm install --verbose`.
 | `POST` | `/api/projects/:id/invites` | Invite a user by username — **owner** — JSON `username`, optional `note` |
 | `GET` | `/api/me/project-invitations` | Pending invitations to you — **auth** |
 | `PATCH` | `/api/me/project-invitations/:id` | Accept or decline — **auth** — JSON `{ "status": "accepted" \| "declined" }` |
+| `GET` | `/api/users/search` | Search people — `?q=` (≥ 2 chars; substring across username, display name, bio, and work tags), cursor-paginated `?cursor=`, `?limit=` (cap 50). Returns `{ users, next_cursor }` |
 | `GET` | `/api/users/:username` | Public profile (no email). With **optional** `Authorization`, includes `viewer_follows` |
 | `POST` | `/api/users/:username/follow` | Follow user — **auth** (idempotent if already following) |
 | `DELETE` | `/api/users/:username/follow` | Unfollow — **auth** |
