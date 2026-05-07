@@ -143,8 +143,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-/* Default JSON body cap. PATCH /api/me overrides to 4mb below for avatars. */
-app.use(express.json({ limit: "1mb" }));
+/* 4mb cap: PATCH /api/me sends base64 avatar_data (~700KB+) plus work_tags and bio. */
+app.use(express.json({ limit: "4mb" }));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -397,11 +397,20 @@ const DISPLAY_NAME_MAX = 100;
 const BIO_MAX = 2000;
 
 async function saveAvatarFromDataUrl(userId, dataUrl) {
-  var m = /^data:(image\/[a-z0-9.+*-]+);base64,(.+)$/i.exec(String(dataUrl).trim());
-  if (!m) {
+  var s = String(dataUrl || "").trim();
+  /* Accept data:image/…;base64,… and data:image/…;charset=…;base64,… (regex was too strict). */
+  var sep = ";base64,";
+  var sepIdx = s.toLowerCase().indexOf(sep);
+  if (sepIdx === -1) {
     return { ok: false, error: "Invalid image data" };
   }
-  var mime = m[1].toLowerCase();
+  var header = s.slice(0, sepIdx);
+  var b64 = s.slice(sepIdx + sep.length).replace(/\s/g, "");
+  var mimeMatch = /^data:(image\/[a-z0-9.+*-]+)/i.exec(header);
+  if (!mimeMatch || !b64.length) {
+    return { ok: false, error: "Invalid image data" };
+  }
+  var mime = mimeMatch[1].toLowerCase();
   /* Some UAs use image/jpg; map to image/jpeg for storage. */
   if (mime === "image/jpg" || mime === "image/pjpeg") {
     mime = "image/jpeg";
@@ -411,7 +420,7 @@ async function saveAvatarFromDataUrl(userId, dataUrl) {
   }
   var buf;
   try {
-    buf = Buffer.from(m[2], "base64");
+    buf = Buffer.from(b64, "base64");
   } catch (_) {
     return { ok: false, error: "Invalid image data" };
   }
@@ -483,9 +492,7 @@ registerConversationRoutes(app, { db, requireAuth });
 const usersRouter = createUsersRouter({ db, requireAuth, optionalAuth });
 app.use("/api/users", usersRouter);
 
-/* Override the global 1mb cap: avatar_data is base64 (≤512KB raw → ~684KB encoded) plus body fields. */
-const meBodyParser = express.json({ limit: "4mb" });
-app.patch("/api/me", meBodyParser, requireAuth, async (req, res) => {
+app.patch("/api/me", requireAuth, async (req, res) => {
   var body = req.body || {};
   var displayNameIn = body.display_name;
   var bioIn = body.bio;
@@ -612,16 +619,14 @@ app.patch("/api/me", meBodyParser, requireAuth, async (req, res) => {
   var nextWs = String(row.work_subfield || "").trim();
 
   if (tagsToSave !== null) {
-    await db.run("DELETE FROM user_work_tags WHERE user_id = $1", [req.user.id]);
-    for (var j = 0; j < tagsToSave.length; j++) {
-      var tg = tagsToSave[j];
-      await db.run(
-        "INSERT INTO user_work_tags (user_id, work_field, work_subfield) VALUES ($1, $2, $3)",
-        [req.user.id, tg.work_field, tg.work_subfield]
-      );
-    }
     nextWf = tagsToSave[0].work_field;
     nextWs = tagsToSave[0].work_subfield;
+  }
+
+  if (nextDisplay.length < 2) {
+    return res
+      .status(400)
+      .json({ error: "Display name must be at least 2 characters" });
   }
 
   var nextAvatarUrl =
@@ -639,10 +644,15 @@ app.patch("/api/me", meBodyParser, requireAuth, async (req, res) => {
     nextAvatarUrl = saved.url;
   }
 
-  if (nextDisplay.length < 2) {
-    return res
-      .status(400)
-      .json({ error: "Display name must be at least 2 characters" });
+  if (tagsToSave !== null) {
+    await db.run("DELETE FROM user_work_tags WHERE user_id = $1", [req.user.id]);
+    for (var j = 0; j < tagsToSave.length; j++) {
+      var tg = tagsToSave[j];
+      await db.run(
+        "INSERT INTO user_work_tags (user_id, work_field, work_subfield) VALUES ($1, $2, $3)",
+        [req.user.id, tg.work_field, tg.work_subfield]
+      );
+    }
   }
 
   await db.run(
