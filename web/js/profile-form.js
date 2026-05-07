@@ -293,11 +293,27 @@
       if (pref === "full_name" && dn.length >= 2) return dn;
       if (un) return un;
       if (dn.length >= 2) return dn;
-      return un || "Your name";
+      return un || "\u2014";
+    }
+
+    function enterPreviewNameLoading() {
+      if (!previewName) return;
+      previewName.textContent = "";
+      previewName.innerHTML =
+        '<span class="profile-preview-name-skeleton skeleton" aria-hidden="true"></span>';
+      previewName.setAttribute("aria-busy", "true");
+      previewName.setAttribute("aria-label", "Loading preview name");
+    }
+
+    function exitPreviewNameLoading() {
+      if (!previewName) return;
+      previewName.removeAttribute("aria-busy");
+      previewName.removeAttribute("aria-label");
+      previewName.innerHTML = "";
     }
 
     function updateLivePreview() {
-      if (previewName) {
+      if (previewName && previewName.getAttribute("aria-busy") !== "true") {
         previewName.textContent = peerVisibleName();
       }
       if (previewBio) {
@@ -522,6 +538,9 @@
       try {
         var primed = window.synodosAuth.getCachedMe();
         if (primed) {
+          accountUsername = primed.username
+            ? String(primed.username).trim()
+            : "";
           if (displayInput && primed.display_name) {
             displayInput.value = primed.display_name;
           }
@@ -538,16 +557,28 @@
           }
         }
 
+        if (!accountUsername) {
+          enterPreviewNameLoading();
+        } else {
+          exitPreviewNameLoading();
+          updateLivePreview();
+        }
+
         var meR = await window.synodosAuth.apiFetch("/api/me", {});
         if (!meR) {
+          exitPreviewNameLoading();
           return;
         }
         if (!meR.res.ok) {
+          exitPreviewNameLoading();
+          if (previewName) previewName.textContent = "\u2014";
           window.alert("Could not load your profile. Please try again.");
           return;
         }
         var fieldsR = await window.synodosAuth.apiFetch("/api/profile-fields", {});
         if (!fieldsR || !fieldsR.res.ok) {
+          exitPreviewNameLoading();
+          if (previewName) previewName.textContent = "\u2014";
           window.alert("Could not load profile options from the server.");
           return;
         }
@@ -558,6 +589,8 @@
           typeof fieldsPayload.fields !== "object" ||
           fieldsPayload.fields === null
         ) {
+          exitPreviewNameLoading();
+          if (previewName) previewName.textContent = "\u2014";
           window.alert(
             "Profile options from the server were incomplete. Try again or update the app."
           );
@@ -566,6 +599,7 @@
         fieldsCatalog = fieldsPayload;
 
         if (flow === "setup" && meData.user && meData.user.profile_complete) {
+          exitPreviewNameLoading();
           window.location.href = "dashboard.html";
           return;
         }
@@ -615,6 +649,7 @@
           addWorkTagRow("", "");
         }
 
+        exitPreviewNameLoading();
         updateLivePreview();
         hideSaveStatus();
 
@@ -625,6 +660,8 @@
         if (workTagsAddBtn) workTagsAddBtn.disabled = false;
         updateAddButtonState();
       } catch (err) {
+        exitPreviewNameLoading();
+        if (previewName) previewName.textContent = "\u2014";
         window.alert(
           "Could not reach the server. Please try again."
         );
