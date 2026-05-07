@@ -2073,6 +2073,15 @@ footer {
   width: 100%;
   text-align: center;
   max-width: 100%;
+  min-height: 1.35rem;
+}
+
+/* Shimmer bar while /api/me resolves (no “Your name” flash) */
+.profile-preview-name-skeleton {
+  width: min(10.5rem, 72%);
+  height: 1.1rem;
+  margin: 0.12rem auto 0;
+  border-radius: 999px;
 }
 
 .synodos-space-card__badges {
