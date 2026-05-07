@@ -35,7 +35,8 @@
   }
 
   /**
-   * Fill a dedicated host element (replaces its contents) with 0–2 badges.
+   * Fill a dedicated host element (replaces its contents) with 0–1 badges.
+   * Official accounts show only Official (not Verified — verified is for consumer accounts).
    * @param {HTMLElement|null} host
    * @param {{ verified?: boolean, official_account?: boolean }|null} user
    */
@@ -46,12 +47,10 @@
     var inner = document.createElement("span");
     inner.className = "user-badges-inline";
     inner.setAttribute("data-synodos-user-badges", "1");
-    if (isVerified(user)) {
-      inner.appendChild(makeVerifiedBadge());
-    }
     if (isOfficial(user)) {
-      if (inner.lastChild) inner.appendChild(document.createTextNode(" "));
       inner.appendChild(makeOfficialBadge());
+    } else if (isVerified(user)) {
+      inner.appendChild(makeVerifiedBadge());
     }
     if (inner.childNodes.length) {
       host.appendChild(inner);
@@ -72,12 +71,10 @@
     var inner = document.createElement("span");
     inner.className = "user-badges-inline";
     inner.setAttribute("data-synodos-user-badges", "1");
-    if (isVerified(user)) {
-      inner.appendChild(makeVerifiedBadge());
-    }
     if (isOfficial(user)) {
-      if (inner.lastChild) inner.appendChild(document.createTextNode(" "));
       inner.appendChild(makeOfficialBadge());
+    } else if (isVerified(user)) {
+      inner.appendChild(makeVerifiedBadge());
     }
     parent.appendChild(document.createTextNode(" "));
     parent.appendChild(inner);

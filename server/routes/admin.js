@@ -125,16 +125,39 @@ function registerAdminRoutes(app, deps) {
         }
       }
 
+      if (hasVerified && body.verified === true) {
+        const current = await db.get(
+          "SELECT official_account FROM users WHERE id = $1",
+          [target.id]
+        );
+        if (current && Number(current.official_account) === 1) {
+          return res.status(400).json({
+            error:
+              "Official accounts are not marked verified; clear official_account first if you need verified.",
+          });
+        }
+      }
+
+      /* Official accounts use the Official badge only — never consumer Verified. */
+      let verifiedToStore = nextVerified;
+      if (hasOfficial && nextOfficial === true) {
+        verifiedToStore = false;
+      }
       if (hasVerified && hasOfficial) {
         await db.run(
           "UPDATE users SET verified = $1, official_account = $2 WHERE id = $3",
-          [nextVerified, nextOfficial, target.id]
+          [verifiedToStore, nextOfficial, target.id]
         );
       } else if (hasVerified) {
         await db.run("UPDATE users SET verified = $1 WHERE id = $2", [
           nextVerified,
           target.id,
         ]);
+      } else if (hasOfficial && nextOfficial === true) {
+        await db.run(
+          "UPDATE users SET official_account = $1, verified = false WHERE id = $2",
+          [true, target.id]
+        );
       } else {
         await db.run("UPDATE users SET official_account = $1 WHERE id = $2", [
           nextOfficial,
