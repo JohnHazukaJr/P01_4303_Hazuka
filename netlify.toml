@@ -5,6 +5,11 @@
   command = "node scripts/write-netlify-api-base.js"
   publish = "."
 
+# SYNODOS_API_BASE is meant to ship in client JS. If it is flagged "secret" in
+# Netlify, the deploy scanner blocks the build unless this path is omitted.
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "web/js/netlify-api-base.js"
+
 [[headers]]
   for = "/*"
   [headers.values]
