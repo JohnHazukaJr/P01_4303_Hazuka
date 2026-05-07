@@ -2056,21 +2056,21 @@ footer {
   word-break: break-word;
 }
 
-/* Preview card: name + verified/official on one visual line */
+/* Preview card: name centered on avatar; badges on a row below, also centered */
 .synodos-space-card__name-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.45rem 0.65rem;
+  gap: 0.35rem;
   margin: 0.5rem 0 0.35rem;
   padding: 0 0.25rem;
+  width: 100%;
   max-width: 100%;
 }
 
 .synodos-space-card__name--preview {
   margin: 0;
-  flex: 0 1 auto;
+  width: 100%;
   text-align: center;
   max-width: 100%;
 }
