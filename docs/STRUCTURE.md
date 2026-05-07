@@ -14,7 +14,7 @@
 ├── docs/                   This folder — structure, roadmap, smoke tests
 ├── .github/workflows/      GitHub Pages deploy for `web/`
 ├── docker-compose.yml      Optional local Postgres (schema tests without Supabase)
-├── netlify.toml            Static site → `web/`; build writes `web/js/netlify-api-base.js` from `SYNODOS_API_BASE`
+├── netlify.toml            `base = web`, `node scripts/write-netlify-api-base.js`, `publish = .`; env `SYNODOS_API_BASE`
 ├── render.yaml             Example Render blueprint (API + static; env set in dashboard)
 ├── package.json            Root: `npm start`, `npm run migrate`, `npm run verify`, …
 ├── index.html              Repo-root redirect → `web/index.html`

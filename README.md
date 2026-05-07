@@ -85,7 +85,7 @@ Full route list: [`server/README.md`](server/README.md).
 
 ## Deployment
 
-- **Static site (Netlify):** [https://synodos.netlify.app/](https://synodos.netlify.app/) — publish root is `web/` (see [`netlify.toml`](netlify.toml)). **Required:** add environment variable **`SYNODOS_API_BASE`** = your API origin (e.g. `https://synodos-api.onrender.com`, no trailing slash). Each build runs `node web/scripts/write-netlify-api-base.js`, which writes `web/js/netlify-api-base.js` so login/register call the real API instead of `localhost:8080`. GitHub Pages: see [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) — set the same variable in the workflow if you use it.
+- **Static site (Netlify):** [https://synodos.netlify.app/](https://synodos.netlify.app/) — see [`netlify.toml`](netlify.toml): build **`base`** is `web/`, command runs `node scripts/write-netlify-api-base.js`, **`publish`** is that folder. **Required:** environment variable **`SYNODOS_API_BASE`** = your API origin (no trailing slash) so login/register hit the real API. GitHub Pages: [`.github/workflows/deploy-github-pages.yml`](.github/workflows/deploy-github-pages.yml) still runs `node web/scripts/...` from repo root.
 - **API:** not hosted on Netlify; run separately (e.g. Railway, Render, Fly).
 
 ### Deploying the API
