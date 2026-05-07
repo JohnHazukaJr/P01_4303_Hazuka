@@ -618,7 +618,7 @@
         updateLivePreview();
         hideSaveStatus();
 
-        var badgeHost = document.getElementById("profile-page-badges");
+        var badgeHost = document.getElementById("profile-preview-badges");
         if (badgeHost && window.synodosUserBadges) {
           window.synodosUserBadges.renderBadgesOnly(badgeHost, u);
         }
@@ -725,7 +725,7 @@
             }
           }
           updateLivePreview();
-          var badgeHostAfterSave = document.getElementById("profile-page-badges");
+          var badgeHostAfterSave = document.getElementById("profile-preview-badges");
           if (badgeHostAfterSave && window.synodosUserBadges && data.user) {
             window.synodosUserBadges.renderBadgesOnly(badgeHostAfterSave, data.user);
           }
