@@ -30,12 +30,13 @@ jobs:
       - name: Install root tooling (eslint, prettier)
         run: npm install --no-audit --no-fund
 
+      # Before server `npm ci` — it prunes root node_modules and drops hoisted eslint.
+      - name: Lint
+        run: npm run lint
+
       - name: Install API dependencies
         working-directory: server
         run: npm ci || npm install
-
-      - name: Lint
-        run: npm run lint
 
       - name: Unit tests
         run: npm test
