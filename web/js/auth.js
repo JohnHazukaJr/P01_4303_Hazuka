@@ -305,13 +305,14 @@
       return this.getCachedMe();
     },
     /**
-     * Show the correct avatar on an <img> + placeholder pair; update session avatar cache
-     * from API-shaped `user` when skipCacheWrite is false (default).
+     * Show the correct avatar on an <img>. Optional `ph` is a placeholder sibling
+     * (e.g. inline SVG) to hide when the image loads — many pages pass `null` and use only the img.
+     * Updates session avatar cache from API-shaped `user` when skipCacheWrite is false (default).
      */
     applyUserAvatar: function (img, ph, user, opts) {
       opts = opts || {};
       var skipCacheWrite = !!opts.skipCacheWrite;
-      if (!img || !ph) return;
+      if (!img) return;
       if (!skipCacheWrite && user) {
         rememberAvatarKeys(user);
       }
@@ -329,12 +330,17 @@
       var tryUploadedFirst = raw.length > 0;
       function reveal() {
         img.hidden = false;
-        ph.hidden = true;
+        if (ph) ph.hidden = true;
       }
       function showPlaceholder() {
-        img.hidden = true;
-        img.removeAttribute("src");
-        ph.hidden = false;
+        if (ph) {
+          img.hidden = true;
+          img.removeAttribute("src");
+          ph.hidden = false;
+        } else {
+          img.hidden = false;
+          img.src = global.synodosAuth.getDefaultAvatarUrl();
+        }
       }
       img.onload = function () {
         reveal();
@@ -360,7 +366,7 @@
      * options.username — public profile (?u=); omit for current user (JWT sub).
      */
     primeUserAvatar: function (img, ph, options) {
-      if (!img || !ph) return;
+      if (!img) return;
       options = options || {};
       var path = null;
       var un = options.username != null ? String(options.username).trim().toLowerCase() : "";
