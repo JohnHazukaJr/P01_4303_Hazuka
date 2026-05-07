@@ -14,7 +14,7 @@
 ├── docs/                   This folder — structure, roadmap, smoke tests
 ├── .github/workflows/      GitHub Pages deploy for `web/`
 ├── docker-compose.yml      Optional local Postgres (schema tests without Supabase)
-├── netlify.toml            Static site → `web/`; build writes `web/js/netlify-api-base.js` from `SYNODOS_API_BASE`
+├── netlify.toml            `base = web`, `node scripts/write-netlify-api-base.js`, `publish = .`; env `SYNODOS_API_BASE`
 ├── render.yaml             Example Render blueprint (API + static; env set in dashboard)
 ├── package.json            Root: `npm start`, `npm run migrate`, `npm run verify`, …
 ├── index.html              Repo-root redirect → `web/index.html`
@@ -33,6 +33,7 @@ The directory `server/data/` is **gitignored**. It may hold legacy files (e.g. o
 | `web/login.html` / `web/register.html` | Auth |
 | `web/profile-setup.html` / `web/profile.html` | Profile |
 | `web/dashboard.html` | Projects feed |
+| `web/people.html` | Find people (`?q=` search) |
 | `web/project.html` | Public project (`?id=`) |
 | `web/user.html` | Public profile (`?u=username`) |
 | `web/messages.html` / `web/notifications.html` | Comms |

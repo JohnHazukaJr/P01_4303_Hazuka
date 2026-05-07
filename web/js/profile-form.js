@@ -617,6 +617,11 @@
 
         updateLivePreview();
         hideSaveStatus();
+
+        var badgeHost = document.getElementById("profile-page-badges");
+        if (badgeHost && window.synodosUserBadges) {
+          window.synodosUserBadges.renderBadgesOnly(badgeHost, u);
+        }
         if (workTagsAddBtn) workTagsAddBtn.disabled = false;
         updateAddButtonState();
       } catch (err) {
@@ -720,6 +725,10 @@
             }
           }
           updateLivePreview();
+          var badgeHostAfterSave = document.getElementById("profile-page-badges");
+          if (badgeHostAfterSave && window.synodosUserBadges && data.user) {
+            window.synodosUserBadges.renderBadgesOnly(badgeHostAfterSave, data.user);
+          }
           showSaveStatus(true, "Profile saved. Your space is up to date.");
         }
       } catch (err) {

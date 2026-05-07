@@ -392,6 +392,14 @@
     }
   }
 
+  function showSkeletons() {
+    if (!window.synodosUi) return;
+    var convList = document.getElementById("messages-conv-list");
+    var convEmpty = document.getElementById("messages-conv-empty");
+    if (convList) window.synodosUi.skeletonLines(convList, 4);
+    if (convEmpty) convEmpty.hidden = true;
+  }
+
   async function init() {
     token =
       window.synodosAuth &&
@@ -401,6 +409,7 @@
       window.location.href = "login.html";
       return;
     }
+    showSkeletons();
     var ok = await loadMe();
     if (!ok) return;
 

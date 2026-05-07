@@ -28,6 +28,11 @@
   var token = null;
   var userId = null;
   var cachedProjects = [];
+  var nextCursor = null;
+  var loadMoreBtn = null;
+  var searchDebounceTimer = null;
+  var lastSearchToken = 0;
+  var inflightProjectsLoad = false;
 
   function setDashboardAvatar(user) {
     if (dashAvatarImg) {
@@ -122,8 +127,29 @@
     return true;
   }
 
-  async function fetchProjects() {
-    var result = await window.synodosAuth.apiFetch("/api/projects", {});
+  function buildProjectsUrl(opts) {
+    opts = opts || {};
+    var params = [];
+    var q = (
+      (projectsFilterInput && projectsFilterInput.value) ||
+      ""
+    ).trim();
+    if (q) params.push("q=" + encodeURIComponent(q));
+    if (projectsFilterMine && projectsFilterMine.checked) {
+      params.push("mine=1");
+    }
+    if (opts.cursor != null) {
+      params.push("cursor=" + encodeURIComponent(String(opts.cursor)));
+    }
+    if (opts.limit != null) {
+      params.push("limit=" + encodeURIComponent(String(opts.limit)));
+    }
+    return "/api/projects" + (params.length ? "?" + params.join("&") : "");
+  }
+
+  async function fetchProjects(opts) {
+    var url = buildProjectsUrl(opts || {});
+    var result = await window.synodosAuth.apiFetch(url, {});
     if (!result) {
       return null;
     }
@@ -137,52 +163,60 @@
     return userId != null && Number(project.owner_user_id) === Number(userId);
   }
 
-  function filterProjects(list) {
-    var q = (
-      (projectsFilterInput && projectsFilterInput.value) ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
-    var mineOnly = projectsFilterMine && projectsFilterMine.checked;
-    var out = [];
-    for (var i = 0; i < list.length; i++) {
-      var p = list[i];
-      if (mineOnly && !isOwner(p)) continue;
-      if (q) {
-        var title = String(p.title || "").toLowerCase();
-        var desc = String(p.description || "").toLowerCase();
-        var ownerLabel = String(p.owner_display || "").toLowerCase();
-        if (
-          title.indexOf(q) === -1 &&
-          desc.indexOf(q) === -1 &&
-          ownerLabel.indexOf(q) === -1
-        ) {
-          continue;
-        }
-      }
-      out.push(p);
+  function renderEmptyState() {
+    if (!projectsEmpty) return;
+    var hasAny = cachedProjects.length > 0;
+    var q = (projectsFilterInput && projectsFilterInput.value || "").trim();
+    var mineOnly = !!(projectsFilterMine && projectsFilterMine.checked);
+    if (hasAny) {
+      projectsEmpty.hidden = true;
+      return;
     }
-    return out;
+    if (q || mineOnly) {
+      projectsEmpty.textContent =
+        "No projects match — try different words or clear the search.";
+    } else {
+      projectsEmpty.textContent = "No projects yet — create one above.";
+    }
+    projectsEmpty.hidden = false;
+  }
+
+  function ensureLoadMoreButton() {
+    if (loadMoreBtn || !projectsRoot || !projectsRoot.parentNode) return;
+    loadMoreBtn = document.createElement("button");
+    loadMoreBtn.type = "button";
+    loadMoreBtn.className = "btn btn-ghost projects-load-more";
+    loadMoreBtn.textContent = "Load more projects";
+    loadMoreBtn.hidden = true;
+    loadMoreBtn.addEventListener("click", function () {
+      loadMoreProjects();
+    });
+    projectsRoot.parentNode.insertBefore(loadMoreBtn, projectsRoot.nextSibling);
+  }
+
+  function syncLoadMoreVisibility() {
+    if (!loadMoreBtn) return;
+    loadMoreBtn.hidden = !nextCursor;
+    loadMoreBtn.disabled = !!inflightProjectsLoad;
+    if (loadMoreBtn.disabled) {
+      loadMoreBtn.textContent = "Loading…";
+    } else {
+      loadMoreBtn.textContent = "Load more projects";
+    }
   }
 
   function renderProjectList() {
     if (!projectsRoot) return;
-    var list = filterProjects(cachedProjects);
     projectsRoot.innerHTML = "";
-    var hasAny = cachedProjects.length > 0;
-    if (projectsEmpty) {
-      if (!hasAny) {
-        projectsEmpty.textContent = "No projects yet — create one above.";
-        projectsEmpty.hidden = false;
-      } else if (list.length === 0) {
-        projectsEmpty.textContent =
-          "No projects match your filter — try different words or clear the search.";
-        projectsEmpty.hidden = false;
-      } else {
-        projectsEmpty.hidden = true;
-      }
+    for (var j = 0; j < cachedProjects.length; j++) {
+      projectsRoot.appendChild(renderProjectCard(cachedProjects[j]));
     }
+    renderEmptyState();
+    syncLoadMoreVisibility();
+  }
+
+  function appendProjects(list) {
+    if (!projectsRoot || !list || list.length === 0) return;
     for (var j = 0; j < list.length; j++) {
       projectsRoot.appendChild(renderProjectCard(list[j]));
     }
@@ -190,7 +224,30 @@
 
   function renderProjects(data) {
     cachedProjects = (data && data.projects) || [];
+    nextCursor = data && data.next_cursor != null ? data.next_cursor : null;
     renderProjectList();
+  }
+
+  async function loadMoreProjects() {
+    if (!nextCursor || inflightProjectsLoad) return;
+    inflightProjectsLoad = true;
+    syncLoadMoreVisibility();
+    try {
+      var data = await fetchProjects({ cursor: nextCursor });
+      if (data === null) return;
+      var more = (data && data.projects) || [];
+      appendProjects(more);
+      cachedProjects = cachedProjects.concat(more);
+      nextCursor = data && data.next_cursor != null ? data.next_cursor : null;
+    } catch (err) {
+      showMsg(
+        (err && err.message) || "Could not load more projects.",
+        true
+      );
+    } finally {
+      inflightProjectsLoad = false;
+      syncLoadMoreVisibility();
+    }
   }
 
   function renderProjectCard(project) {
@@ -221,6 +278,15 @@
       oa.className = "project-owner-link";
       oa.textContent = project.owner_display || oun;
       meta.appendChild(oa);
+      if (window.synodosUserBadges) {
+        var ob = document.createElement("span");
+        ob.className = "project-card__owner-badges";
+        meta.appendChild(ob);
+        window.synodosUserBadges.renderBadgesOnly(ob, {
+          verified: project.owner_verified,
+          official_account: project.owner_official_account,
+        });
+      }
     } else {
       meta.appendChild(
         document.createTextNode(project.owner_display || "?")
@@ -349,20 +415,44 @@
     return row;
   }
 
-  async function refresh() {
-    showMsg("", false);
+  function showSkeletonProjects() {
+    if (!projectsRoot) return;
+    if (window.synodosUi && typeof window.synodosUi.skeletonCards === "function") {
+      window.synodosUi.skeletonCards(projectsRoot, 3);
+    }
+    if (projectsEmpty) projectsEmpty.hidden = true;
+  }
+
+  async function reloadProjects() {
+    var token = ++lastSearchToken;
+    inflightProjectsLoad = true;
+    syncLoadMoreVisibility();
+    showSkeletonProjects();
     try {
-      var data = await fetchProjects();
-      if (data === null) {
-        return;
-      }
+      var data = await fetchProjects({ cursor: null });
+      if (token !== lastSearchToken) return;
+      if (data === null) return;
       renderProjects(data);
     } catch (err) {
+      if (token !== lastSearchToken) return;
+      if (projectsRoot && window.synodosUi) {
+        window.synodosUi.clearSkeleton(projectsRoot);
+      }
       showMsg(
         (err && err.message) || "Something went wrong loading projects.",
         true
       );
+    } finally {
+      if (token === lastSearchToken) {
+        inflightProjectsLoad = false;
+        syncLoadMoreVisibility();
+      }
     }
+  }
+
+  async function refresh() {
+    showMsg("", false);
+    await reloadProjects();
     await loadInbox();
   }
 
@@ -576,14 +666,29 @@
     var ok = await loadMe();
     if (!ok) return;
 
-    function onProjectsFilterChange() {
-      renderProjectList();
+    ensureLoadMoreButton();
+
+    function scheduleSearchReload() {
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+      }
+      searchDebounceTimer = setTimeout(function () {
+        searchDebounceTimer = null;
+        reloadProjects();
+      }, 250);
     }
     if (projectsFilterInput) {
-      projectsFilterInput.addEventListener("input", onProjectsFilterChange);
+      projectsFilterInput.addEventListener("input", scheduleSearchReload);
+      projectsFilterInput.addEventListener("search", scheduleSearchReload);
     }
     if (projectsFilterMine) {
-      projectsFilterMine.addEventListener("change", onProjectsFilterChange);
+      projectsFilterMine.addEventListener("change", function () {
+        if (searchDebounceTimer) {
+          clearTimeout(searchDebounceTimer);
+          searchDebounceTimer = null;
+        }
+        reloadProjects();
+      });
     }
 
     if (formNew) {

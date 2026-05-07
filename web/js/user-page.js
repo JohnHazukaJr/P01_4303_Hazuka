@@ -103,23 +103,8 @@
     if (titleEl) {
       var label = user.public_display_label || user.username || "—";
       titleEl.textContent = label;
-      if (user.verified) {
-        var bv = document.createElement("span");
-        bv.className = "verified-badge";
-        bv.textContent = "Verified";
-        bv.setAttribute("aria-label", "Identity verified");
-        bv.title = "Identity verified";
-        titleEl.appendChild(document.createTextNode(" "));
-        titleEl.appendChild(bv);
-      }
-      if (user.official_account) {
-        var bo = document.createElement("span");
-        bo.className = "official-badge";
-        bo.textContent = "Official";
-        bo.setAttribute("aria-label", "Official account");
-        bo.title = "Official account — notable organization or platform account";
-        titleEl.appendChild(document.createTextNode(" "));
-        titleEl.appendChild(bo);
+      if (window.synodosUserBadges && typeof window.synodosUserBadges.appendToTitle === "function") {
+        window.synodosUserBadges.appendToTitle(titleEl, user);
       }
     }
     if (usernameEl) {

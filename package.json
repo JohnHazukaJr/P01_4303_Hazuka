@@ -11,6 +11,15 @@
     "migrate:avatars": "npm --prefix server run migrate-avatars",
     "check-env": "npm --prefix server run check-env",
     "verify-schema": "npm --prefix server run verify-schema",
-    "health-check": "npm --prefix server run health-check"
+    "health-check": "npm --prefix server run health-check",
+    "test": "npm --prefix server test",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.16.0",
+    "eslint": "^9.16.0",
+    "prettier": "^3.4.2"
   }
 }

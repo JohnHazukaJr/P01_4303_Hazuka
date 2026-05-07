@@ -1,4 +1,3 @@
-const express = require("express");
 const { publicDisplayLabel } = require("../displayLabel");
 const { parseCursor } = require("../routeUtils");
 

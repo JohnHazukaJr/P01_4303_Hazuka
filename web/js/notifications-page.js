@@ -225,9 +225,22 @@
     await refresh();
   }
 
+  function showSkeletons() {
+    if (!window.synodosUi) return;
+    var listRoot = document.getElementById("notifications-list-root");
+    var invRoot = document.getElementById("notifications-invites-root");
+    var listEmpty = document.getElementById("notifications-list-empty");
+    var invEmpty = document.getElementById("notifications-invites-empty");
+    if (listRoot) window.synodosUi.skeletonLines(listRoot, 5);
+    if (invRoot) window.synodosUi.skeletonCards(invRoot, 1);
+    if (listEmpty) listEmpty.hidden = true;
+    if (invEmpty) invEmpty.hidden = true;
+  }
+
   function init() {
     var btn = document.getElementById("notifications-mark-all");
     if (btn) btn.addEventListener("click", markAllRead);
+    showSkeletons();
     refresh();
   }
 

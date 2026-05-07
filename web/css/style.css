@@ -1276,6 +1276,13 @@ footer {
   max-width: 42rem;
 }
 
+.dashboard-lead-link {
+  margin-left: 0.4rem;
+  color: var(--color-cobalt);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .project-form {
   max-width: 32rem;
   display: flex;
@@ -1368,10 +1375,92 @@ footer {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
 }
 
+.projects-load-more {
+  margin: 1rem auto 0;
+  display: block;
+}
+
 .dashboard-empty {
   margin: 0;
   font-size: 0.9375rem;
   color: var(--color-ink-muted2);
+}
+
+/* ----- Skeleton loaders --------------------------------------------------
+ * Small CSS utility for placeholder shimmers while page data loads.
+ * Use one of: .skeleton, .skeleton--line, .skeleton--card, .skeleton--avatar
+ * Wrap repeats in <div class="skeleton-stack"> for vertical spacing.
+ */
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--color-marble-border) 0%,
+    var(--color-card-project) 40%,
+    var(--color-marble-border) 80%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-md, 8px);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  color: transparent;
+  user-select: none;
+}
+
+.skeleton--line {
+  height: 0.875rem;
+  width: 100%;
+  margin: 0 0 0.5rem;
+}
+
+.skeleton--line.skeleton--short {
+  width: 40%;
+}
+
+.skeleton--line.skeleton--medium {
+  width: 70%;
+}
+
+.skeleton--card {
+  height: 8.5rem;
+  width: 100%;
+  margin: 0 0 1rem;
+}
+
+.skeleton--avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+
+.skeleton-stack > * + * {
+  margin-top: 0.5rem;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--color-marble-border);
+  }
+}
+
+.user-public-tag {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-cobalt);
+  background: var(--color-cobalt-muted);
+  border: 1px solid var(--color-marble-border);
+  border-radius: 999px;
 }
 
 .project-card {
@@ -2191,6 +2280,52 @@ footer {
   content: "★";
   font-size: 0.65rem;
   line-height: 1;
+}
+
+/* Inline badge groups (profile header, cards, project meta) */
+.user-badges-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  vertical-align: middle;
+}
+
+.profile-page-header__title--with-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.profile-page-header__title-text {
+  flex: 0 1 auto;
+}
+
+.profile-page-header__badges {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  min-height: 1.5rem;
+}
+
+.people-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.people-card__badges {
+  display: inline-flex;
+  align-items: center;
+}
+
+.project-card__owner-badges {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.15rem;
+  vertical-align: middle;
 }
 
 .feed-list {

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Don't index logged-in / personal pages.
+Disallow: /dashboard.html
+Disallow: /profile.html
+Disallow: /profile-setup.html
+Disallow: /messages.html
+Disallow: /notifications.html
+
+Sitemap: https://synodos.netlify.app/sitemap.xml
