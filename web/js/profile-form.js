@@ -398,7 +398,7 @@
       workTagsAddBtn.addEventListener("click", function () {
         if (!fieldsCatalog || !fieldsCatalog.fields) {
           window.alert(
-            "Work areas are still loading. Check your connection and that the API is running (server: npm start)."
+            "Work areas are still loading. Check your connection and refresh the page."
           );
           return;
         }
@@ -595,7 +595,7 @@
         if (!fieldsR || !fieldsR.res.ok) {
           exitPreviewNameLoading();
           if (previewName) previewName.textContent = "\u2014";
-          window.alert("Could not load profile options from the server.");
+          window.alert("Could not load your work area list. Please try again.");
           return;
         }
         var meData = meR.data;
@@ -608,7 +608,7 @@
           exitPreviewNameLoading();
           if (previewName) previewName.textContent = "\u2014";
           window.alert(
-            "Profile options from the server were incomplete. Try again or update the app."
+            "Something went wrong loading your profile options. Please refresh and try again."
           );
           return;
         }
@@ -756,7 +756,8 @@
               "Save request was too large. Try again with a smaller photo or compress the image first.";
           }
           if (!saveErr && res.status >= 500) {
-            saveErr = "Server error while saving. Check the API logs and your Supabase storage settings.";
+            saveErr =
+              "Something went wrong while saving. Please try again in a moment.";
           }
           showSaveStatus(
             false,
@@ -772,7 +773,7 @@
         if (hadAvatarDataPayload && !avatarUrlBack) {
           showSaveStatus(
             false,
-            "Profile saved but the photo did not persist. Check the API host: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (service role), and a public Storage bucket (e.g. avatars). Then click Save again."
+            "Your profile saved, but the photo could not be uploaded. Try a smaller image or another file, then save again."
           );
           if (data.user) {
             window.synodosAuth.setCachedMe(data.user);

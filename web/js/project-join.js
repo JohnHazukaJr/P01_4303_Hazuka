@@ -133,12 +133,10 @@
       "</select>" +
       "</div>" +
       '<div class="field">' +
-      '<label for="join-note">Note to the owner (optional, max ' +
-      NOTE_MAX +
-      ")</label>" +
+      '<label for="join-note">Optional message to the project owner</label>' +
       '<textarea id="join-note" name="note" class="field-textarea" rows="2" maxlength="' +
       NOTE_MAX +
-      '" placeholder="Skills, availability, link to work…"></textarea>' +
+      '" placeholder="Relevant experience, availability, or a link to your work"></textarea>' +
       "</div>" +
       '<button type="submit" class="btn btn-primary">Send join request</button>' +
       "</form>";
