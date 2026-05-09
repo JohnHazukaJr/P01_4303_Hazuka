@@ -23,6 +23,44 @@ const AVATAR_MAX_BYTES = 512 * 1024;
 
 let cachedClient = null;
 
+// #region agent log
+function dbgSupabaseRoleFromJwt(key) {
+  try {
+    const parts = String(key || "").split(".");
+    if (parts.length < 2) return null;
+    let b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const json = Buffer.from(b64, "base64").toString("utf8");
+    const obj = JSON.parse(json);
+    return obj && obj.role != null ? String(obj.role) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function dbgPost(hypothesisId, location, message, data) {
+  try {
+    if (typeof fetch !== "function") return;
+    fetch("http://127.0.0.1:7462/ingest/2e0e05ed-2293-4597-b6c6-1abe56458da5", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "7dfff8",
+      },
+      body: JSON.stringify({
+        sessionId: "7dfff8",
+        runId: "pre-fix",
+        hypothesisId,
+        location,
+        message,
+        data: data || {},
+        timestamp: Date.now(),
+      }),
+    }).catch(function () {});
+  } catch (_) {}
+}
+// #endregion
+
 function getBucket() {
   return String(process.env.SUPABASE_AVATAR_BUCKET || "avatars").trim();
 }
@@ -110,10 +148,33 @@ function getClient() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
+    // #region agent log
+    dbgPost(
+      "A",
+      "server/storage.js:getClient",
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+      {
+        hasUrl: !!url,
+        hasKey: !!key,
+      }
+    );
+    // #endregion
     throw new Error(
       "[synodos] Avatar uploads require SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
     );
   }
+  // #region agent log
+  dbgPost(
+    "A",
+    "server/storage.js:getClient",
+    "Creating Supabase client for Storage",
+    {
+      supabaseUrlHost: String(url).replace(/^https?:\/\//i, "").split("/")[0],
+      keyRole: dbgSupabaseRoleFromJwt(key),
+      keyLen: String(key).length,
+    }
+  );
+  // #endregion
   cachedClient = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -157,6 +218,14 @@ async function uploadAvatar(userId, buffer, mime) {
   }
 
   const bucket = getBucket();
+  // #region agent log
+  dbgPost("B", "server/storage.js:uploadAvatar", "Starting avatar upload", {
+    userId: String(userId),
+    mime,
+    bytes: buffer && buffer.length ? buffer.length : 0,
+    bucket,
+  });
+  // #endregion
   if (!bucket) {
     return {
       ok: false,
@@ -191,6 +260,19 @@ async function uploadAvatar(userId, buffer, mime) {
       cacheControl: "3600",
     });
   if (upErr) {
+    // #region agent log
+    dbgPost("C", "server/storage.js:uploadAvatar", "Supabase upload error", {
+      bucket,
+      objectKey: newKey,
+      errName: upErr && upErr.name ? String(upErr.name) : null,
+      errMessage: upErr && upErr.message ? String(upErr.message) : null,
+      statusCode: upErr && upErr.statusCode != null ? upErr.statusCode : null,
+      cause:
+        upErr && upErr.cause && upErr.cause.message
+          ? String(upErr.cause.message)
+          : null,
+    });
+    // #endregion
     return {
       ok: false,
       error: formatStorageError(bucket, upErr),
