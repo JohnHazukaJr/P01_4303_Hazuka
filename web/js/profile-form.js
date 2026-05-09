@@ -149,6 +149,8 @@
 
     var fieldsCatalog = null;
     var pendingAvatarDataUrl = null;
+    /** True while FileReader / canvas is still building a data URL (Save must wait). */
+    var avatarImportInProgress = false;
     var avatarResetRequested = false;
     var tagRowCounter = 0;
     var accountUsername = "";
@@ -438,18 +440,30 @@
               "Image is still over 512 KB after processing. Try another file."
             );
             avatarFile.value = "";
+            avatarImportInProgress = false;
             return;
           }
           pendingAvatarDataUrl = dataUrl;
           avatarResetRequested = false;
           showLocalPickedAvatar(dataUrl);
+          avatarImportInProgress = false;
         }
+
+        avatarImportInProgress = true;
 
         if (f.size <= AVATAR_MAX_BYTES) {
           var reader = new FileReader();
+          reader.onerror = function () {
+            avatarImportInProgress = false;
+            window.alert("Could not read this image file.");
+            avatarFile.value = "";
+          };
           reader.onload = function () {
             var dataUrl = reader.result;
-            if (typeof dataUrl !== "string") return;
+            if (typeof dataUrl !== "string") {
+              avatarImportInProgress = false;
+              return;
+            }
             if (dataUrlDecodedLength(dataUrl) <= AVATAR_MAX_BYTES) {
               applyPick(dataUrl);
             } else {
@@ -461,6 +475,7 @@
                   if (err) {
                     window.alert(err);
                     avatarFile.value = "";
+                    avatarImportInProgress = false;
                     return;
                   }
                   applyPick(out);
@@ -480,6 +495,7 @@
             if (err) {
               window.alert(err);
               avatarFile.value = "";
+              avatarImportInProgress = false;
               return;
             }
             applyPick(dataUrl);
@@ -694,6 +710,14 @@
         return;
       }
 
+      if (avatarImportInProgress) {
+        showSaveStatus(
+          false,
+          "Still processing your photo. Wait a moment, then click Save again."
+        );
+        return;
+      }
+
       var payload = {
         display_name: displayName,
         public_display_as: publicDisplayAs,
@@ -706,6 +730,10 @@
       } else if (avatarResetRequested) {
         payload.avatar_reset = true;
       }
+
+      var hadAvatarDataPayload =
+        typeof payload.avatar_data === "string" &&
+        payload.avatar_data.length > 0;
 
       var submitBtn = form.querySelector('[type="submit"]');
       if (submitBtn) submitBtn.disabled = true;
@@ -736,6 +764,23 @@
           );
           return;
         }
+
+        var avatarUrlBack =
+          data.user && data.user.avatar_url != null
+            ? String(data.user.avatar_url).trim()
+            : "";
+        if (hadAvatarDataPayload && !avatarUrlBack) {
+          showSaveStatus(
+            false,
+            "Profile saved but the photo did not persist. Check the API host: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (service role), and a public Storage bucket (e.g. avatars). Then click Save again."
+          );
+          if (data.user) {
+            window.synodosAuth.setCachedMe(data.user);
+            meSnapshot = data.user;
+          }
+          return;
+        }
+
         if (data.user) {
           window.synodosAuth.setCachedMe(data.user);
         }
@@ -747,7 +792,7 @@
           avatarResetRequested = false;
           if (data.user) {
             meSnapshot = data.user;
-            if (data.user.avatar_url) {
+            if (avatarUrlBack) {
               window.synodosAuth.applyUserAvatar(avatarImg, null, data.user);
             } else {
               showDefaultAvatar();
