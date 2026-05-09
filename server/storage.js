@@ -35,11 +35,17 @@ function getBucket() {
 async function ensureAvatarBucket(client, bucketName) {
   const { data: buckets, error: listErr } = await client.storage.listBuckets();
   if (listErr) {
+    var lm = listErr.message || "Could not access Storage";
+    var extra = "";
+    if (/row-level security|rls policy|violates row-level/i.test(String(lm))) {
+      extra = rlsServiceRoleHint(bucketName);
+    } else {
+      extra =
+        " — Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (Settings → API → **service_role** secret, not anon).";
+    }
     return {
       ok: false,
-      error:
-        (listErr.message || "Could not access Storage") +
-        " — Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (Settings → API → service_role).",
+      error: lm + extra,
     };
   }
   const exists = (buckets || []).some(function (b) {
@@ -69,8 +75,25 @@ async function ensureAvatarBucket(client, bucketName) {
   };
 }
 
+function rlsServiceRoleHint(bucketName) {
+  const b =
+    bucketName && String(bucketName).trim()
+      ? String(bucketName).trim()
+      : getBucket();
+  return (
+    " Fix: In Supabase go to **Settings → API** and copy the **service_role** key (secret), " +
+    "not the anon / publishable key — put it in `SUPABASE_SERVICE_ROLE_KEY` on the API host and restart. " +
+    "With the anon key, Storage RLS blocks uploads. Also ensure bucket **" +
+    b +
+    "** exists and is **public** (Storage → bucket → Public)."
+  );
+}
+
 function formatStorageError(bucket, upErr) {
   const raw = (upErr && upErr.message) || "Avatar upload failed";
+  if (/row-level security|rls policy|violates row-level/i.test(raw)) {
+    return raw + "." + rlsServiceRoleHint(bucket);
+  }
   if (/bucket not found|not found|does not exist/i.test(raw)) {
     return (
       raw +
