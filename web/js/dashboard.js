@@ -16,6 +16,14 @@
     }
     return;
   }
+  if (!window.synodosSession) {
+    if (typeof console !== "undefined" && console.error) {
+      console.error(
+        "synodosSession not found. Load js/session-guard.js before js/dashboard.js."
+      );
+    }
+    return;
+  }
 
   var displayNameEl = document.getElementById("dashboard-display-name");
   var dashAvatarImg = document.getElementById("dashboard-avatar-img");
@@ -103,12 +111,21 @@
     };
   }
 
+  function msgForFetchFailure(err, fallback) {
+    var isNetwork =
+      err &&
+      (err.name === "TypeError" ||
+        /network|fetch|failed to fetch|load failed|aborted/i.test(
+          String(err.message || "")
+        ));
+    if (isNetwork) {
+      return "Unable to reach synodos. Check your connection and try again.";
+    }
+    return (err && err.message) || fallback;
+  }
+
   async function loadMe() {
     token = window.synodosAuth.getToken();
-    if (!token) {
-      window.location.href = "login.html";
-      return false;
-    }
     var cached = window.synodosAuth.getCachedMe();
     if (cached && displayNameEl) {
       var pub0 = String(cached.public_display_label || "").trim();
@@ -118,31 +135,36 @@
     if (cached) {
       setDashboardAvatar(cached);
     }
-    var result = await window.synodosAuth.apiFetch("/api/me", {});
-    if (!result) {
+    var gate = await window.synodosSession.ensureAuthedAndCompleteProfile(
+      {}
+    );
+    if (!gate.ok) {
+      if (gate.reason === "network") {
+        showMsg(
+          msgForFetchFailure(
+            gate.error,
+            "Could not load your account. Please try again."
+          ),
+          true
+        );
+        return false;
+      }
+      if (gate.reason === "me-failed") {
+        showMsg("Could not load your account. Please try again.", true);
+        return false;
+      }
       return false;
     }
-    var res = result.res;
-    var data = result.data;
-    if (!res.ok) {
-      showMsg("Could not load your account. Please try again.", true);
-      return false;
-    }
-    if (data.user && !data.user.profile_complete) {
-      window.location.href = "profile-setup.html";
-      return false;
-    }
-    if (data.user) {
-      window.synodosAuth.setCachedMe(data.user);
-    }
-    userId = data.user && data.user.id;
-    if (displayNameEl && data.user) {
-      var pub = String(data.user.public_display_label || "").trim();
-      var dn = String(data.user.display_name || "").trim();
+    token = window.synodosAuth.getToken();
+    var u = gate.user;
+    userId = u && u.id;
+    if (displayNameEl && u) {
+      var pub = String(u.public_display_label || "").trim();
+      var dn = String(u.display_name || "").trim();
       displayNameEl.textContent = pub || dn || "Welcome back";
     }
-    if (data.user) {
-      setDashboardAvatar(data.user);
+    if (u) {
+      setDashboardAvatar(u);
     }
     return true;
   }

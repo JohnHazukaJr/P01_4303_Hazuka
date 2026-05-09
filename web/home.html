@@ -61,7 +61,7 @@
 
   <main class="dashboard-main" id="main-content" tabindex="-1">
     <div class="wrap dashboard-wrap">
-      <p id="home-msg" class="dashboard-msg" hidden></p>
+      <p id="home-msg" class="dashboard-msg" role="status" aria-live="polite" tabindex="-1" hidden></p>
 
       <div class="auth-card dashboard-intro">
         <div class="dashboard-user-strip">
@@ -114,6 +114,9 @@
           <a href="profile.html">Your space</a>
         </span>
       </nav>
+      <svg class="brand-meander" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 5" fill="none" aria-hidden="true">
+        <path stroke="currentColor" stroke-width="0.9" stroke-linecap="square" d="M0 2.5h6l2-2 2 2 2-2 2 2 2-2 2 2h44l2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2h6"/>
+      </svg>
       <p class="footer-credit">synodos</p>
     </div>
   </footer>
@@ -122,6 +125,7 @@
   <script src="js/global-errors.js" defer></script>
   <script src="js/config.js" defer></script>
   <script src="js/auth.js" defer></script>
+  <script src="js/session-guard.js" defer></script>
   <script src="js/notification-helpers.js" defer></script>
   <script src="js/public-nav.js" defer></script>
   <script src="js/theme.js" defer></script>
