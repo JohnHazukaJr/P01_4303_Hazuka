@@ -14,6 +14,14 @@
     }
     return;
   }
+  if (!window.synodosSession) {
+    if (typeof console !== "undefined" && console.error) {
+      console.error(
+        "synodosSession not found. Load js/session-guard.js before js/home.js."
+      );
+    }
+    return;
+  }
 
   var PROJECTS_LIMIT = 15;
   var FEED_LIMIT = 20;
@@ -79,20 +87,36 @@
     });
   }
 
+  function msgForFetchFailure(err, fallback) {
+    var isNetwork =
+      err &&
+      (err.name === "TypeError" ||
+        /network|fetch|failed to fetch|load failed|aborted/i.test(
+          String(err.message || "")
+        ));
+    if (isNetwork) {
+      return "Unable to reach synodos. Check your connection and try again.";
+    }
+    return (err && err.message) || fallback;
+  }
+
   function showMsg(text, isError) {
     if (!msgEl) return;
     msgEl.textContent = text || "";
     msgEl.hidden = !text;
     msgEl.className =
       "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    if (isError && text) {
+      try {
+        msgEl.focus({ preventScroll: true });
+      } catch (e) {
+        msgEl.focus();
+      }
+    }
   }
 
   async function loadMe() {
     token = window.synodosAuth.getToken();
-    if (!token) {
-      window.location.href = "login.html";
-      return false;
-    }
     var cached = window.synodosAuth.getCachedMe();
     if (cached && displayNameEl) {
       var pub0 = String(cached.public_display_label || "").trim();
@@ -102,30 +126,36 @@
     if (cached) {
       setAvatars(cached);
     }
-    var result = await window.synodosAuth.apiFetch("/api/me", {});
-    if (!result) {
+    var gate = await window.synodosSession.ensureAuthedAndCompleteProfile(
+      {}
+    );
+    if (!gate.ok) {
+      if (gate.reason === "network") {
+        showMsg(
+          msgForFetchFailure(
+            gate.error,
+            "Could not load your account. Please try again."
+          ),
+          true
+        );
+        return false;
+      }
+      if (gate.reason === "me-failed") {
+        showMsg("Could not load your account. Please try again.", true);
+        return false;
+      }
       return false;
     }
-    if (!result.res.ok) {
-      showMsg("Could not load your account. Please try again.", true);
-      return false;
-    }
-    var data = result.data;
-    if (data.user && !data.user.profile_complete) {
-      window.location.href = "profile-setup.html";
-      return false;
-    }
-    if (data.user) {
-      window.synodosAuth.setCachedMe(data.user);
-    }
-    userId = data.user && data.user.id;
-    if (displayNameEl && data.user) {
-      var pub = String(data.user.public_display_label || "").trim();
-      var dn = String(data.user.display_name || "").trim();
+    token = window.synodosAuth.getToken();
+    var u = gate.user;
+    userId = u && u.id;
+    if (displayNameEl && u) {
+      var pub = String(u.public_display_label || "").trim();
+      var dn = String(u.display_name || "").trim();
       displayNameEl.textContent = pub || dn || "Welcome back";
     }
-    if (data.user) {
-      setAvatars(data.user);
+    if (u) {
+      setAvatars(u);
     }
     return true;
   }
@@ -150,6 +180,10 @@
     if (!projectsLoadMore) return;
     projectsLoadMore.hidden = !projectsNextCursor;
     projectsLoadMore.disabled = !!projectsInflight;
+    projectsLoadMore.setAttribute(
+      "aria-busy",
+      projectsInflight ? "true" : "false"
+    );
     projectsLoadMore.textContent = projectsInflight
       ? "Loading…"
       : "Load more projects";
@@ -192,7 +226,7 @@
     try {
       var result = await window.synodosAuth.apiFetch(buildProjectsUrl(null), {});
       if (!result || !result.res.ok) {
-        throw new Error("Could not load projects");
+        throw new Error("Could not load projects.");
       }
       var data = result.data || {};
       cachedProjects = data.projects || [];
@@ -207,7 +241,7 @@
         window.synodosUi.clearSkeleton(projectsRoot);
       }
       showMsg(
-        (e && e.message) || "Could not load projects. Try again.",
+        msgForFetchFailure(e, "Could not load projects. Try again."),
         true
       );
       renderProjectsEmpty();
@@ -227,7 +261,7 @@
         {}
       );
       if (!result || !result.res.ok) {
-        throw new Error("Could not load projects");
+        throw new Error("Could not load projects.");
       }
       var data = result.data || {};
       var more = data.projects || [];
@@ -359,6 +393,10 @@
     if (!activityLoadMore) return;
     activityLoadMore.hidden = !feedNextCursor;
     activityLoadMore.disabled = !!feedInflight;
+    activityLoadMore.setAttribute(
+      "aria-busy",
+      feedInflight ? "true" : "false"
+    );
     activityLoadMore.textContent = feedInflight ? "Loading…" : "Load more";
   }
 
@@ -409,7 +447,7 @@
         window.synodosUi.clearSkeleton(activityRoot);
       }
       showMsg(
-        (e && e.message) || "Could not load activity. Try again.",
+        msgForFetchFailure(e, "Could not load activity. Try again."),
         true
       );
       renderActivityEmpty();
@@ -442,7 +480,7 @@
       renderActivityEmpty();
     } catch (e) {
       showMsg(
-        (e && e.message) || "Could not load more activity.",
+        msgForFetchFailure(e, "Could not load more activity."),
         true
       );
     } finally {

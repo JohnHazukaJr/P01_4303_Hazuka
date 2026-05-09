@@ -1,0 +1,106 @@
+:root {
+  color-scheme: light;
+  --color-marble: #f4f6f8;
+  --color-marble-deep: #e9eef3;
+  --color-marble-border: #dce3eb;
+  --color-gold: #b8975c;
+  --color-gold-strong: #9a7a45;
+  --color-gold-faint: rgba(184, 151, 92, 0.1);
+  --color-cobalt: #1b4f8f;
+  --color-cobalt-hover: #153d6f;
+  --color-cobalt-muted: rgba(27, 79, 143, 0.08);
+  --color-accent: #1b4f8f;
+  --color-accent-hover: #153d6f;
+  --color-ink: #1c2430;
+  --color-ink-muted: rgba(28, 36, 48, 0.88);
+  --color-ink-soft: rgba(28, 36, 48, 0.85);
+  --color-ink-faint: rgba(28, 36, 48, 0.78);
+  --color-ink-note: rgba(28, 36, 48, 0.75);
+  --color-ink-dim: rgba(28, 36, 48, 0.65);
+  --color-ink-subtle: rgba(28, 36, 48, 0.58);
+  --color-ink-muted2: rgba(28, 36, 48, 0.55);
+  --color-ink-faint2: rgba(28, 36, 48, 0.5);
+  --color-ink-placeholder: rgba(28, 36, 48, 0.4);
+  --color-ink-on-card: rgba(28, 36, 48, 0.82);
+  --color-top-bg: rgba(244, 246, 248, 0.94);
+  --color-section-alt: rgba(233, 238, 243, 0.65);
+  --color-card-bg: rgba(255, 255, 255, 0.72);
+  --color-card-bg-strong: rgba(255, 255, 255, 0.85);
+  --color-card-project: rgba(255, 255, 255, 0.88);
+  --shadow-auth: 0 8px 28px rgba(27, 79, 143, 0.06);
+  --shadow-project: 0 6px 22px rgba(27, 79, 143, 0.05);
+  --color-input-bg: #fff;
+  --color-focus-ring: rgba(27, 79, 143, 0.15);
+  --color-msg-info-bg: rgba(27, 79, 143, 0.08);
+  --color-msg-info-border: rgba(27, 79, 143, 0.2);
+  --color-border-gold: rgba(184, 151, 92, 0.4);
+  --color-border-gold-hover: rgba(184, 151, 92, 0.45);
+  --color-btn-on-cobalt-bg: #fff;
+  --color-btn-on-cobalt-border: #fff;
+  --color-btn-on-cobalt-hover-bg: var(--color-marble-deep);
+  --color-btn-on-cobalt-hover-border: var(--color-marble-deep);
+  --font-display: "Libre Baskerville", Georgia, "Times New Roman", serif;
+  --font-body: "Figtree", system-ui, -apple-system, Segoe UI, sans-serif;
+  --content-max: 64rem;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --transition-fast: 0.18s ease;
+  --transition-theme: background-color 0.22s ease, color 0.22s ease,
+    border-color 0.22s ease;
+  --header-sticky-offset: 4.25rem;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-marble: #12161d;
+  --color-marble-deep: #0e1319;
+  --color-marble-border: #2a3544;
+  --color-gold: #c4a86a;
+  --color-gold-strong: #d4bc8a;
+  --color-gold-faint: rgba(196, 168, 106, 0.14);
+  --color-cobalt-muted: rgba(110, 176, 232, 0.1);
+  --color-accent: #7eb8e8;
+  --color-accent-hover: #9ec8f0;
+  --color-ink: #e8ecf0;
+  --color-ink-muted: rgba(232, 236, 240, 0.88);
+  --color-ink-soft: rgba(232, 236, 240, 0.85);
+  --color-ink-faint: rgba(232, 236, 240, 0.78);
+  --color-ink-note: rgba(232, 236, 240, 0.75);
+  --color-ink-dim: rgba(232, 236, 240, 0.65);
+  --color-ink-subtle: rgba(232, 236, 240, 0.58);
+  --color-ink-muted2: rgba(232, 236, 240, 0.55);
+  --color-ink-faint2: rgba(232, 236, 240, 0.5);
+  --color-ink-placeholder: rgba(232, 236, 240, 0.4);
+  --color-ink-on-card: rgba(232, 236, 240, 0.88);
+  --color-top-bg: rgba(18, 22, 29, 0.94);
+  --color-section-alt: rgba(20, 26, 34, 0.88);
+  --color-card-bg: rgba(255, 255, 255, 0.06);
+  --color-card-bg-strong: rgba(255, 255, 255, 0.08);
+  --color-card-project: rgba(255, 255, 255, 0.07);
+  --shadow-auth: 0 8px 28px rgba(0, 0, 0, 0.4);
+  --shadow-project: 0 6px 22px rgba(0, 0, 0, 0.35);
+  --color-input-bg: #1a222c;
+  --color-focus-ring: rgba(110, 176, 232, 0.28);
+  --color-msg-info-bg: rgba(110, 176, 232, 0.12);
+  --color-msg-info-border: rgba(110, 176, 232, 0.38);
+  --color-border-gold: rgba(196, 168, 106, 0.45);
+  --color-border-gold-hover: rgba(196, 168, 106, 0.55);
+  --color-btn-on-cobalt-bg: #f0f4f8;
+  --color-btn-on-cobalt-border: #f0f4f8;
+  --color-btn-on-cobalt-hover-bg: #d8e4f0;
+  --color-btn-on-cobalt-hover-border: #d8e4f0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
