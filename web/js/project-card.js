@@ -146,10 +146,10 @@
       addForm.className = "role-form";
       addForm.innerHTML =
         '<label class="role-form__label"><span>Role title</span>' +
-        '<input name="title" type="text" required maxlength="200" placeholder="e.g. UI design">' +
+        '<input name="title" type="text" required maxlength="200" placeholder="Role title">' +
         "</label>" +
         '<label class="role-form__label"><span>Skills / tools</span>' +
-        '<input name="skills" type="text" maxlength="2000" placeholder="Figma, accessibility">' +
+        '<input name="skills" type="text" maxlength="2000" placeholder="Tools or skills">' +
         "</label>" +
         '<label class="role-form__label role-form__label--narrow"><span>Openings</span>' +
         '<input name="slots" type="number" min="0" max="999" value="1">' +

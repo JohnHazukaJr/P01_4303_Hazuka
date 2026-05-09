@@ -85,11 +85,11 @@
         <form class="project-form" id="form-new-project" action="#" method="post" novalidate>
           <div class="field">
             <label for="np-title">Title</label>
-            <input id="np-title" name="title" type="text" required maxlength="200" placeholder="Course app, hackathon team, …">
+            <input id="np-title" name="title" type="text" required maxlength="200" placeholder="Short title for your project">
           </div>
           <div class="field">
             <label for="np-desc">Description</label>
-            <textarea id="np-desc" name="description" class="field-textarea" rows="3" maxlength="8000" placeholder="What you are shipping, stack, time commitment…"></textarea>
+            <textarea id="np-desc" name="description" class="field-textarea" rows="3" maxlength="8000" placeholder="What you are building, what you need, and how you work together"></textarea>
           </div>
           <button type="submit" class="btn btn-primary">Publish project</button>
         </form>
@@ -104,7 +104,7 @@
         <div class="projects-toolbar" role="search">
           <label class="projects-toolbar__search">
             <span class="visually-hidden">Search projects by title or description</span>
-            <input type="search" id="projects-filter" class="projects-filter-input" placeholder="Search by title or description…" autocomplete="off" enterkeyhint="search">
+            <input type="search" id="projects-filter" class="projects-filter-input" placeholder="Search projects" autocomplete="off" enterkeyhint="search">
           </label>
           <label class="projects-toolbar__mine">
             <input type="checkbox" id="projects-filter-mine">
@@ -120,7 +120,7 @@
   <footer class="auth-footer-note">
     <div class="wrap">
       <nav class="footer-nav" aria-label="Site pages">
-        <a href="index.html">Marketing</a>
+        <a href="index.html">Home</a>
         <span class="footer-nav__cluster" data-nav-group="guest">
           <a href="login.html">Log in</a>
           <a href="register.html">Get started</a>
