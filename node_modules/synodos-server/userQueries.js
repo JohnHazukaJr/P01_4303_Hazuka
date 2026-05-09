@@ -1,8 +1,4 @@
-const {
-  enrichTag,
-  isValidWorkField,
-  isValidWorkSubfield,
-} = require("./profileFields");
+const { enrichTag, isValidWorkField, isValidWorkSubfield } = require("./profileFields");
 
 const USER_PROFILE_COLUMNS =
   "id, username, display_name, public_display_as, bio, avatar_url, work_field, work_subfield, verified, official_account";
@@ -37,22 +33,14 @@ function profileCompleteFromRow(row, tags) {
   if (tags && tags.length > 0) {
     for (let i = 0; i < tags.length; i++) {
       const t = tags[i];
-      if (
-        isValidWorkField(t.work_field) &&
-        isValidWorkSubfield(t.work_field, t.work_subfield)
-      ) {
+      if (isValidWorkField(t.work_field) && isValidWorkSubfield(t.work_field, t.work_subfield)) {
         return true;
       }
     }
   }
   const wf = String(row.work_field || "").trim();
   const ws = String(row.work_subfield || "").trim();
-  return (
-    wf.length > 0 &&
-    ws.length > 0 &&
-    isValidWorkField(wf) &&
-    isValidWorkSubfield(wf, ws)
-  );
+  return wf.length > 0 && ws.length > 0 && isValidWorkField(wf) && isValidWorkSubfield(wf, ws);
 }
 
 module.exports = {

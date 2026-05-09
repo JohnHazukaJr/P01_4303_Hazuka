@@ -27,14 +27,11 @@
         var note = String(fd.get("note") || "").trim();
         pg.showMsg("", false);
         try {
-          var invRes = await window.synodosAuth.apiFetch(
-            "/api/projects/" + pid + "/invites",
-            {
-              method: "POST",
-              headers: window.synodosAuth.authHeaders({ json: true }),
-              body: JSON.stringify({ username: username, note: note }),
-            }
-          );
+          var invRes = await window.synodosAuth.apiFetch("/api/projects/" + pid + "/invites", {
+            method: "POST",
+            headers: window.synodosAuth.authHeaders({ json: true }),
+            body: JSON.stringify({ username: username, note: note }),
+          });
           if (!invRes) {
             return;
           }

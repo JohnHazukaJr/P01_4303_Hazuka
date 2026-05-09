@@ -1,10 +1,7 @@
 const { normalizeUsername } = require("../db");
 const { publicDisplayLabel } = require("../displayLabel");
 const { parseId, parseCursor } = require("../routeUtils");
-const {
-  insertNotification,
-  NOTIFICATION_TYPES,
-} = require("../userNotifications");
+const { insertNotification, NOTIFICATION_TYPES } = require("../userNotifications");
 
 const DM_BODY_MAX = 8000;
 
@@ -25,25 +22,21 @@ async function findPairConversationId(db, userA, userB) {
 async function findOrCreatePairConversation(db, userA, userB) {
   const existing = await findPairConversationId(db, userA, userB);
   if (existing) return existing;
-  const info = await db
-    .prepare(`INSERT INTO dm_conversations DEFAULT VALUES RETURNING id`)
-    .run();
+  const info = await db.prepare(`INSERT INTO dm_conversations DEFAULT VALUES RETURNING id`).run();
   const cid = info && info.rows && info.rows[0] ? Number(info.rows[0].id) : null;
   if (!cid) throw new Error("Could not create conversation");
-  await db.prepare(
-    `INSERT INTO dm_participants (conversation_id, user_id) VALUES (?, ?)`
-  ).run(cid, userA);
-  await db.prepare(
-    `INSERT INTO dm_participants (conversation_id, user_id) VALUES (?, ?)`
-  ).run(cid, userB);
+  await db
+    .prepare(`INSERT INTO dm_participants (conversation_id, user_id) VALUES (?, ?)`)
+    .run(cid, userA);
+  await db
+    .prepare(`INSERT INTO dm_participants (conversation_id, user_id) VALUES (?, ?)`)
+    .run(cid, userB);
   return cid;
 }
 
 async function userInConversation(db, conversationId, userId) {
   const row = await db
-    .prepare(
-      `SELECT 1 FROM dm_participants WHERE conversation_id = ? AND user_id = ?`
-    )
+    .prepare(`SELECT 1 FROM dm_participants WHERE conversation_id = ? AND user_id = ?`)
     .get(conversationId, userId);
   return !!row;
 }
@@ -85,17 +78,13 @@ function registerConversationRoutes(app, deps) {
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         const other = await otherParticipantRow(db, r.id, req.user.id);
-        const preview =
-          r.last_body != null
-            ? String(r.last_body).slice(0, 160)
-            : null;
+        const preview = r.last_body != null ? String(r.last_body).slice(0, 160) : null;
         list.push({
           id: r.id,
           other_user: other
             ? {
                 id: other.id,
-                username:
-                  other.username != null ? String(other.username) : null,
+                username: other.username != null ? String(other.username) : null,
                 public_display_label: publicDisplayLabel(other),
               }
             : null,
@@ -115,9 +104,7 @@ function registerConversationRoutes(app, deps) {
     if (!uname) {
       return res.status(400).json({ error: "with_username is required" });
     }
-    const other = await db
-      .prepare("SELECT id FROM users WHERE username = ?")
-      .get(uname);
+    const other = await db.prepare("SELECT id FROM users WHERE username = ?").get(uname);
     if (!other) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -171,8 +158,7 @@ function registerConversationRoutes(app, deps) {
         body: m.body != null ? String(m.body) : "",
         created_at: m.created_at,
       }));
-      const nextCursor =
-        hasMore && slice.length > 0 ? slice[slice.length - 1].id : null;
+      const nextCursor = hasMore && slice.length > 0 ? slice[slice.length - 1].id : null;
       res.json({ messages, next_cursor: nextCursor });
     } catch (e) {
       console.error(e);
@@ -203,36 +189,24 @@ function registerConversationRoutes(app, deps) {
           `INSERT INTO dm_messages (conversation_id, sender_user_id, body) VALUES (?, ?, ?) RETURNING id`
         )
         .run(cid, req.user.id, body);
-      await db.prepare(
-        `UPDATE dm_conversations SET updated_at = now() WHERE id = ?`
-      ).run(cid);
+      await db.prepare(`UPDATE dm_conversations SET updated_at = now() WHERE id = ?`).run(cid);
       const mid = info && info.rows && info.rows[0] ? Number(info.rows[0].id) : null;
       const msg = await db
-        .prepare(
-          `SELECT id, sender_user_id, body, created_at FROM dm_messages WHERE id = ?`
-        )
+        .prepare(`SELECT id, sender_user_id, body, created_at FROM dm_messages WHERE id = ?`)
         .get(mid);
       const peer = await otherParticipantRow(db, cid, req.user.id);
       if (peer && peer.id != null) {
         const senderRow = await db
-          .prepare(
-            `SELECT username, display_name, public_display_as FROM users WHERE id = ?`
-          )
+          .prepare(`SELECT username, display_name, public_display_as FROM users WHERE id = ?`)
           .get(req.user.id);
-        const preview =
-          body.length > 120 ? body.slice(0, 120) + "…" : body;
-        await insertNotification(
-          db,
-          Number(peer.id),
-          NOTIFICATION_TYPES.DM_MESSAGE_RECEIVED,
-          {
-            conversation_id: cid,
-            sender_public_display_label: publicDisplayLabel(
-              senderRow || { username: null, display_name: "", public_display_as: "username" }
-            ),
-            message_preview: preview,
-          }
-        );
+        const preview = body.length > 120 ? body.slice(0, 120) + "…" : body;
+        await insertNotification(db, Number(peer.id), NOTIFICATION_TYPES.DM_MESSAGE_RECEIVED, {
+          conversation_id: cid,
+          sender_public_display_label: publicDisplayLabel(
+            senderRow || { username: null, display_name: "", public_display_as: "username" }
+          ),
+          message_preview: preview,
+        });
       }
       res.status(201).json({
         message: {

@@ -18,15 +18,15 @@ Generic social feeds optimize for attention; **synodos** focuses on **assembly**
 
 ## What tools did you use?
 
-| Area | Choice | Why it fits |
-|------|--------|-------------|
-| **Frontend** | HTML, CSS, vanilla JavaScript in `web/` | No bundler required; straightforward deploy to static hosting; direct control over markup and accessibility. |
-| **Backend** | Node.js, **Express** | REST API, widely used, pairs cleanly with JWT JSON APIs. |
-| **Auth** | **JWT** (bearer tokens), **bcrypt** for passwords | Stateless API; standard pattern for a separate frontend and backend. |
-| **Database** | **PostgreSQL** via `pg`, hosted on **Supabase** | Managed Postgres, SQL migrations in the repo, pooled connections for production. |
-| **Storage** | **Supabase Storage** (avatars bucket) | Profile images off the app server; public URLs suitable for `<img>` tags. |
-| **Frontend hosting** | **Netlify** (`netlify.toml`) | Publishes `web/`; build step injects `SYNODOS_API_BASE` for production. |
-| **API hosting** | e.g. **Render** (see `render.yaml`) | Express with `NODE_ENV`, CORS (`ALLOWED_ORIGINS`), and secrets in the host dashboard. |
+| Area                 | Choice                                            | Why it fits                                                                                                  |
+| -------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Frontend**         | HTML, CSS, vanilla JavaScript in `web/`           | No bundler required; straightforward deploy to static hosting; direct control over markup and accessibility. |
+| **Backend**          | Node.js, **Express**                              | REST API, widely used, pairs cleanly with JWT JSON APIs.                                                     |
+| **Auth**             | **JWT** (bearer tokens), **bcrypt** for passwords | Stateless API; standard pattern for a separate frontend and backend.                                         |
+| **Database**         | **PostgreSQL** via `pg`, hosted on **Supabase**   | Managed Postgres, SQL migrations in the repo, pooled connections for production.                             |
+| **Storage**          | **Supabase Storage** (avatars bucket)             | Profile images off the app server; public URLs suitable for `<img>` tags.                                    |
+| **Frontend hosting** | **Netlify** (`netlify.toml`)                      | Publishes `web/`; build step injects `SYNODOS_API_BASE` for production.                                      |
+| **API hosting**      | e.g. **Render** (see `render.yaml`)               | Express with `NODE_ENV`, CORS (`ALLOWED_ORIGINS`), and secrets in the host dashboard.                        |
 
 ---
 

@@ -2,9 +2,7 @@
 (function () {
   if (!window.synodosAuth) {
     if (typeof console !== "undefined" && console.error) {
-      console.error(
-        "synodosAuth not found. Load js/auth.js before js/dashboard.js."
-      );
+      console.error("synodosAuth not found. Load js/auth.js before js/dashboard.js.");
     }
     return;
   }
@@ -18,9 +16,7 @@
   }
   if (!window.synodosSession) {
     if (typeof console !== "undefined" && console.error) {
-      console.error(
-        "synodosSession not found. Load js/session-guard.js before js/dashboard.js."
-      );
+      console.error("synodosSession not found. Load js/session-guard.js before js/dashboard.js.");
     }
     return;
   }
@@ -91,8 +87,7 @@
     if (!msgEl) return;
     msgEl.textContent = text || "";
     msgEl.hidden = !text;
-    msgEl.className =
-      "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    msgEl.className = "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
   function jsonAuthHeaders() {
@@ -115,9 +110,7 @@
     var isNetwork =
       err &&
       (err.name === "TypeError" ||
-        /network|fetch|failed to fetch|load failed|aborted/i.test(
-          String(err.message || "")
-        ));
+        /network|fetch|failed to fetch|load failed|aborted/i.test(String(err.message || "")));
     if (isNetwork) {
       return "Unable to reach synodos. Check your connection and try again.";
     }
@@ -135,16 +128,11 @@
     if (cached) {
       setDashboardAvatar(cached);
     }
-    var gate = await window.synodosSession.ensureAuthedAndCompleteProfile(
-      {}
-    );
+    var gate = await window.synodosSession.ensureAuthedAndCompleteProfile({});
     if (!gate.ok) {
       if (gate.reason === "network") {
         showMsg(
-          msgForFetchFailure(
-            gate.error,
-            "Could not load your account. Please try again."
-          ),
+          msgForFetchFailure(gate.error, "Could not load your account. Please try again."),
           true
         );
         return false;
@@ -172,10 +160,7 @@
   function buildProjectsUrl(opts) {
     opts = opts || {};
     var params = [];
-    var q = (
-      (projectsFilterInput && projectsFilterInput.value) ||
-      ""
-    ).trim();
+    var q = ((projectsFilterInput && projectsFilterInput.value) || "").trim();
     if (q) params.push("q=" + encodeURIComponent(q));
     if (projectsFilterMine && projectsFilterMine.checked) {
       params.push("mine=1");
@@ -204,15 +189,14 @@
   function renderEmptyState() {
     if (!projectsEmpty) return;
     var hasAny = cachedProjects.length > 0;
-    var q = (projectsFilterInput && projectsFilterInput.value || "").trim();
+    var q = ((projectsFilterInput && projectsFilterInput.value) || "").trim();
     var mineOnly = !!(projectsFilterMine && projectsFilterMine.checked);
     if (hasAny) {
       projectsEmpty.hidden = true;
       return;
     }
     if (q || mineOnly) {
-      projectsEmpty.textContent =
-        "No projects match — try different words or clear the search.";
+      projectsEmpty.textContent = "No projects match — try different words or clear the search.";
     } else {
       projectsEmpty.textContent = "No projects yet — create one above.";
     }
@@ -248,10 +232,7 @@
     projectsRoot.innerHTML = "";
     for (var j = 0; j < cachedProjects.length; j++) {
       projectsRoot.appendChild(
-        window.synodosProjectCard.renderProjectCard(
-          cachedProjects[j],
-          projectCardOptions()
-        )
+        window.synodosProjectCard.renderProjectCard(cachedProjects[j], projectCardOptions())
       );
     }
     renderEmptyState();
@@ -285,10 +266,7 @@
       cachedProjects = cachedProjects.concat(more);
       nextCursor = data && data.next_cursor != null ? data.next_cursor : null;
     } catch (err) {
-      showMsg(
-        (err && err.message) || "Could not load more projects.",
-        true
-      );
+      showMsg((err && err.message) || "Could not load more projects.", true);
     } finally {
       inflightProjectsLoad = false;
       syncLoadMoreVisibility();
@@ -318,10 +296,7 @@
       if (projectsRoot && window.synodosUi) {
         window.synodosUi.clearSkeleton(projectsRoot);
       }
-      showMsg(
-        (err && err.message) || "Something went wrong loading projects.",
-        true
-      );
+      showMsg((err && err.message) || "Something went wrong loading projects.", true);
     } finally {
       if (token === lastSearchToken) {
         inflightProjectsLoad = false;
@@ -342,27 +317,17 @@
     var title = document.createElement("h3");
     title.className = "requests-inbox-card__project";
     var projLink = document.createElement("a");
-    projLink.href =
-      "project.html?id=" + encodeURIComponent(String(req.project_id));
+    projLink.href = "project.html?id=" + encodeURIComponent(String(req.project_id));
     projLink.textContent = req.project_title || "Project";
     title.appendChild(projLink);
     card.appendChild(title);
     var who = document.createElement("p");
     who.className = "requests-inbox-card__who";
     who.appendChild(document.createTextNode("From: "));
-    if (
-      req.requester &&
-      req.requester.username &&
-      String(req.requester.username).trim()
-    ) {
+    if (req.requester && req.requester.username && String(req.requester.username).trim()) {
       var whoLink = document.createElement("a");
-      whoLink.href =
-        "user.html?u=" +
-        encodeURIComponent(String(req.requester.username).trim());
-      whoLink.textContent =
-        req.requester.public_display_label ||
-        req.requester.username ||
-        "?";
+      whoLink.href = "user.html?u=" + encodeURIComponent(String(req.requester.username).trim());
+      whoLink.textContent = req.requester.public_display_label || req.requester.username || "?";
       who.appendChild(whoLink);
     } else {
       who.appendChild(
@@ -411,10 +376,7 @@
   async function loadInbox() {
     if (!inboxSection || !inboxRoot || !token) return;
     try {
-      var inboxResult = await window.synodosAuth.apiFetch(
-        "/api/me/project-requests-inbox",
-        {}
-      );
+      var inboxResult = await window.synodosAuth.apiFetch("/api/me/project-requests-inbox", {});
       if (!inboxResult) {
         return;
       }
@@ -436,10 +398,7 @@
     showMsg("", false);
     try {
       var joinResult = await window.synodosAuth.apiFetch(
-        "/api/projects/" +
-          projectId +
-          "/join-requests/" +
-          requestId,
+        "/api/projects/" + projectId + "/join-requests/" + requestId,
         {
           method: "PATCH",
           headers: jsonAuthHeaders(),
@@ -465,14 +424,11 @@
   async function addRole(projectId, body) {
     showMsg("", false);
     try {
-      var roleResult = await window.synodosAuth.apiFetch(
-        "/api/projects/" + projectId + "/roles",
-        {
-          method: "POST",
-          headers: jsonAuthHeaders(),
-          body: JSON.stringify(body),
-        }
-      );
+      var roleResult = await window.synodosAuth.apiFetch("/api/projects/" + projectId + "/roles", {
+        method: "POST",
+        headers: jsonAuthHeaders(),
+        body: JSON.stringify(body),
+      });
       if (!roleResult) {
         return;
       }
@@ -492,10 +448,7 @@
     showMsg("", false);
     try {
       var delRoleResult = await window.synodosAuth.apiFetch(
-        "/api/projects/" +
-          projectId +
-          "/roles/" +
-          roleId,
+        "/api/projects/" + projectId + "/roles/" + roleId,
         { method: "DELETE" }
       );
       if (!delRoleResult) {
@@ -516,10 +469,9 @@
   async function deleteProject(projectId) {
     showMsg("", false);
     try {
-      var delProjResult = await window.synodosAuth.apiFetch(
-        "/api/projects/" + projectId,
-        { method: "DELETE" }
-      );
+      var delProjResult = await window.synodosAuth.apiFetch("/api/projects/" + projectId, {
+        method: "DELETE",
+      });
       if (!delProjResult) {
         return;
       }

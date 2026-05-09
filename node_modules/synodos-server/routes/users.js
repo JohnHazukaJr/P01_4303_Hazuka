@@ -40,7 +40,9 @@ function createUsersRouter(deps) {
     try {
       const limit = clampSearchLimit(req.query.limit);
       const cursor = parseCursor(req.query.cursor);
-      const qRaw = String(req.query.q || "").trim().slice(0, SEARCH_QUERY_MAX);
+      const qRaw = String(req.query.q || "")
+        .trim()
+        .slice(0, SEARCH_QUERY_MAX);
       if (qRaw.length < SEARCH_QUERY_MIN) {
         return res.json({ users: [], next_cursor: null });
       }
@@ -87,16 +89,14 @@ function createUsersRouter(deps) {
           display_name: row.display_name != null ? String(row.display_name) : "",
           public_display_label: publicDisplayLabel(row),
           verified: Number(row.verified) === 1 || row.verified === true,
-          official_account:
-            row.official_account === true || Number(row.official_account) === 1,
+          official_account: row.official_account === true || Number(row.official_account) === 1,
           bio: row.bio != null ? String(row.bio) : "",
           avatar_url: row.avatar_url != null ? String(row.avatar_url) : "",
           work_tags: tags,
         });
       }
 
-      const nextCursor =
-        hasMore && slice.length > 0 ? Number(slice[slice.length - 1].id) : null;
+      const nextCursor = hasMore && slice.length > 0 ? Number(slice[slice.length - 1].id) : null;
       res.json({ users, next_cursor: nextCursor });
     } catch (e) {
       console.error("[synodos] GET /api/users/search failed", e);
@@ -120,8 +120,7 @@ function createUsersRouter(deps) {
       display_name: row.display_name != null ? String(row.display_name) : "",
       public_display_label: publicDisplayLabel(row),
       verified: Number(row.verified) === 1,
-      official_account:
-        row.official_account === true || Number(row.official_account) === 1,
+      official_account: row.official_account === true || Number(row.official_account) === 1,
       bio: row.bio != null ? String(row.bio) : "",
       avatar_url: row.avatar_url != null ? String(row.avatar_url) : "",
       work_tags: tags,
@@ -146,10 +145,7 @@ function createUsersRouter(deps) {
     if (!uname) {
       return res.status(404).json({ error: "Not found" });
     }
-    const target = await db.get(
-      "SELECT id, username FROM users WHERE username = $1",
-      [uname]
-    );
+    const target = await db.get("SELECT id, username FROM users WHERE username = $1", [uname]);
     if (!target) {
       return res.status(404).json({ error: "Not found" });
     }
@@ -172,8 +168,7 @@ function createUsersRouter(deps) {
       );
       await insertFeedEvent(db, me, EVENT_TYPES.USER_FOLLOWED, {
         target_user_id: tid,
-        target_username:
-          target.username != null ? String(target.username) : null,
+        target_username: target.username != null ? String(target.username) : null,
       });
       res.status(201).json({ ok: true, following: true });
     } catch (e) {
@@ -187,10 +182,7 @@ function createUsersRouter(deps) {
     if (!uname) {
       return res.status(404).json({ error: "Not found" });
     }
-    const target = await db.get(
-      "SELECT id FROM users WHERE username = $1",
-      [uname]
-    );
+    const target = await db.get("SELECT id FROM users WHERE username = $1", [uname]);
     if (!target) {
       return res.status(404).json({ error: "Not found" });
     }

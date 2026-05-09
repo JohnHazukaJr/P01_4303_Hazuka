@@ -16,10 +16,8 @@ body {
   line-height: 1.65;
   color: var(--color-ink);
   background-color: var(--color-marble);
-  background-image: linear-gradient(
-      var(--color-cobalt-muted) 1px,
-      transparent 1px
-    ),
+  background-image:
+    linear-gradient(var(--color-cobalt-muted) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-cobalt-muted) 1px, transparent 1px);
   background-size: 56px 56px;
   background-position: -1px -1px;
@@ -385,7 +383,9 @@ a:focus-visible {
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color var(--transition-fast), color var(--transition-fast),
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
     border-color var(--transition-fast);
 }
 
@@ -461,11 +461,8 @@ a:focus-visible {
 /* ——— Hero ——— */
 .hero {
   padding-block: clamp(2.75rem, 7vw, 4.75rem);
-  background: linear-gradient(
-      165deg,
-      var(--color-cobalt-muted) 0%,
-      transparent 42%
-    ),
+  background:
+    linear-gradient(165deg, var(--color-cobalt-muted) 0%, transparent 42%),
     linear-gradient(180deg, var(--color-marble-deep) 0%, var(--color-marble) 55%);
   border-bottom: 1px solid var(--color-marble-border);
 }
@@ -817,20 +814,23 @@ footer {
   border-radius: var(--radius-md);
   background: var(--color-input-bg);
   color: var(--color-ink);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .field select {
   cursor: pointer;
   appearance: none;
-  background-image: linear-gradient(
-      45deg,
-      transparent 50%,
-      var(--color-ink-muted2) 50%
-    ),
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-ink-muted2) 50%),
     linear-gradient(135deg, var(--color-ink-muted2) 50%, transparent 50%);
-  background-position: calc(100% - 0.85rem) 0.85rem, calc(100% - 0.55rem) 0.85rem;
-  background-size: 6px 6px, 6px 6px;
+  background-position:
+    calc(100% - 0.85rem) 0.85rem,
+    calc(100% - 0.55rem) 0.85rem;
+  background-size:
+    6px 6px,
+    6px 6px;
   background-repeat: no-repeat;
   padding-right: 2rem;
 }
@@ -878,7 +878,9 @@ footer {
   background: transparent;
   color: var(--color-ink-muted2);
   cursor: pointer;
-  transition: color var(--transition-fast), background-color var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .password-toggle:hover {
@@ -916,10 +918,8 @@ footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: max(1rem, env(safe-area-inset-top))
-    max(1rem, env(safe-area-inset-right))
-    max(1rem, env(safe-area-inset-bottom))
-    max(1rem, env(safe-area-inset-left));
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
   background: rgba(15, 22, 32, 0.42);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -949,7 +949,8 @@ footer {
   color: var(--color-ink);
   transform: scale(0.94) translateY(14px);
   opacity: 0;
-  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+  transition:
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.38s ease;
 }
 
@@ -1211,7 +1212,9 @@ footer {
   color: var(--color-ink);
   resize: vertical;
   min-height: 5rem;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .field-textarea:hover {
@@ -1248,7 +1251,9 @@ footer {
   border-radius: var(--radius-md);
   background: var(--color-input-bg);
   color: var(--color-ink);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .projects-filter-input:hover {
@@ -2884,4 +2889,3 @@ footer {
 .project-invite-form__row {
   max-width: 20rem;
 }
-

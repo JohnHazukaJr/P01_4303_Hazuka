@@ -5,10 +5,7 @@
   var SIGN_OUT_REASON_KEY = "synodos_sign_out_reason";
   var IDLE_MS = 10 * 60 * 1000; // 10 minutes
   var win = typeof window !== "undefined" ? window : null;
-  var apiFromWindow =
-    win &&
-    win.SYNODOS_API_BASE &&
-    String(win.SYNODOS_API_BASE).trim();
+  var apiFromWindow = win && win.SYNODOS_API_BASE && String(win.SYNODOS_API_BASE).trim();
 
   var AVATAR_MAP_KEY = "synodos_avatar_url_map";
   var ME_CACHE_KEY = "synodos_me_v1";
@@ -79,8 +76,7 @@
 
   function rememberAvatarKeys(user) {
     if (!user) return;
-    var raw =
-      user.avatar_url != null ? String(user.avatar_url).trim() : "";
+    var raw = user.avatar_url != null ? String(user.avatar_url).trim() : "";
     if (/^(?:data:|blob:)/i.test(raw)) return;
     var map = readAvatarMap();
     if (user.id != null) {
@@ -334,9 +330,7 @@
         rememberAvatarKeys(user);
       }
       var pub =
-        user && user.public_display_label != null
-          ? String(user.public_display_label).trim()
-          : "";
+        user && user.public_display_label != null ? String(user.public_display_label).trim() : "";
       var raw = user && user.avatar_url != null ? String(user.avatar_url).trim() : "";
       var alt = pub
         ? "Avatar for " + pub
@@ -374,7 +368,10 @@
       if (img.complete && img.naturalWidth > 0) {
         reveal();
       } else if (typeof img.decode === "function") {
-        img.decode().then(reveal).catch(function () {});
+        img
+          .decode()
+          .then(reveal)
+          .catch(function () {});
       }
     },
     /**
@@ -404,11 +401,7 @@
       if (!path || !String(path).trim()) {
         if (!un) {
           var cached = this.getCachedMe();
-          if (
-            cached &&
-            cached.avatar_url != null &&
-            String(cached.avatar_url).trim()
-          ) {
+          if (cached && cached.avatar_url != null && String(cached.avatar_url).trim()) {
             path = String(cached.avatar_url).trim();
           }
         }
@@ -421,13 +414,8 @@
         {
           avatar_url: path,
           public_display_label:
-            options.public_display_label ||
-            (cachedMe && cachedMe.public_display_label) ||
-            "",
-          display_name:
-            options.display_name ||
-            (cachedMe && cachedMe.display_name) ||
-            "",
+            options.public_display_label || (cachedMe && cachedMe.public_display_label) || "",
+          display_name: options.display_name || (cachedMe && cachedMe.display_name) || "",
         },
         { skipCacheWrite: true }
       );
@@ -456,9 +444,7 @@
       if (global.synodosAuth) global.synodosAuth.touchActivity();
     }
 
-    ["click", "keydown", "mousemove", "scroll", "touchstart"].forEach(function (
-      evt
-    ) {
+    ["click", "keydown", "mousemove", "scroll", "touchstart"].forEach(function (evt) {
       doc.addEventListener(evt, onActivity, { passive: true });
     });
 

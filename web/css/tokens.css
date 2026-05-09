@@ -45,8 +45,7 @@
   --radius-sm: 2px;
   --radius-md: 3px;
   --transition-fast: 0.18s ease;
-  --transition-theme: background-color 0.22s ease, color 0.22s ease,
-    border-color 0.22s ease;
+  --transition-theme: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease;
   --header-sticky-offset: 4.25rem;
 }
 

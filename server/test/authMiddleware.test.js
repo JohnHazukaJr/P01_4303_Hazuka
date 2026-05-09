@@ -2,10 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const jwt = require("jsonwebtoken");
 
-const {
-  createRequireAuth,
-  createOptionalAuth,
-} = require("../authMiddleware");
+const { createRequireAuth, createOptionalAuth } = require("../authMiddleware");
 
 const SECRET = "test-secret";
 

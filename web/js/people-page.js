@@ -23,8 +23,7 @@
     if (!msgEl) return;
     msgEl.textContent = text || "";
     msgEl.hidden = !text;
-    msgEl.className =
-      "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    msgEl.className = "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
   function setEmpty(text) {
@@ -90,8 +89,7 @@
     titleLink.className = "project-card__title-link";
     var uname = user && user.username ? String(user.username).trim() : "";
     titleLink.href = "user.html?u=" + encodeURIComponent(uname || "");
-    titleLink.textContent =
-      user.public_display_label || user.display_name || uname || "Member";
+    titleLink.textContent = user.public_display_label || user.display_name || uname || "Member";
     titleRow.appendChild(titleLink);
     var badgeHost = document.createElement("span");
     badgeHost.className = "people-card__badges";
@@ -114,13 +112,11 @@
     if (user.bio) {
       var bio = document.createElement("p");
       bio.className = "project-card__desc";
-      bio.textContent = user.bio.length > 240
-        ? user.bio.slice(0, 237) + "…"
-        : user.bio;
+      bio.textContent = user.bio.length > 240 ? user.bio.slice(0, 237) + "…" : user.bio;
       card.appendChild(bio);
     }
 
-    var tags = (user && Array.isArray(user.work_tags)) ? user.work_tags : [];
+    var tags = user && Array.isArray(user.work_tags) ? user.work_tags : [];
     if (tags.length > 0) {
       var tagList = document.createElement("ul");
       tagList.className = "user-public-tags";
@@ -217,10 +213,7 @@
     inflight = true;
     syncLoadMore();
     try {
-      var result = await window.synodosAuth.apiFetch(
-        buildUrl({ cursor: nextCursor }),
-        {}
-      );
+      var result = await window.synodosAuth.apiFetch(buildUrl({ cursor: nextCursor }), {});
       if (!result || !result.res.ok) return;
       var data = result.data || {};
       var users = Array.isArray(data.users) ? data.users : [];

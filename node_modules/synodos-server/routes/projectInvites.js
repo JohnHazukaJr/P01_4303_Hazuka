@@ -1,9 +1,6 @@
 const { normalizeUsername } = require("../db");
 const { publicDisplayLabel } = require("../displayLabel");
-const {
-  insertNotification,
-  NOTIFICATION_TYPES,
-} = require("../userNotifications");
+const { insertNotification, NOTIFICATION_TYPES } = require("../userNotifications");
 
 const NOTE_MAX = 500;
 
@@ -37,11 +34,11 @@ function registerProjectInviteRoutes(router, deps) {
     if (!uname) {
       return res.status(400).json({ error: "username is required" });
     }
-    const note = String(req.body?.note || "").trim().slice(0, NOTE_MAX);
+    const note = String(req.body?.note || "")
+      .trim()
+      .slice(0, NOTE_MAX);
     const invitee = await db
-      .prepare(
-        `SELECT id, username, display_name, public_display_as FROM users WHERE username = ?`
-      )
+      .prepare(`SELECT id, username, display_name, public_display_as FROM users WHERE username = ?`)
       .get(uname);
     if (!invitee) {
       return res.status(404).json({ error: "User not found" });
@@ -72,9 +69,7 @@ function registerProjectInviteRoutes(router, deps) {
       });
     }
     const inviter = await db
-      .prepare(
-        `SELECT username, display_name, public_display_as FROM users WHERE id = ?`
-      )
+      .prepare(`SELECT username, display_name, public_display_as FROM users WHERE id = ?`)
       .get(req.user.id);
     try {
       const info = await db
@@ -90,21 +85,16 @@ function registerProjectInviteRoutes(router, deps) {
       await insertNotification(db, invitee.id, NOTIFICATION_TYPES.PROJECT_INVITE_RECEIVED, {
         invitation_id: invId,
         project_id: projectId,
-        project_title:
-          project.title != null ? String(project.title) : "",
+        project_title: project.title != null ? String(project.title) : "",
         inviter_user_id: req.user.id,
-        inviter_username:
-          inviter && inviter.username != null ? String(inviter.username) : null,
-        inviter_public_display_label: inviter
-          ? publicDisplayLabel(inviter)
-          : null,
+        inviter_username: inviter && inviter.username != null ? String(inviter.username) : null,
+        inviter_public_display_label: inviter ? publicDisplayLabel(inviter) : null,
       });
       res.status(201).json({
         invitation: {
           id: invId,
           project_id: projectId,
-          invitee_username:
-            invitee.username != null ? String(invitee.username) : null,
+          invitee_username: invitee.username != null ? String(invitee.username) : null,
         },
       });
     } catch (e) {
@@ -144,8 +134,7 @@ function registerMeProjectInviteRoutes(app, deps) {
         created_at: row.created_at,
         inviter: {
           id: row.inviter_id,
-          username:
-            row.inviter_username != null ? String(row.inviter_username) : null,
+          username: row.inviter_username != null ? String(row.inviter_username) : null,
           public_display_label: publicDisplayLabel({
             username: row.inviter_username,
             display_name: row.inviter_display_name,
@@ -167,9 +156,7 @@ function registerMeProjectInviteRoutes(app, deps) {
     }
     const next = String(req.body?.status || "").toLowerCase();
     if (next !== "accepted" && next !== "declined") {
-      return res
-        .status(400)
-        .json({ error: 'status must be "accepted" or "declined"' });
+      return res.status(400).json({ error: 'status must be "accepted" or "declined"' });
     }
     const row = await db
       .prepare(
@@ -182,33 +169,31 @@ function registerMeProjectInviteRoutes(app, deps) {
     if (row.status !== "pending") {
       return res.status(400).json({ error: "This invitation is no longer pending" });
     }
-    await db.prepare(
-      `UPDATE project_invitations SET status = ?, resolved_at = now() WHERE id = ?`
-    ).run(next, inviteId);
+    await db
+      .prepare(`UPDATE project_invitations SET status = ?, resolved_at = now() WHERE id = ?`)
+      .run(next, inviteId);
     if (next === "accepted") {
       const proj = await db
         .prepare("SELECT id, title FROM projects WHERE id = ?")
         .get(row.project_id);
       const inviteeRow = await db
-        .prepare(
-          `SELECT username, display_name, public_display_as FROM users WHERE id = ?`
-        )
+        .prepare(`SELECT username, display_name, public_display_as FROM users WHERE id = ?`)
         .get(req.user.id);
-      const title =
-        proj && proj.title != null ? String(proj.title) : "";
-      await insertNotification(db, row.inviter_user_id, NOTIFICATION_TYPES.PROJECT_INVITE_ACCEPTED, {
-        invitation_id: inviteId,
-        project_id: row.project_id,
-        project_title: title,
-        invitee_user_id: req.user.id,
-        invitee_username:
-          inviteeRow && inviteeRow.username != null
-            ? String(inviteeRow.username)
-            : null,
-        invitee_public_display_label: inviteeRow
-          ? publicDisplayLabel(inviteeRow)
-          : null,
-      });
+      const title = proj && proj.title != null ? String(proj.title) : "";
+      await insertNotification(
+        db,
+        row.inviter_user_id,
+        NOTIFICATION_TYPES.PROJECT_INVITE_ACCEPTED,
+        {
+          invitation_id: inviteId,
+          project_id: row.project_id,
+          project_title: title,
+          invitee_user_id: req.user.id,
+          invitee_username:
+            inviteeRow && inviteeRow.username != null ? String(inviteeRow.username) : null,
+          invitee_public_display_label: inviteeRow ? publicDisplayLabel(inviteeRow) : null,
+        }
+      );
       await insertNotification(db, req.user.id, NOTIFICATION_TYPES.PROJECT_YOU_WERE_ADDED, {
         invitation_id: inviteId,
         project_id: row.project_id,

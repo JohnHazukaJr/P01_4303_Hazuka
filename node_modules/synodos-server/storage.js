@@ -69,17 +69,14 @@ async function ensureAvatarBucket(client, bucketName) {
     ok: false,
     error:
       msg +
-      ' — In Supabase: open **Storage** → **New bucket** → name it **' +
+      " — In Supabase: open **Storage** → **New bucket** → name it **" +
       bucketName +
       "** → enable **Public bucket** → Create. Or set `SUPABASE_AVATAR_BUCKET` in `.env` to a bucket you already created.",
   };
 }
 
 function rlsServiceRoleHint(bucketName) {
-  const b =
-    bucketName && String(bucketName).trim()
-      ? String(bucketName).trim()
-      : getBucket();
+  const b = bucketName && String(bucketName).trim() ? String(bucketName).trim() : getBucket();
   return (
     " Fix: In Supabase go to **Settings → API** and copy the **service_role** key (secret), " +
     "not the anon / publishable key — put it in `SUPABASE_SERVICE_ROLE_KEY` on the API host and restart. " +
@@ -97,7 +94,7 @@ function formatStorageError(bucket, upErr) {
   if (/bucket not found|not found|does not exist/i.test(raw)) {
     return (
       raw +
-      ' — Create a **public** Storage bucket named **' +
+      " — Create a **public** Storage bucket named **" +
       bucket +
       "** (Supabase dashboard → Storage → New bucket), or set `SUPABASE_AVATAR_BUCKET` to match your bucket name, then restart the API."
     );
@@ -110,9 +107,7 @@ function getClient() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    throw new Error(
-      "[synodos] Avatar uploads require SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
-    );
+    throw new Error("[synodos] Avatar uploads require SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
   }
   cachedClient = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -183,13 +178,11 @@ async function uploadAvatar(userId, buffer, mime) {
     }
   }
 
-  const { error: upErr } = await client.storage
-    .from(bucket)
-    .upload(newKey, buffer, {
-      contentType: mime,
-      upsert: true,
-      cacheControl: "3600",
-    });
+  const { error: upErr } = await client.storage.from(bucket).upload(newKey, buffer, {
+    contentType: mime,
+    upsert: true,
+    cacheControl: "3600",
+  });
   if (upErr) {
     return {
       ok: false,

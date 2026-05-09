@@ -44,12 +44,7 @@ function main() {
   all = ok("SUPABASE_URL", supaOk, supa || "(missing)") && all;
 
   const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-  all =
-    ok(
-      "SUPABASE_SERVICE_ROLE_KEY",
-      key.length > 20,
-      key ? "(set)" : "(missing)"
-    ) && all;
+  all = ok("SUPABASE_SERVICE_ROLE_KEY", key.length > 20, key ? "(set)" : "(missing)") && all;
 
   if (key.length > 20) {
     const role = supabaseKeyRole(key);
@@ -74,14 +69,10 @@ function main() {
   if (jwt.length > 0) {
     ok("JWT_SECRET", true, "(set)");
   } else {
-    console.log(
-      "  … JWT_SECRET — optional for local dev (server uses a default warning)"
-    );
+    console.log("  … JWT_SECRET — optional for local dev (server uses a default warning)");
   }
 
-  const bucket = String(
-    process.env.SUPABASE_AVATAR_BUCKET || "avatars"
-  ).trim();
+  const bucket = String(process.env.SUPABASE_AVATAR_BUCKET || "avatars").trim();
   console.log("  … SUPABASE_AVATAR_BUCKET =", bucket || "avatars");
 
   console.log(

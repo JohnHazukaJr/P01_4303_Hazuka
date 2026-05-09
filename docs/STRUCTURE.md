@@ -27,17 +27,17 @@ The directory `server/data/` is **gitignored**. It may hold legacy files (e.g. o
 
 ## Frontend entry points
 
-| Path | Role |
-|------|------|
-| `web/index.html` | Landing |
-| `web/login.html` / `web/register.html` | Auth |
-| `web/profile-setup.html` / `web/profile.html` | Profile |
-| `web/dashboard.html` | Projects feed |
-| `web/people.html` | Find people (`?q=` search) |
-| `web/project.html` | Public project (`?id=`) |
-| `web/user.html` | Public profile (`?u=username`) |
-| `web/messages.html` / `web/notifications.html` | Comms |
-| `web/404.html` | Static “page not found” (Netlify / Render static serve this for unknown URLs) |
+| Path                                           | Role                                                                          |
+| ---------------------------------------------- | ----------------------------------------------------------------------------- |
+| `web/index.html`                               | Landing                                                                       |
+| `web/login.html` / `web/register.html`         | Auth                                                                          |
+| `web/profile-setup.html` / `web/profile.html`  | Profile                                                                       |
+| `web/dashboard.html`                           | Projects feed                                                                 |
+| `web/people.html`                              | Find people (`?q=` search)                                                    |
+| `web/project.html`                             | Public project (`?id=`)                                                       |
+| `web/user.html`                                | Public profile (`?u=username`)                                                |
+| `web/messages.html` / `web/notifications.html` | Comms                                                                         |
+| `web/404.html`                                 | Static “page not found” (Netlify / Render static serve this for unknown URLs) |
 
 **Local workflow:** `npm start` at repo root (or `cd server && npm start`), then serve `web/` with Live Server so `fetch` reaches the API.
 

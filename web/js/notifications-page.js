@@ -23,17 +23,15 @@
   }
 
   async function markRead(id) {
-    var mr = await window.synodosAuth.apiFetch(
-      "/api/me/notifications/" + id + "/read",
-      { method: "PATCH" }
-    );
+    var mr = await window.synodosAuth.apiFetch("/api/me/notifications/" + id + "/read", {
+      method: "PATCH",
+    });
     if (mr) bumpBadge();
   }
 
   function renderNotificationRow(n) {
     var article = document.createElement("article");
-    article.className =
-      "notification-row" + (n.read_at ? "" : " notification-row--unread");
+    article.className = "notification-row" + (n.read_at ? "" : " notification-row--unread");
     article.setAttribute("data-notification-id", String(n.id));
     var p = document.createElement("p");
     p.className = "notification-row__text";
@@ -70,8 +68,7 @@
     var title = document.createElement("h3");
     title.className = "notification-invite-card__title";
     var pl = document.createElement("a");
-    pl.href =
-      "project.html?id=" + encodeURIComponent(String(inv.project_id));
+    pl.href = "project.html?id=" + encodeURIComponent(String(inv.project_id));
     pl.textContent = inv.project_title || "Project";
     title.appendChild(pl);
     card.appendChild(title);
@@ -79,9 +76,7 @@
     who.className = "notification-invite-card__who";
     who.textContent =
       "From " +
-      (inv.inviter && inv.inviter.public_display_label
-        ? inv.inviter.public_display_label
-        : "?");
+      (inv.inviter && inv.inviter.public_display_label ? inv.inviter.public_display_label : "?");
     card.appendChild(who);
     if (inv.note) {
       var note = document.createElement("p");
@@ -116,20 +111,16 @@
     if (!el) return;
     el.textContent = text || "";
     el.hidden = !text;
-    el.className =
-      "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    el.className = "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
   async function resolveInvite(id, status) {
     showPageMsg("", false);
-    var rv = await window.synodosAuth.apiFetch(
-      "/api/me/project-invitations/" + id,
-      {
-        method: "PATCH",
-        headers: window.synodosAuth.authHeaders({ json: true }),
-        body: JSON.stringify({ status: status }),
-      }
-    );
+    var rv = await window.synodosAuth.apiFetch("/api/me/project-invitations/" + id, {
+      method: "PATCH",
+      headers: window.synodosAuth.authHeaders({ json: true }),
+      body: JSON.stringify({ status: status }),
+    });
     if (!rv) {
       return;
     }
@@ -171,10 +162,7 @@
       window.synodosAuth.setCachedMe(meData.user);
     }
 
-    var invResult = await window.synodosAuth.apiFetch(
-      "/api/me/project-invitations",
-      {}
-    );
+    var invResult = await window.synodosAuth.apiFetch("/api/me/project-invitations", {});
     var invRoot = document.getElementById("notifications-invites-root");
     var invEmpty = document.getElementById("notifications-invites-empty");
     if (!invResult) {
@@ -193,10 +181,7 @@
       }
     }
 
-    var listResult = await window.synodosAuth.apiFetch(
-      "/api/me/notifications?limit=80",
-      {}
-    );
+    var listResult = await window.synodosAuth.apiFetch("/api/me/notifications?limit=80", {});
     var listRoot = document.getElementById("notifications-list-root");
     var listEmpty = document.getElementById("notifications-list-empty");
     if (!listResult) {

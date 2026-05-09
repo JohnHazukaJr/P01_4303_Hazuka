@@ -29,8 +29,7 @@
     bo.className = "official-badge";
     bo.textContent = "Official";
     bo.setAttribute("aria-label", "Official account");
-    bo.title =
-      "Official account — platform or notable organization on synodos";
+    bo.title = "Official account — platform or notable organization on synodos";
     return bo;
   }
 

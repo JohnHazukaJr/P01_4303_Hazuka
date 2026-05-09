@@ -24,20 +24,12 @@ const rateLimit = require("express-rate-limit");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const {
-  normalizeEmail,
-  normalizeUsername,
-  validateUsername,
-  looksLikeEmail,
-} = require("./db");
+const { normalizeEmail, normalizeUsername, validateUsername, looksLikeEmail } = require("./db");
 const db = require("./dbPool");
 const storage = require("./storage");
 const { createRequireAuth, createOptionalAuth } = require("./authMiddleware");
 const { createProjectsRouter } = require("./routes/projects");
-const {
-  registerProjectJoinRoutes,
-  registerMeJoinRoutes,
-} = require("./routes/joinRequests");
+const { registerProjectJoinRoutes, registerMeJoinRoutes } = require("./routes/joinRequests");
 const { createUsersRouter } = require("./routes/users");
 const { registerFeedRoutes } = require("./routes/feed");
 const { registerConversationRoutes } = require("./routes/conversations");
@@ -46,26 +38,17 @@ const {
   registerProjectInviteRoutes,
   registerMeProjectInviteRoutes,
 } = require("./routes/projectInvites");
-const {
-  isValidWorkField,
-  isValidWorkSubfield,
-  profileFieldsPayload,
-} = require("./profileFields");
+const { isValidWorkField, isValidWorkSubfield, profileFieldsPayload } = require("./profileFields");
 const { publicDisplayLabel } = require("./displayLabel");
 const { registerAdminRoutes, createIsAdmin } = require("./routes/admin");
-const {
-  loadUserProfileRow,
-  loadUserWorkTags,
-  profileCompleteFromRow,
-} = require("./userQueries");
+const { loadUserProfileRow, loadUserWorkTags, profileCompleteFromRow } = require("./userQueries");
 
 const app = express();
 /* Respect X-Forwarded-For when behind Render/reverse proxy (rate limit + logs). */
 app.set("trust proxy", 1);
 const PORT = Number(process.env.PORT) || 8080;
 const IS_PRODUCTION = String(process.env.NODE_ENV || "").toLowerCase() === "production";
-const JWT_SECRET =
-  process.env.JWT_SECRET || "synodos-dev-secret-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || "synodos-dev-secret-change-in-production";
 const BCRYPT_ROUNDS = 10;
 
 if (!process.env.JWT_SECRET) {
@@ -75,9 +58,7 @@ if (!process.env.JWT_SECRET) {
     );
     process.exit(1);
   }
-  console.warn(
-    "[synodos] Using default JWT_SECRET. Set JWT_SECRET in production."
-  );
+  console.warn("[synodos] Using default JWT_SECRET. Set JWT_SECRET in production.");
 }
 
 const requireAuth = createRequireAuth(db, JWT_SECRET);
@@ -95,12 +76,7 @@ function signUserToken(userId, email) {
 function isDatabaseConnectivityError(err) {
   if (!err) return false;
   const c = err.code;
-  if (
-    c === "ECONNREFUSED" ||
-    c === "ETIMEDOUT" ||
-    c === "ENOTFOUND" ||
-    c === "EAI_AGAIN"
-  ) {
+  if (c === "ECONNREFUSED" || c === "ETIMEDOUT" || c === "ENOTFOUND" || c === "EAI_AGAIN") {
     return true;
   }
   if (typeof c === "string") {
@@ -112,7 +88,7 @@ function isDatabaseConnectivityError(err) {
   if (
     msg.includes("connection terminated") ||
     msg.includes("connect econnrefused") ||
-    msg.includes("timeout") && msg.includes("connection")
+    (msg.includes("timeout") && msg.includes("connection"))
   ) {
     return true;
   }
@@ -228,9 +204,7 @@ app.get("/api/health", async (_req, res) => {
     res.json({ status: "ok", database: "connected" });
   } catch (e) {
     console.error("[synodos] /api/health database check failed", e);
-    res
-      .status(503)
-      .json({ status: "error", database: "unavailable" });
+    res.status(503).json({ status: "error", database: "unavailable" });
   }
 });
 
@@ -251,13 +225,9 @@ app.get("/api/debug/env-check", requireAuth, async (req, res) => {
   res.json({
     hasDatabaseUrl: !!(e.DATABASE_URL && String(e.DATABASE_URL).trim()),
     hasSupabaseUrl: !!(e.SUPABASE_URL && String(e.SUPABASE_URL).trim()),
-    hasServiceRole: !!(
-      e.SUPABASE_SERVICE_ROLE_KEY && String(e.SUPABASE_SERVICE_ROLE_KEY).trim()
-    ),
+    hasServiceRole: !!(e.SUPABASE_SERVICE_ROLE_KEY && String(e.SUPABASE_SERVICE_ROLE_KEY).trim()),
     hasJwtSecret: !!(e.JWT_SECRET && String(e.JWT_SECRET).trim()),
-    allowedOriginsConfigured: !!(
-      e.ALLOWED_ORIGINS && String(e.ALLOWED_ORIGINS).trim()
-    ),
+    allowedOriginsConfigured: !!(e.ALLOWED_ORIGINS && String(e.ALLOWED_ORIGINS).trim()),
   });
 });
 
@@ -273,9 +243,7 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
     return res.status(400).json({ error: "Email is required" });
   }
   if (!password || String(password).length < 8) {
-    return res
-      .status(400)
-      .json({ error: "Password must be at least 8 characters" });
+    return res.status(400).json({ error: "Password must be at least 8 characters" });
   }
 
   const passwordHash = bcrypt.hashSync(String(password), BCRYPT_ROUNDS);
@@ -296,16 +264,12 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
     if (e && e.code === "23505") {
       const msg = String(e.constraint || e.detail || e.message || "");
       if (msg.toLowerCase().includes("email")) {
-        return res
-          .status(409)
-          .json({ error: "That email is already registered" });
+        return res.status(409).json({ error: "That email is already registered" });
       }
       if (msg.toLowerCase().includes("username")) {
         return res.status(409).json({ error: "That username is already taken" });
       }
-      return res
-        .status(409)
-        .json({ error: "That email or username is already registered" });
+      return res.status(409).json({ error: "That email or username is already registered" });
     }
     console.error(e);
     if (isDatabaseConnectivityError(e)) {
@@ -326,9 +290,7 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
   const password = req.body?.password;
 
   if (!raw) {
-    return res
-      .status(400)
-      .json({ error: "Email or username is required" });
+    return res.status(400).json({ error: "Email or username is required" });
   }
   if (!password || String(password).trim() === "") {
     return res.status(400).json({ error: "Password is required" });
@@ -337,41 +299,28 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
   try {
     var row;
     if (looksLikeEmail(raw)) {
-      row = await db.get(
-        "SELECT id, email, password_hash FROM users WHERE email = $1",
-        [normalizeEmail(raw)]
-      );
+      row = await db.get("SELECT id, email, password_hash FROM users WHERE email = $1", [
+        normalizeEmail(raw),
+      ]);
     } else {
-      row = await db.get(
-        "SELECT id, email, password_hash FROM users WHERE username = $1",
-        [normalizeUsername(raw)]
-      );
+      row = await db.get("SELECT id, email, password_hash FROM users WHERE username = $1", [
+        normalizeUsername(raw),
+      ]);
     }
 
-    if (
-      !row ||
-      row.password_hash == null ||
-      String(row.password_hash).trim() === ""
-    ) {
-      return res
-        .status(401)
-        .json({ error: "Invalid email, username, or password" });
+    if (!row || row.password_hash == null || String(row.password_hash).trim() === "") {
+      return res.status(401).json({ error: "Invalid email, username, or password" });
     }
 
     var passwordOk = false;
     try {
-      passwordOk = bcrypt.compareSync(
-        String(password),
-        String(row.password_hash)
-      );
+      passwordOk = bcrypt.compareSync(String(password), String(row.password_hash));
     } catch (bcErr) {
       console.warn("[synodos] login bcrypt.compareSync", bcErr);
       passwordOk = false;
     }
     if (!passwordOk) {
-      return res
-        .status(401)
-        .json({ error: "Invalid email, username, or password" });
+      return res.status(401).json({ error: "Invalid email, username, or password" });
     }
 
     const token = signUserToken(Number(row.id), row.email);
@@ -443,21 +392,13 @@ function userPayload(row, tags) {
     id: row.id,
     username: row.username != null ? String(row.username) : null,
     display_name: displayName,
-    public_display_as:
-      row.public_display_as != null
-        ? String(row.public_display_as)
-        : "username",
+    public_display_as: row.public_display_as != null ? String(row.public_display_as) : "username",
     public_display_label: publicDisplayLabel(row),
     verified: Number(row.verified) === 1,
-    official_account:
-      row.official_account === true || Number(row.official_account) === 1,
+    official_account: row.official_account === true || Number(row.official_account) === 1,
     bio: bio,
     avatar_url: row.avatar_url != null ? String(row.avatar_url) : "",
-    work_field: primary
-      ? primary.work_field
-      : row.work_field != null
-        ? String(row.work_field)
-        : "",
+    work_field: primary ? primary.work_field : row.work_field != null ? String(row.work_field) : "",
     work_subfield: primary
       ? primary.work_subfield
       : row.work_subfield != null
@@ -506,9 +447,7 @@ app.patch("/api/me", requireAuth, async (req, res) => {
   if (displayNameIn !== undefined && displayNameIn !== null) {
     var dn = String(displayNameIn).trim();
     if (dn.length < 2) {
-      return res
-        .status(400)
-        .json({ error: "Display name must be at least 2 characters" });
+      return res.status(400).json({ error: "Display name must be at least 2 characters" });
     }
     if (dn.length > DISPLAY_NAME_MAX) {
       return res.status(400).json({
@@ -517,12 +456,9 @@ app.patch("/api/me", requireAuth, async (req, res) => {
     }
   }
 
-  var bioStr =
-    bioIn === undefined || bioIn === null ? undefined : String(bioIn);
+  var bioStr = bioIn === undefined || bioIn === null ? undefined : String(bioIn);
   if (bioStr !== undefined && bioStr.length > BIO_MAX) {
-    return res
-      .status(400)
-      .json({ error: "Bio must be at most " + BIO_MAX + " characters" });
+    return res.status(400).json({ error: "Bio must be at most " + BIO_MAX + " characters" });
   }
 
   var tagsToSave = null;
@@ -530,17 +466,9 @@ app.patch("/api/me", requireAuth, async (req, res) => {
     if (!Array.isArray(workTagsIn)) {
       return res.status(400).json({ error: "work_tags must be an array" });
     }
-    if (
-      workTagsIn.length < WORK_TAGS_MIN ||
-      workTagsIn.length > WORK_TAGS_MAX
-    ) {
+    if (workTagsIn.length < WORK_TAGS_MIN || workTagsIn.length > WORK_TAGS_MAX) {
       return res.status(400).json({
-        error:
-          "Add between " +
-          WORK_TAGS_MIN +
-          " and " +
-          WORK_TAGS_MAX +
-          " field/subfield pairs",
+        error: "Add between " + WORK_TAGS_MIN + " and " + WORK_TAGS_MAX + " field/subfield pairs",
       });
     }
     var seen = new Set();
@@ -607,8 +535,7 @@ app.patch("/api/me", requireAuth, async (req, res) => {
     displayNameIn !== undefined && displayNameIn !== null
       ? String(displayNameIn).trim()
       : String(row.display_name || "").trim();
-  var nextBio =
-    bioStr !== undefined ? bioStr : String(row.bio || "");
+  var nextBio = bioStr !== undefined ? bioStr : String(row.bio || "");
 
   var nextPda =
     nextPublicDisplayAs != null
@@ -624,13 +551,10 @@ app.patch("/api/me", requireAuth, async (req, res) => {
   }
 
   if (nextDisplay.length < 2) {
-    return res
-      .status(400)
-      .json({ error: "Display name must be at least 2 characters" });
+    return res.status(400).json({ error: "Display name must be at least 2 characters" });
   }
 
-  var nextAvatarUrl =
-    row.avatar_url != null ? String(row.avatar_url) : "";
+  var nextAvatarUrl = row.avatar_url != null ? String(row.avatar_url) : "";
 
   if (avatarReset) {
     await storage.deleteAvatar(req.user.id);
@@ -685,10 +609,7 @@ app.use((err, _req, res, _next) => {
   if (err && err.type === "entity.too.large") {
     status = 413;
   }
-  let msg =
-    err && err.expose && err.message
-      ? err.message
-      : "Internal server error";
+  let msg = err && err.expose && err.message ? err.message : "Internal server error";
   if (status === 413) {
     msg = "Request too large (try a smaller photo or save without changing the picture).";
   }

@@ -53,13 +53,10 @@ async function loadProject(db, id) {
       row.owner_display_name,
       row.owner_public_display_as
     ),
-    owner_username:
-      row.owner_username != null ? String(row.owner_username) : null,
-    owner_verified:
-      row.owner_verified === true || Number(row.owner_verified) === 1,
+    owner_username: row.owner_username != null ? String(row.owner_username) : null,
+    owner_verified: row.owner_verified === true || Number(row.owner_verified) === 1,
     owner_official_account:
-      row.owner_official_account === true ||
-      Number(row.owner_official_account) === 1,
+      row.owner_official_account === true || Number(row.owner_official_account) === 1,
   };
 }
 
@@ -81,9 +78,7 @@ function workTagKey(field, sub) {
 /** Sets of "field\0subfield" for overlap scoring when signed in. */
 async function loadUserTagSet(db, userId) {
   const rows = await db
-    .prepare(
-      "SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = ?"
-    )
+    .prepare("SELECT work_field, work_subfield FROM user_work_tags WHERE user_id = ?")
     .all(userId);
   const set = new Set();
   for (let i = 0; i < rows.length; i++) {
@@ -93,11 +88,7 @@ async function loadUserTagSet(db, userId) {
     const u = await db
       .prepare("SELECT work_field, work_subfield FROM users WHERE id = ?")
       .get(userId);
-    if (
-      u &&
-      String(u.work_field || "").trim() &&
-      String(u.work_subfield || "").trim()
-    ) {
+    if (u && String(u.work_field || "").trim() && String(u.work_subfield || "").trim()) {
       set.add(workTagKey(u.work_field, u.work_subfield));
     }
   }
@@ -121,11 +112,11 @@ function createProjectsRouter(deps) {
     try {
       const limit = clampLimit(req.query.limit);
       const cursor = parseCursor(req.query.cursor);
-      const qRaw = String(req.query.q || "").trim().slice(0, MAX_QUERY_LEN);
+      const qRaw = String(req.query.q || "")
+        .trim()
+        .slice(0, MAX_QUERY_LEN);
       const mineOnly =
-        String(req.query.mine || "").trim() === "1" &&
-        req.user &&
-        req.user.id != null;
+        String(req.query.mine || "").trim() === "1" && req.user && req.user.id != null;
 
       const where = [];
       const params = [];
@@ -170,9 +161,7 @@ function createProjectsRouter(deps) {
       const projects = hasMore ? rows.slice(0, limit) : rows;
 
       const viewerSet =
-        req.user && req.user.id != null
-          ? await loadUserTagSet(db, req.user.id)
-          : null;
+        req.user && req.user.id != null ? await loadUserTagSet(db, req.user.id) : null;
       const personalize = viewerSet != null && viewerSet.size > 0;
 
       for (let i = 0; i < projects.length; i++) {
@@ -182,15 +171,12 @@ function createProjectsRouter(deps) {
           p.owner_display_name,
           p.owner_public_display_as
         );
-        p.owner_username =
-          p.owner_username != null ? String(p.owner_username) : null;
+        p.owner_username = p.owner_username != null ? String(p.owner_username) : null;
         delete p.owner_display_name;
         delete p.owner_public_display_as;
-        p.owner_verified =
-          p.owner_verified === true || Number(p.owner_verified) === 1;
+        p.owner_verified = p.owner_verified === true || Number(p.owner_verified) === 1;
         p.owner_official_account =
-          p.owner_official_account === true ||
-          Number(p.owner_official_account) === 1;
+          p.owner_official_account === true || Number(p.owner_official_account) === 1;
         p.roles = await loadRoles(db, p.id);
         if (personalize) {
           const ownerSet = await loadUserTagSet(db, p.owner_user_id);
@@ -201,9 +187,7 @@ function createProjectsRouter(deps) {
       }
 
       const nextCursor =
-        hasMore && projects.length > 0
-          ? Number(projects[projects.length - 1].id)
-          : null;
+        hasMore && projects.length > 0 ? Number(projects[projects.length - 1].id) : null;
 
       res.json({ projects, next_cursor: nextCursor });
     } catch (e) {
@@ -264,9 +248,7 @@ function createProjectsRouter(deps) {
     if (!id) {
       return res.status(404).json({ error: "Not found" });
     }
-    const project = await db
-      .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
-      .get(id);
+    const project = await db.prepare("SELECT id, owner_user_id FROM projects WHERE id = ?").get(id);
     if (!project) {
       return res.status(404).json({ error: "Not found" });
     }
@@ -320,12 +302,8 @@ function createProjectsRouter(deps) {
       if (!rid) {
         return res.status(500).json({ error: "Could not add role" });
       }
-      const role = await db
-        .prepare("SELECT * FROM project_roles WHERE id = ?")
-        .get(rid);
-      const projRow = await db
-        .prepare("SELECT title FROM projects WHERE id = ?")
-        .get(projectId);
+      const role = await db.prepare("SELECT * FROM project_roles WHERE id = ?").get(rid);
+      const projRow = await db.prepare("SELECT title FROM projects WHERE id = ?").get(projectId);
       await insertFeedEvent(db, req.user.id, EVENT_TYPES.ROLE_ADDED, {
         project_id: projectId,
         project_title: projRow ? projRow.title : "",
@@ -355,9 +333,7 @@ function createProjectsRouter(deps) {
       return res.status(403).json({ error: "Only the owner can remove roles" });
     }
     const role = await db
-      .prepare(
-        "SELECT id FROM project_roles WHERE id = ? AND project_id = ?"
-      )
+      .prepare("SELECT id FROM project_roles WHERE id = ? AND project_id = ?")
       .get(roleId, projectId);
     if (!role) {
       return res.status(404).json({ error: "Not found" });

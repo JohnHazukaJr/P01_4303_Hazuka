@@ -63,10 +63,7 @@ async function applyOne(pool, id, sql) {
 async function main() {
   const pool = new Pool({
     connectionString: url,
-    ssl:
-      process.env.PGSSLMODE === "disable"
-        ? false
-        : { rejectUnauthorized: false },
+    ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
   });
 
   try {
@@ -93,4 +90,3 @@ main().catch((e) => {
   console.error("[migrate] failed", e);
   process.exit(1);
 });
-

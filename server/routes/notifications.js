@@ -76,10 +76,12 @@ function registerNotificationRoutes(app, deps) {
 
   app.post("/api/me/notifications/read-all", requireAuth, async (req, res) => {
     try {
-      await db.prepare(
-        `UPDATE user_notifications SET read_at = now()
+      await db
+        .prepare(
+          `UPDATE user_notifications SET read_at = now()
          WHERE user_id = ? AND read_at IS NULL`
-      ).run(req.user.id);
+        )
+        .run(req.user.id);
       res.status(204).end();
     } catch (e) {
       console.error(e);

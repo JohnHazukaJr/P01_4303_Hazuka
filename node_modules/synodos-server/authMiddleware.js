@@ -8,10 +8,7 @@ function createRequireAuth(db, jwtSecret) {
     }
     try {
       const payload = jwt.verify(h.slice(7), jwtSecret);
-      const row = await db.get(
-        "SELECT id, email FROM users WHERE id = $1",
-        [payload.sub]
-      );
+      const row = await db.get("SELECT id, email FROM users WHERE id = $1", [payload.sub]);
       if (!row) {
         return res.status(401).json({ error: "Unauthorized" });
       }
@@ -32,10 +29,7 @@ function createOptionalAuth(db, jwtSecret) {
     }
     try {
       const payload = jwt.verify(h.slice(7), jwtSecret);
-      const row = await db.get(
-        "SELECT id, email FROM users WHERE id = $1",
-        [payload.sub]
-      );
+      const row = await db.get("SELECT id, email FROM users WHERE id = $1", [payload.sub]);
       if (row) req.user = row;
     } catch {
       /* invalid token — treat as anonymous */

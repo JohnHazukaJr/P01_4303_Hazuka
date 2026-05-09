@@ -38,11 +38,7 @@
     if (mode === "dark") {
       return "Theme: dark. Activate to match system appearance.";
     }
-    return (
-      "Theme: system (" +
-      (darkNow ? "dark" : "light") +
-      "). Activate for light mode."
-    );
+    return "Theme: system (" + (darkNow ? "dark" : "light") + "). Activate for light mode.";
   }
 
   function updateToggles() {
@@ -56,10 +52,7 @@
   }
 
   function apply() {
-    document.documentElement.setAttribute(
-      "data-theme",
-      effectiveIsDark() ? "dark" : "light"
-    );
+    document.documentElement.setAttribute("data-theme", effectiveIsDark() ? "dark" : "light");
     updateToggles();
   }
 

@@ -70,8 +70,7 @@
       if (!jrResult) {
         return;
       }
-      pan.innerHTML =
-        '<p class="dashboard-lead">Could not load your join requests.</p>';
+      pan.innerHTML = '<p class="dashboard-lead">Could not load your join requests.</p>';
       return;
     }
     var jrData = jrResult.data;
@@ -114,11 +113,7 @@
       roles
         .map(function (r) {
           return (
-            '<option value="' +
-            String(r.id) +
-            '">' +
-            escapeHtml(r.title || "Role") +
-            "</option>"
+            '<option value="' + String(r.id) + '">' + escapeHtml(r.title || "Role") + "</option>"
           );
         })
         .join("");
@@ -160,7 +155,9 @@
     var fd = new FormData(form);
     var roleVal = fd.get("role_id");
     var body = {
-      note: String(fd.get("note") || "").trim().slice(0, NOTE_MAX),
+      note: String(fd.get("note") || "")
+        .trim()
+        .slice(0, NOTE_MAX),
     };
     if (roleVal && String(roleVal).trim() !== "") {
       body.role_id = Number(roleVal);
@@ -196,10 +193,7 @@
     pg.showMsg("", false);
     try {
       var wd = await window.synodosAuth.apiFetch(
-        "/api/projects/" +
-          pg.getProjectId() +
-          "/join-requests/" +
-          requestId,
+        "/api/projects/" + pg.getProjectId() + "/join-requests/" + requestId,
         { method: "DELETE" }
       );
       if (!wd) {

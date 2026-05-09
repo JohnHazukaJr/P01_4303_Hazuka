@@ -15,10 +15,7 @@ function getPool() {
   const url = requireEnv("DATABASE_URL");
   pool = new Pool({
     connectionString: url,
-    ssl:
-      process.env.PGSSLMODE === "disable"
-        ? false
-        : { rejectUnauthorized: false },
+    ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
   });
   return pool;
 }
@@ -69,4 +66,3 @@ function prepare(sql) {
 }
 
 module.exports = { query, get, all, run, prepare };
-

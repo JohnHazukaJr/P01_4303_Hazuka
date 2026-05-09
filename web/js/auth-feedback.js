@@ -10,10 +10,8 @@
    */
   function showAuthSuccess(message, opts) {
     opts = opts || {};
-    var holdMs =
-      typeof opts.holdMs === "number" ? opts.holdMs : DEFAULT_HOLD_MS;
-    var fadeMs =
-      typeof opts.fadeMs === "number" ? opts.fadeMs : DEFAULT_FADE_MS;
+    var holdMs = typeof opts.holdMs === "number" ? opts.holdMs : DEFAULT_HOLD_MS;
+    var fadeMs = typeof opts.fadeMs === "number" ? opts.fadeMs : DEFAULT_FADE_MS;
 
     return new Promise(function (resolve) {
       var root = document.createElement("div");

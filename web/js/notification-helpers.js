@@ -13,11 +13,7 @@
       case "join_request_accepted":
         return "You were accepted into “" + (p.project_title || "a project") + ".”";
       case "join_request_declined":
-        return (
-          "Your request to join “" +
-          (p.project_title || "a project") +
-          "” was declined."
-        );
+        return "Your request to join “" + (p.project_title || "a project") + "” was declined.";
       case "project_invite_received":
         return (
           (p.inviter_public_display_label || p.inviter_username || "Someone") +
@@ -33,11 +29,7 @@
           ".”"
         );
       case "project_you_were_added":
-        return (
-          "You joined “" +
-          (p.project_title || "a project") +
-          "” from an invitation."
-        );
+        return "You joined “" + (p.project_title || "a project") + "” from an invitation.";
       case "dm_message_received":
         return (
           (p.sender_public_display_label || "Someone") +
@@ -55,10 +47,7 @@
       return "project.html?id=" + encodeURIComponent(String(p.project_id));
     }
     if (type === "dm_message_received" && p.conversation_id != null) {
-      return (
-        "messages.html?c=" +
-        encodeURIComponent(String(p.conversation_id))
-      );
+      return "messages.html?c=" + encodeURIComponent(String(p.conversation_id));
     }
     return null;
   }

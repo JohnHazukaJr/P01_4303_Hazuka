@@ -58,11 +58,7 @@
     if (isDesktop()) return;
     if (e.target.closest("a[href]")) setOpen(false);
     var b = e.target.closest("button");
-    if (
-      b &&
-      !b.hasAttribute("data-theme-toggle") &&
-      b.getAttribute("type") === "button"
-    ) {
+    if (b && !b.hasAttribute("data-theme-toggle") && b.getAttribute("type") === "button") {
       setOpen(false);
     }
   });

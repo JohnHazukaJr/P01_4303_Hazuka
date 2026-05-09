@@ -24,8 +24,7 @@
     }
     var slots = document.createElement("span");
     slots.className = "role-row__slots";
-    slots.textContent =
-      "Openings: " + String(role.slots != null ? role.slots : 1);
+    slots.textContent = "Openings: " + String(role.slots != null ? role.slots : 1);
     main.appendChild(slots);
     row.appendChild(main);
     if (canDelete && typeof onDeleteRole === "function") {
@@ -55,25 +54,21 @@
 
     var own = isOwner(project, userId);
     var card = document.createElement("article");
-    card.className =
-      "project-card" + (own ? " project-card--own" : "");
+    card.className = "project-card" + (own ? " project-card--own" : "");
     card.setAttribute("data-project-id", String(project.id));
 
     var title = document.createElement("h3");
     title.className = "project-card__title";
     var titleLink = document.createElement("a");
     titleLink.className = "project-card__title-link";
-    titleLink.href =
-      "project.html?id=" + encodeURIComponent(String(project.id));
+    titleLink.href = "project.html?id=" + encodeURIComponent(String(project.id));
     titleLink.textContent = project.title || "Untitled";
     title.appendChild(titleLink);
 
     var meta = document.createElement("p");
     meta.className = "project-card__meta";
     meta.appendChild(document.createTextNode("Owner: "));
-    var oun = project.owner_username
-      ? String(project.owner_username).trim()
-      : "";
+    var oun = project.owner_username ? String(project.owner_username).trim() : "";
     if (oun) {
       var oa = document.createElement("a");
       oa.href = "user.html?u=" + encodeURIComponent(oun);
@@ -90,9 +85,7 @@
         });
       }
     } else {
-      meta.appendChild(
-        document.createTextNode(project.owner_display || "?")
-      );
+      meta.appendChild(document.createTextNode(project.owner_display || "?"));
     }
     var feedN = Number(project.feed_match_count);
     if (hasToken && Number.isFinite(feedN) && feedN > 0) {
@@ -103,9 +96,7 @@
         "Overlaps with your field/subfield tags — ranked higher in your feed"
       );
       feedBadge.textContent =
-        feedN === 1
-          ? "1 match with your fields"
-          : feedN + " matches with your fields";
+        feedN === 1 ? "1 match with your fields" : feedN + " matches with your fields";
       meta.appendChild(document.createTextNode(" · "));
       meta.appendChild(feedBadge);
     }
@@ -174,9 +165,7 @@
       delBtn.textContent = "Delete project";
       delBtn.addEventListener("click", function () {
         if (
-          global.confirm(
-            "Delete this project and all of its open roles? This cannot be undone."
-          )
+          global.confirm("Delete this project and all of its open roles? This cannot be undone.")
         ) {
           handlers.deleteProject(project.id);
         }
