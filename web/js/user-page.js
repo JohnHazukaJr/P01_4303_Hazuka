@@ -75,8 +75,8 @@
       }
     }
     if (back) {
-      back.setAttribute("href", meId ? "dashboard.html" : "index.html");
-      back.textContent = meId ? "← Back to dashboard" : "← Back to home";
+      back.setAttribute("href", meId ? "home.html" : "index.html");
+      back.textContent = meId ? "← Back to home" : "← Back to marketing site";
     }
 
     var profResult = await window.synodosAuth.apiFetch(

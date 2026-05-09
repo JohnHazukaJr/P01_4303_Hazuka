@@ -8,6 +8,14 @@
     }
     return;
   }
+  if (!window.synodosProjectCard) {
+    if (typeof console !== "undefined" && console.error) {
+      console.error(
+        "synodosProjectCard not found. Load js/project-card.js before js/dashboard.js."
+      );
+    }
+    return;
+  }
 
   var displayNameEl = document.getElementById("dashboard-display-name");
   var dashAvatarImg = document.getElementById("dashboard-avatar-img");
@@ -81,6 +89,18 @@
 
   function jsonAuthHeaders() {
     return window.synodosAuth.authHeaders({ json: true });
+  }
+
+  function projectCardOptions() {
+    return {
+      userId: userId,
+      hasToken: !!token,
+      handlers: {
+        addRole: addRole,
+        deleteRole: deleteRole,
+        deleteProject: deleteProject,
+      },
+    };
   }
 
   async function loadMe() {
@@ -159,10 +179,6 @@
     return result.data;
   }
 
-  function isOwner(project) {
-    return userId != null && Number(project.owner_user_id) === Number(userId);
-  }
-
   function renderEmptyState() {
     if (!projectsEmpty) return;
     var hasAny = cachedProjects.length > 0;
@@ -209,7 +225,12 @@
     if (!projectsRoot) return;
     projectsRoot.innerHTML = "";
     for (var j = 0; j < cachedProjects.length; j++) {
-      projectsRoot.appendChild(renderProjectCard(cachedProjects[j]));
+      projectsRoot.appendChild(
+        window.synodosProjectCard.renderProjectCard(
+          cachedProjects[j],
+          projectCardOptions()
+        )
+      );
     }
     renderEmptyState();
     syncLoadMoreVisibility();
@@ -218,7 +239,9 @@
   function appendProjects(list) {
     if (!projectsRoot || !list || list.length === 0) return;
     for (var j = 0; j < list.length; j++) {
-      projectsRoot.appendChild(renderProjectCard(list[j]));
+      projectsRoot.appendChild(
+        window.synodosProjectCard.renderProjectCard(list[j], projectCardOptions())
+      );
     }
   }
 
@@ -248,171 +271,6 @@
       inflightProjectsLoad = false;
       syncLoadMoreVisibility();
     }
-  }
-
-  function renderProjectCard(project) {
-    var own = isOwner(project);
-    var card = document.createElement("article");
-    card.className =
-      "project-card" + (own ? " project-card--own" : "");
-    card.setAttribute("data-project-id", String(project.id));
-
-    var title = document.createElement("h3");
-    title.className = "project-card__title";
-    var titleLink = document.createElement("a");
-    titleLink.className = "project-card__title-link";
-    titleLink.href =
-      "project.html?id=" + encodeURIComponent(String(project.id));
-    titleLink.textContent = project.title || "Untitled";
-    title.appendChild(titleLink);
-
-    var meta = document.createElement("p");
-    meta.className = "project-card__meta";
-    meta.appendChild(document.createTextNode("Owner: "));
-    var oun = project.owner_username
-      ? String(project.owner_username).trim()
-      : "";
-    if (oun) {
-      var oa = document.createElement("a");
-      oa.href = "user.html?u=" + encodeURIComponent(oun);
-      oa.className = "project-owner-link";
-      oa.textContent = project.owner_display || oun;
-      meta.appendChild(oa);
-      if (window.synodosUserBadges) {
-        var ob = document.createElement("span");
-        ob.className = "project-card__owner-badges";
-        meta.appendChild(ob);
-        window.synodosUserBadges.renderBadgesOnly(ob, {
-          verified: project.owner_verified,
-          official_account: project.owner_official_account,
-        });
-      }
-    } else {
-      meta.appendChild(
-        document.createTextNode(project.owner_display || "?")
-      );
-    }
-    var feedN = Number(project.feed_match_count);
-    if (token && Number.isFinite(feedN) && feedN > 0) {
-      var feedBadge = document.createElement("span");
-      feedBadge.className = "project-card__feed-match";
-      feedBadge.setAttribute(
-        "title",
-        "Overlaps with your field/subfield tags — ranked higher in your feed"
-      );
-      feedBadge.textContent =
-        feedN === 1
-          ? "1 match with your fields"
-          : feedN + " matches with your fields";
-      meta.appendChild(document.createTextNode(" · "));
-      meta.appendChild(feedBadge);
-    }
-
-    var desc = document.createElement("p");
-    desc.className = "project-card__desc";
-    desc.textContent = project.description || "";
-
-    card.appendChild(title);
-    card.appendChild(meta);
-    card.appendChild(desc);
-
-    var rolesWrap = document.createElement("div");
-    rolesWrap.className = "project-roles";
-    var rh = document.createElement("h4");
-    rh.className = "project-roles__heading";
-    rh.textContent = "Open roles";
-    rolesWrap.appendChild(rh);
-
-    var roles = project.roles || [];
-    if (roles.length === 0) {
-      var empty = document.createElement("p");
-      empty.className = "project-roles__empty";
-      empty.textContent = "No open roles yet.";
-      rolesWrap.appendChild(empty);
-    } else {
-      for (var r = 0; r < roles.length; r++) {
-        rolesWrap.appendChild(renderRoleRow(project, roles[r], own));
-      }
-    }
-    card.appendChild(rolesWrap);
-
-    if (own) {
-      var addForm = document.createElement("form");
-      addForm.className = "role-form";
-      addForm.innerHTML =
-        '<label class="role-form__label"><span>Role title</span>' +
-        '<input name="title" type="text" required maxlength="200" placeholder="e.g. UI design">' +
-        "</label>" +
-        '<label class="role-form__label"><span>Skills / tools</span>' +
-        '<input name="skills" type="text" maxlength="2000" placeholder="Figma, accessibility">' +
-        "</label>" +
-        '<label class="role-form__label role-form__label--narrow"><span>Openings</span>' +
-        '<input name="slots" type="number" min="0" max="999" value="1">' +
-        "</label>" +
-        '<button type="submit" class="btn btn-primary btn-block">Add open role</button>';
-      addForm.addEventListener("submit", function (ev) {
-        ev.preventDefault();
-        var fd = new FormData(addForm);
-        addRole(project.id, {
-          title: fd.get("title"),
-          skills: fd.get("skills") || "",
-          slots: fd.get("slots"),
-        });
-      });
-      card.appendChild(addForm);
-
-      var delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "btn btn-ghost btn-block project-card__delete";
-      delBtn.textContent = "Delete project";
-      delBtn.addEventListener("click", function () {
-        if (
-          window.confirm(
-            "Delete this project and all of its open roles? This cannot be undone."
-          )
-        ) {
-          deleteProject(project.id);
-        }
-      });
-      card.appendChild(delBtn);
-    }
-
-    return card;
-  }
-
-  function renderRoleRow(project, role, canDelete) {
-    var row = document.createElement("div");
-    row.className = "role-row";
-    var main = document.createElement("div");
-    main.className = "role-row__main";
-    var t = document.createElement("strong");
-    t.className = "role-row__title";
-    t.textContent = role.title || "";
-    main.appendChild(t);
-    if (role.skills) {
-      var sk = document.createElement("span");
-      sk.className = "role-row__skills";
-      sk.textContent = role.skills;
-      main.appendChild(sk);
-    }
-    var slots = document.createElement("span");
-    slots.className = "role-row__slots";
-    slots.textContent =
-      "Openings: " + String(role.slots != null ? role.slots : 1);
-    main.appendChild(slots);
-    row.appendChild(main);
-    if (canDelete) {
-      var rm = document.createElement("button");
-      rm.type = "button";
-      rm.className = "btn btn-ghost role-row__remove";
-      rm.setAttribute("aria-label", "Remove role");
-      rm.textContent = "Remove";
-      rm.addEventListener("click", function () {
-        deleteRole(project.id, role.id);
-      });
-      row.appendChild(rm);
-    }
-    return row;
   }
 
   function showSkeletonProjects() {

@@ -33,8 +33,8 @@
       window.synodosAuth.getToken()
     );
     if (backLink) {
-      backLink.setAttribute("href", hasToken ? "dashboard.html" : "index.html");
-      backLink.textContent = hasToken ? "← Back to dashboard" : "← Back to home";
+      backLink.setAttribute("href", hasToken ? "home.html" : "index.html");
+      backLink.textContent = hasToken ? "← Back to home" : "← Back to marketing site";
     }
   }
 

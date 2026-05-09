@@ -22,7 +22,7 @@
     if (pg.isOwner()) {
       sec.hidden = false;
       pan.innerHTML =
-        '<p class="dashboard-lead" style="margin-bottom:0">You own this project. Manage open roles and respond to join requests on your <a href="dashboard.html">dashboard</a>.</p>';
+        '<p class="dashboard-lead" style="margin-bottom:0">You own this project. Manage open roles and respond to join requests on <a href="dashboard.html">Projects</a>.</p>';
       return;
     }
 
