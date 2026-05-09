@@ -11,6 +11,7 @@
  */
 
 const { createClient } = require("@supabase/supabase-js");
+const fs = require("fs");
 
 const AVATAR_MIME_EXT = {
   "image/jpeg": ".jpg",
@@ -40,23 +41,35 @@ function dbgSupabaseRoleFromJwt(key) {
 
 function dbgPost(hypothesisId, location, message, data) {
   try {
-    if (typeof fetch !== "function") return;
-    fetch("http://127.0.0.1:7462/ingest/2e0e05ed-2293-4597-b6c6-1abe56458da5", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "7dfff8",
-      },
-      body: JSON.stringify({
-        sessionId: "7dfff8",
-        runId: "pre-fix",
-        hypothesisId,
-        location,
-        message,
-        data: data || {},
-        timestamp: Date.now(),
-      }),
-    }).catch(function () {});
+    const payload = {
+      sessionId: "7dfff8",
+      runId: "pre-fix",
+      hypothesisId,
+      location,
+      message,
+      data: data || {},
+      timestamp: Date.now(),
+    };
+
+    // Primary: write directly to the provisioned NDJSON log file (most reliable).
+    try {
+      fs.appendFileSync("debug-7dfff8.log", JSON.stringify(payload) + "\n");
+    } catch (_) {}
+
+    // Secondary: also try the HTTP ingest if available.
+    if (typeof fetch === "function") {
+      fetch(
+        "http://127.0.0.1:7462/ingest/2e0e05ed-2293-4597-b6c6-1abe56458da5",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "7dfff8",
+          },
+          body: JSON.stringify(payload),
+        }
+      ).catch(function () {});
+    }
   } catch (_) {}
 }
 // #endregion
@@ -73,6 +86,19 @@ function getBucket() {
 async function ensureAvatarBucket(client, bucketName) {
   const { data: buckets, error: listErr } = await client.storage.listBuckets();
   if (listErr) {
+    // #region agent log
+    dbgPost("D", "server/storage.js:ensureAvatarBucket", "listBuckets error", {
+      bucketName,
+      errName: listErr && listErr.name ? String(listErr.name) : null,
+      errMessage: listErr && listErr.message ? String(listErr.message) : null,
+      statusCode:
+        listErr && listErr.statusCode != null ? listErr.statusCode : null,
+      cause:
+        listErr && listErr.cause && listErr.cause.message
+          ? String(listErr.cause.message)
+          : null,
+    });
+    // #endregion
     var lm = listErr.message || "Could not access Storage";
     var extra = "";
     if (/row-level security|rls policy|violates row-level/i.test(String(lm))) {
@@ -99,6 +125,19 @@ async function ensureAvatarBucket(client, bucketName) {
   if (!createErr) {
     return { ok: true };
   }
+  // #region agent log
+  dbgPost("E", "server/storage.js:ensureAvatarBucket", "createBucket error", {
+    bucketName,
+    errName: createErr && createErr.name ? String(createErr.name) : null,
+    errMessage: createErr && createErr.message ? String(createErr.message) : null,
+    statusCode:
+      createErr && createErr.statusCode != null ? createErr.statusCode : null,
+    cause:
+      createErr && createErr.cause && createErr.cause.message
+        ? String(createErr.cause.message)
+        : null,
+  });
+  // #endregion
   const msg = String(createErr.message || "");
   if (/already exists|duplicate/i.test(msg)) {
     return { ok: true };
@@ -172,6 +211,7 @@ function getClient() {
       supabaseUrlHost: String(url).replace(/^https?:\/\//i, "").split("/")[0],
       keyRole: dbgSupabaseRoleFromJwt(key),
       keyLen: String(key).length,
+      keyDotParts: String(key).split(".").length,
     }
   );
   // #endregion
