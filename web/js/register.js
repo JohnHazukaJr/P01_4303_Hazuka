@@ -44,13 +44,21 @@
       if (data.token) {
         window.synodosAuth.setToken(data.token);
       }
+      var prefetchMe =
+        data.token && typeof window.synodosAuth.apiFetch === "function"
+          ? window.synodosAuth.apiFetch("/api/me", {}).then(function (r) {
+              if (r && r.res.ok && r.data && r.data.user) {
+                window.synodosAuth.setCachedMe(r.data.user);
+              }
+            })
+          : Promise.resolve();
       if (typeof window.synodosShowAuthSuccess === "function") {
         await window.synodosShowAuthSuccess(
           "Account created — welcome to synodos.",
           { holdMs: 1650, fadeMs: 320 }
         );
       }
-      /* Successful signup → profile setup (then dashboard after PATCH /api/me). */
+      await prefetchMe;
       window.location.replace("profile-setup.html");
     } catch (err) {
       window.alert("Could not reach the server. Please try again.");

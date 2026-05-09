@@ -80,12 +80,21 @@
       if (data.token) {
         window.synodosAuth.setToken(data.token);
       }
+      var prefetchMe =
+        data.token && typeof window.synodosAuth.apiFetch === "function"
+          ? window.synodosAuth.apiFetch("/api/me", {}).then(function (r) {
+              if (r && r.res.ok && r.data && r.data.user) {
+                window.synodosAuth.setCachedMe(r.data.user);
+              }
+            })
+          : Promise.resolve();
       if (typeof window.synodosShowAuthSuccess === "function") {
         await window.synodosShowAuthSuccess("Signed in — welcome back.", {
           holdMs: 1450,
           fadeMs: 320,
         });
       }
+      await prefetchMe;
       window.location.href = "home.html";
     } catch (err) {
       showMsg("Could not reach the server. Please try again.", true);

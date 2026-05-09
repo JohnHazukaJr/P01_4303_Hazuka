@@ -13,9 +13,25 @@
   var AVATAR_MAP_KEY = "synodos_avatar_url_map";
   var ME_CACHE_KEY = "synodos_me_v1";
 
+  /** Profile cache + avatar hints use localStorage so new tabs reuse the last /api/me paint (sessionStorage was per-tab only). */
+  (function migrateMeAndAvatarFromSessionOnce() {
+    try {
+      [ME_CACHE_KEY, AVATAR_MAP_KEY].forEach(function (key) {
+        var s = sessionStorage.getItem(key);
+        if (!s) return;
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, s);
+        }
+        sessionStorage.removeItem(key);
+      });
+    } catch (e) {
+      /* ignore */
+    }
+  })();
+
   function clearMeCache() {
     try {
-      sessionStorage.removeItem(ME_CACHE_KEY);
+      localStorage.removeItem(ME_CACHE_KEY);
     } catch (e) {
       /* ignore */
     }
@@ -23,7 +39,7 @@
 
   function readMeCacheRaw() {
     try {
-      var raw = sessionStorage.getItem(ME_CACHE_KEY);
+      var raw = localStorage.getItem(ME_CACHE_KEY);
       if (!raw) return null;
       return JSON.parse(raw);
     } catch (e) {
@@ -33,7 +49,7 @@
 
   function readAvatarMap() {
     try {
-      var raw = sessionStorage.getItem(AVATAR_MAP_KEY);
+      var raw = localStorage.getItem(AVATAR_MAP_KEY);
       if (!raw) return { byId: {}, byUser: {} };
       var o = JSON.parse(raw);
       return {
@@ -47,7 +63,7 @@
 
   function writeAvatarMap(map) {
     try {
-      sessionStorage.setItem(AVATAR_MAP_KEY, JSON.stringify(map));
+      localStorage.setItem(AVATAR_MAP_KEY, JSON.stringify(map));
     } catch (e) {
       /* ignore */
     }
@@ -55,7 +71,7 @@
 
   function clearAvatarSessionMap() {
     try {
-      sessionStorage.removeItem(AVATAR_MAP_KEY);
+      localStorage.removeItem(AVATAR_MAP_KEY);
     } catch (e) {
       /* ignore */
     }
@@ -262,7 +278,7 @@
       }
       return { res: res, data: data };
     },
-    /** Cached `/api/me` user for this JWT (same-tab session); null if stale or missing. */
+    /** Cached `/api/me` user for this JWT; null if stale or missing. */
     getCachedMe: function () {
       var token = this.getToken();
       if (!token) return null;
@@ -277,7 +293,7 @@
     setCachedMe: function (user) {
       if (!user || user.id == null) return;
       try {
-        sessionStorage.setItem(
+        localStorage.setItem(
           ME_CACHE_KEY,
           JSON.stringify({
             user: {
@@ -296,6 +312,7 @@
       } catch (e) {
         /* ignore */
       }
+      rememberAvatarKeys(user);
     },
     clearCachedMe: function () {
       clearMeCache();
@@ -361,8 +378,7 @@
       }
     },
     /**
-     * Before /api/me or public profile fetch: paint from sessionStorage so the inline SVG
-     * does not flash on full page loads (same tab).
+     * Before /api/me or public profile fetch: paint from local cache so avatars do not flash.
      * options.username — public profile (?u=); omit for current user (JWT sub).
      */
     primeUserAvatar: function (img, ph, options) {
@@ -385,14 +401,33 @@
           }
         }
       }
-      if (path === null) return;
+      if (!path || !String(path).trim()) {
+        if (!un) {
+          var cached = this.getCachedMe();
+          if (
+            cached &&
+            cached.avatar_url != null &&
+            String(cached.avatar_url).trim()
+          ) {
+            path = String(cached.avatar_url).trim();
+          }
+        }
+      }
+      if (!path || !String(path).trim()) return;
+      var cachedMe = !un ? this.getCachedMe() : null;
       this.applyUserAvatar(
         img,
         ph,
         {
           avatar_url: path,
-          public_display_label: options.public_display_label,
-          display_name: options.display_name,
+          public_display_label:
+            options.public_display_label ||
+            (cachedMe && cachedMe.public_display_label) ||
+            "",
+          display_name:
+            options.display_name ||
+            (cachedMe && cachedMe.display_name) ||
+            "",
         },
         { skipCacheWrite: true }
       );
