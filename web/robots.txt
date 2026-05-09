@@ -3,6 +3,7 @@ Allow: /
 
 # Don't index logged-in / personal pages.
 Disallow: /dashboard.html
+Disallow: /home.html
 Disallow: /profile.html
 Disallow: /profile-setup.html
 Disallow: /messages.html

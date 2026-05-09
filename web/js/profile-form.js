@@ -616,7 +616,7 @@
 
         if (flow === "setup" && meData.user && meData.user.profile_complete) {
           exitPreviewNameLoading();
-          window.location.href = "dashboard.html";
+          window.location.href = "home.html";
           return;
         }
 
@@ -786,7 +786,7 @@
         }
 
         if (flow === "setup") {
-          window.location.href = "dashboard.html";
+          window.location.href = "home.html";
         } else {
           pendingAvatarDataUrl = null;
           avatarResetRequested = false;

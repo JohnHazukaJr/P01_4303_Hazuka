@@ -86,7 +86,7 @@
           fadeMs: 320,
         });
       }
-      window.location.href = "dashboard.html";
+      window.location.href = "home.html";
     } catch (err) {
       showMsg("Could not reach the server. Please try again.", true);
     }
