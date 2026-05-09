@@ -9,10 +9,7 @@ const https = require("https");
 
 const fromArg = process.argv[2] && String(process.argv[2]).trim();
 const fromEnv = String(process.env.SYNODOS_VERIFY_HEALTH_URL || "").trim();
-const url =
-  fromArg ||
-  fromEnv ||
-  "http://127.0.0.1:8080/api/health";
+const url = fromArg || fromEnv || "http://127.0.0.1:8080/api/health";
 
 const client = url.startsWith("https:") ? https : http;
 
@@ -38,10 +35,7 @@ client
           process.exit(1);
         }
         if (j.status === "ok") {
-          console.error(
-            "verify-health: expected database: connected, got:",
-            j.database
-          );
+          console.error("verify-health: expected database: connected, got:", j.database);
           process.exit(1);
         }
       } catch (_) {

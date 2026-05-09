@@ -8,17 +8,13 @@
   }
   if (!window.synodosProjectCard) {
     if (typeof console !== "undefined" && console.error) {
-      console.error(
-        "synodosProjectCard not found. Load js/project-card.js before js/home.js."
-      );
+      console.error("synodosProjectCard not found. Load js/project-card.js before js/home.js.");
     }
     return;
   }
   if (!window.synodosSession) {
     if (typeof console !== "undefined" && console.error) {
-      console.error(
-        "synodosSession not found. Load js/session-guard.js before js/home.js."
-      );
+      console.error("synodosSession not found. Load js/session-guard.js before js/home.js.");
     }
     return;
   }
@@ -91,9 +87,7 @@
     var isNetwork =
       err &&
       (err.name === "TypeError" ||
-        /network|fetch|failed to fetch|load failed|aborted/i.test(
-          String(err.message || "")
-        ));
+        /network|fetch|failed to fetch|load failed|aborted/i.test(String(err.message || "")));
     if (isNetwork) {
       return "Unable to reach synodos. Check your connection and try again.";
     }
@@ -104,8 +98,7 @@
     if (!msgEl) return;
     msgEl.textContent = text || "";
     msgEl.hidden = !text;
-    msgEl.className =
-      "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    msgEl.className = "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
     if (isError && text) {
       try {
         msgEl.focus({ preventScroll: true });
@@ -126,16 +119,11 @@
     if (cached) {
       setAvatars(cached);
     }
-    var gate = await window.synodosSession.ensureAuthedAndCompleteProfile(
-      {}
-    );
+    var gate = await window.synodosSession.ensureAuthedAndCompleteProfile({});
     if (!gate.ok) {
       if (gate.reason === "network") {
         showMsg(
-          msgForFetchFailure(
-            gate.error,
-            "Could not load your account. Please try again."
-          ),
+          msgForFetchFailure(gate.error, "Could not load your account. Please try again."),
           true
         );
         return false;
@@ -180,13 +168,8 @@
     if (!projectsLoadMore) return;
     projectsLoadMore.hidden = !projectsNextCursor;
     projectsLoadMore.disabled = !!projectsInflight;
-    projectsLoadMore.setAttribute(
-      "aria-busy",
-      projectsInflight ? "true" : "false"
-    );
-    projectsLoadMore.textContent = projectsInflight
-      ? "Loading…"
-      : "Load more projects";
+    projectsLoadMore.setAttribute("aria-busy", projectsInflight ? "true" : "false");
+    projectsLoadMore.textContent = projectsInflight ? "Loading…" : "Load more projects";
   }
 
   function renderProjectsEmpty() {
@@ -195,8 +178,7 @@
       projectsEmpty.hidden = true;
       return;
     }
-    projectsEmpty.textContent =
-      "No projects yet — be the first to publish one from Projects.";
+    projectsEmpty.textContent = "No projects yet — be the first to publish one from Projects.";
     projectsEmpty.hidden = false;
   }
 
@@ -205,10 +187,7 @@
     projectsRoot.innerHTML = "";
     for (var j = 0; j < cachedProjects.length; j++) {
       projectsRoot.appendChild(
-        window.synodosProjectCard.renderProjectCard(
-          cachedProjects[j],
-          projectCardOptions()
-        )
+        window.synodosProjectCard.renderProjectCard(cachedProjects[j], projectCardOptions())
       );
     }
     renderProjectsEmpty();
@@ -230,8 +209,7 @@
       }
       var data = result.data || {};
       cachedProjects = data.projects || [];
-      projectsNextCursor =
-        data.next_cursor != null ? data.next_cursor : null;
+      projectsNextCursor = data.next_cursor != null ? data.next_cursor : null;
       if (window.synodosUi) {
         window.synodosUi.clearSkeleton(projectsRoot);
       }
@@ -240,10 +218,7 @@
       if (window.synodosUi) {
         window.synodosUi.clearSkeleton(projectsRoot);
       }
-      showMsg(
-        msgForFetchFailure(e, "Could not load projects. Try again."),
-        true
-      );
+      showMsg(msgForFetchFailure(e, "Could not load projects. Try again."), true);
       renderProjectsEmpty();
     } finally {
       projectsInflight = false;
@@ -256,10 +231,7 @@
     projectsInflight = true;
     syncProjectsLoadMore();
     try {
-      var result = await window.synodosAuth.apiFetch(
-        buildProjectsUrl(projectsNextCursor),
-        {}
-      );
+      var result = await window.synodosAuth.apiFetch(buildProjectsUrl(projectsNextCursor), {});
       if (!result || !result.res.ok) {
         throw new Error("Could not load projects.");
       }
@@ -271,14 +243,10 @@
         );
       }
       cachedProjects = cachedProjects.concat(more);
-      projectsNextCursor =
-        data.next_cursor != null ? data.next_cursor : null;
+      projectsNextCursor = data.next_cursor != null ? data.next_cursor : null;
       renderProjectsEmpty();
     } catch (e) {
-      showMsg(
-        (e && e.message) || "Could not load more projects.",
-        true
-      );
+      showMsg((e && e.message) || "Could not load more projects.", true);
     } finally {
       projectsInflight = false;
       syncProjectsLoadMore();
@@ -286,8 +254,7 @@
   }
 
   function actorLink(ev) {
-    var un =
-      ev.actor_username != null ? String(ev.actor_username).trim() : "";
+    var un = ev.actor_username != null ? String(ev.actor_username).trim() : "";
     if (!un) return null;
     var a = document.createElement("a");
     a.href = "user.html?u=" + encodeURIComponent(un);
@@ -307,11 +274,7 @@
     if (link) {
       body.appendChild(link);
     } else {
-      body.appendChild(
-        document.createTextNode(
-          ev.actor_public_display_label || "Someone"
-        )
-      );
+      body.appendChild(document.createTextNode(ev.actor_public_display_label || "Someone"));
     }
   }
 
@@ -336,32 +299,21 @@
     if (et === "project_created") {
       appendActor(body, ev);
       body.appendChild(document.createTextNode(" published "));
-      body.appendChild(
-        projectLink(p.project_id, p.title || "a project")
-      );
+      body.appendChild(projectLink(p.project_id, p.title || "a project"));
     } else if (et === "role_added") {
       appendActor(body, ev);
       body.appendChild(document.createTextNode(" added open role “"));
-      body.appendChild(
-        document.createTextNode(p.role_title || "Role")
-      );
+      body.appendChild(document.createTextNode(p.role_title || "Role"));
       body.appendChild(document.createTextNode("” on "));
-      body.appendChild(
-        projectLink(p.project_id, p.project_title || "project")
-      );
+      body.appendChild(projectLink(p.project_id, p.project_title || "project"));
     } else if (et === "join_accepted") {
       appendActor(body, ev);
       body.appendChild(document.createTextNode(" joined "));
-      body.appendChild(
-        projectLink(p.project_id, p.project_title || "a project")
-      );
+      body.appendChild(projectLink(p.project_id, p.project_title || "a project"));
     } else if (et === "user_followed") {
       appendActor(body, ev);
       body.appendChild(document.createTextNode(" followed "));
-      var tun =
-        p.target_username != null
-          ? String(p.target_username).trim()
-          : "";
+      var tun = p.target_username != null ? String(p.target_username).trim() : "";
       if (tun) {
         var ta = document.createElement("a");
         ta.href = "user.html?u=" + encodeURIComponent(tun);
@@ -371,9 +323,7 @@
         body.appendChild(document.createTextNode("someone"));
       }
     } else {
-      body.appendChild(
-        document.createTextNode("Something happened in the feed.")
-      );
+      body.appendChild(document.createTextNode("Something happened in the feed."));
     }
 
     article.appendChild(meta);
@@ -393,10 +343,7 @@
     if (!activityLoadMore) return;
     activityLoadMore.hidden = !feedNextCursor;
     activityLoadMore.disabled = !!feedInflight;
-    activityLoadMore.setAttribute(
-      "aria-busy",
-      feedInflight ? "true" : "false"
-    );
+    activityLoadMore.setAttribute("aria-busy", feedInflight ? "true" : "false");
     activityLoadMore.textContent = feedInflight ? "Loading…" : "Load more";
   }
 
@@ -436,8 +383,7 @@
       }
       var data = result.data || {};
       feedEvents = data.events || [];
-      feedNextCursor =
-        data.next_cursor != null ? data.next_cursor : null;
+      feedNextCursor = data.next_cursor != null ? data.next_cursor : null;
       if (window.synodosUi) {
         window.synodosUi.clearSkeleton(activityRoot);
       }
@@ -446,10 +392,7 @@
       if (window.synodosUi) {
         window.synodosUi.clearSkeleton(activityRoot);
       }
-      showMsg(
-        msgForFetchFailure(e, "Could not load activity. Try again."),
-        true
-      );
+      showMsg(msgForFetchFailure(e, "Could not load activity. Try again."), true);
       renderActivityEmpty();
     } finally {
       feedInflight = false;
@@ -462,10 +405,7 @@
     feedInflight = true;
     syncActivityLoadMore();
     try {
-      var result = await window.synodosAuth.apiFetch(
-        buildFeedUrl(feedNextCursor),
-        {}
-      );
+      var result = await window.synodosAuth.apiFetch(buildFeedUrl(feedNextCursor), {});
       if (!result || !result.res.ok) {
         throw new Error("Could not load activity");
       }
@@ -475,14 +415,10 @@
         activityRoot.appendChild(renderFeedEvent(more[i]));
       }
       feedEvents = feedEvents.concat(more);
-      feedNextCursor =
-        data.next_cursor != null ? data.next_cursor : null;
+      feedNextCursor = data.next_cursor != null ? data.next_cursor : null;
       renderActivityEmpty();
     } catch (e) {
-      showMsg(
-        msgForFetchFailure(e, "Could not load more activity."),
-        true
-      );
+      showMsg(msgForFetchFailure(e, "Could not load more activity."), true);
     } finally {
       feedInflight = false;
       syncActivityLoadMore();

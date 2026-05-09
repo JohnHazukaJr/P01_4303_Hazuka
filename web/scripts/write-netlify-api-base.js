@@ -24,7 +24,7 @@ if (base) {
     ";\n";
 } else {
   body =
-    "/* No SYNODOS_API_BASE at build. Set it in Netlify (Site → Environment) and rebuild, or use <meta name=\"synodos-api-base\" content=\"…\"> / localStorage synodos_api_base. */\n";
+    '/* No SYNODOS_API_BASE at build. Set it in Netlify (Site → Environment) and rebuild, or use <meta name="synodos-api-base" content="…"> / localStorage synodos_api_base. */\n';
 }
 
 fs.writeFileSync(out, body, "utf8");

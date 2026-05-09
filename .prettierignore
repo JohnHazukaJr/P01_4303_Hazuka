@@ -1,7 +1,11 @@
 node_modules/
+# Keep in sync with server/; formatting server/ is canonical (workspace copy in git)
+node_modules/synodos-server/
 server/node_modules/
 server/data/
 package-lock.json
 server/package-lock.json
 *.log
 debug-*.log
+# Generated at Netlify build; avoid Prettier churn vs write-netlify-api-base.js output
+web/js/netlify-api-base.js

@@ -44,10 +44,7 @@
         }
         q -= 0.05;
       }
-      done(
-        "This image is still too large after resizing (512 KB max). Try a smaller file.",
-        null
-      );
+      done("This image is still too large after resizing (512 KB max). Try a smaller file.", null);
     }
 
     function runWithDims(w, h, draw) {
@@ -83,10 +80,7 @@
       };
       img.onerror = function () {
         URL.revokeObjectURL(objUrl);
-        done(
-          "Could not read this image. Try JPEG or PNG, or convert HEIC to JPEG.",
-          null
-        );
+        done("Could not read this image. Try JPEG or PNG, or convert HEIC to JPEG.", null);
       };
       img.src = objUrl;
     }
@@ -397,9 +391,7 @@
       workTagsAddBtn.disabled = true;
       workTagsAddBtn.addEventListener("click", function () {
         if (!fieldsCatalog || !fieldsCatalog.fields) {
-          window.alert(
-            "Work areas are still loading. Check your connection and refresh the page."
-          );
+          window.alert("Work areas are still loading. Check your connection and refresh the page.");
           return;
         }
         if (workTagsRoot.querySelectorAll(".work-tag-row").length >= WORK_TAGS_MAX) {
@@ -436,9 +428,7 @@
 
         function applyPick(dataUrl) {
           if (dataUrlDecodedLength(dataUrl) > AVATAR_MAX_BYTES) {
-            window.alert(
-              "Image is still over 512 KB after processing. Try another file."
-            );
+            window.alert("Image is still over 512 KB after processing. Try another file.");
             avatarFile.value = "";
             avatarImportInProgress = false;
             return;
@@ -554,9 +544,7 @@
       try {
         var primed = window.synodosAuth.getCachedMe();
         if (primed) {
-          accountUsername = primed.username
-            ? String(primed.username).trim()
-            : "";
+          accountUsername = primed.username ? String(primed.username).trim() : "";
           if (displayInput && primed.display_name) {
             displayInput.value = primed.display_name;
           }
@@ -564,12 +552,9 @@
             bioInput.value = primed.bio;
           }
           var pdaPrime = String(primed.public_display_as || "username").toLowerCase();
-          var pdaRadiosPrime = form.querySelectorAll(
-            'input[name="public_display_as"]'
-          );
+          var pdaRadiosPrime = form.querySelectorAll('input[name="public_display_as"]');
           for (var pq = 0; pq < pdaRadiosPrime.length; pq++) {
-            pdaRadiosPrime[pq].checked =
-              pdaRadiosPrime[pq].value === pdaPrime;
+            pdaRadiosPrime[pq].checked = pdaRadiosPrime[pq].value === pdaPrime;
           }
         }
 
@@ -656,10 +641,7 @@
             var tg = wtags[wi];
             addWorkTagRow(tg.work_field, tg.work_subfield);
           }
-        } else if (
-          u.work_field &&
-          fieldsCatalog.fields[u.work_field]
-        ) {
+        } else if (u.work_field && fieldsCatalog.fields[u.work_field]) {
           addWorkTagRow(u.work_field, u.work_subfield || "");
         } else {
           addWorkTagRow("", "");
@@ -678,9 +660,7 @@
       } catch (err) {
         exitPreviewNameLoading();
         if (previewName) previewName.textContent = "\u2014";
-        window.alert(
-          "Could not reach the server. Please try again."
-        );
+        window.alert("Could not reach the server. Please try again.");
         if (workTagsAddBtn) workTagsAddBtn.disabled = true;
       }
     }
@@ -694,16 +674,11 @@
         return;
       }
       var fdSubmit = new FormData(form);
-      var displayName = (fdSubmit.get("display_name") || "")
-        .toString()
-        .trim();
+      var displayName = (fdSubmit.get("display_name") || "").toString().trim();
       var bio = (fdSubmit.get("bio") || "").toString();
       var workTags = collectWorkTags();
       var pdaRaw = fdSubmit.get("public_display_as");
-      var publicDisplayAs =
-        pdaRaw === "full_name" || pdaRaw === "username"
-          ? pdaRaw
-          : "username";
+      var publicDisplayAs = pdaRaw === "full_name" || pdaRaw === "username" ? pdaRaw : "username";
 
       if (workTags.length < 1) {
         showSaveStatus(false, "Add at least one field and subfield pair.");
@@ -711,10 +686,7 @@
       }
 
       if (avatarImportInProgress) {
-        showSaveStatus(
-          false,
-          "Still processing your photo. Wait a moment, then click Save again."
-        );
+        showSaveStatus(false, "Still processing your photo. Wait a moment, then click Save again.");
         return;
       }
 
@@ -732,8 +704,7 @@
       }
 
       var hadAvatarDataPayload =
-        typeof payload.avatar_data === "string" &&
-        payload.avatar_data.length > 0;
+        typeof payload.avatar_data === "string" && payload.avatar_data.length > 0;
 
       var submitBtn = form.querySelector('[type="submit"]');
       if (submitBtn) submitBtn.disabled = true;
@@ -756,20 +727,14 @@
               "Save request was too large. Try again with a smaller photo or compress the image first.";
           }
           if (!saveErr && res.status >= 500) {
-            saveErr =
-              "Something went wrong while saving. Please try again in a moment.";
+            saveErr = "Something went wrong while saving. Please try again in a moment.";
           }
-          showSaveStatus(
-            false,
-            saveErr || res.statusText || "Could not save profile"
-          );
+          showSaveStatus(false, saveErr || res.statusText || "Could not save profile");
           return;
         }
 
         var avatarUrlBack =
-          data.user && data.user.avatar_url != null
-            ? String(data.user.avatar_url).trim()
-            : "";
+          data.user && data.user.avatar_url != null ? String(data.user.avatar_url).trim() : "";
         if (hadAvatarDataPayload && !avatarUrlBack) {
           showSaveStatus(
             false,
@@ -815,9 +780,7 @@
           showSaveStatus(true, "Profile saved. Your space is up to date.");
         }
       } catch (err) {
-        window.alert(
-          "Could not reach the server. Please try again."
-        );
+        window.alert("Could not reach the server. Please try again.");
       } finally {
         if (submitBtn) submitBtn.disabled = false;
       }

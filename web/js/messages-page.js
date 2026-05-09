@@ -17,8 +17,7 @@
     if (!msgEl) return;
     msgEl.textContent = text || "";
     msgEl.hidden = !text;
-    msgEl.className =
-      "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    msgEl.className = "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
   function parseConvIdFromQuery() {
@@ -113,13 +112,11 @@
   function renderConvListItem(c, isActive) {
     var btn = document.createElement("button");
     btn.type = "button";
-    btn.className =
-      "messages-conv-item" + (isActive ? " messages-conv-item--active" : "");
+    btn.className = "messages-conv-item" + (isActive ? " messages-conv-item--active" : "");
     btn.setAttribute("data-conv-id", String(c.id));
     var label = document.createElement("span");
     label.className = "messages-conv-item__name";
-    label.textContent =
-      (c.other_user && c.other_user.public_display_label) || "—";
+    label.textContent = (c.other_user && c.other_user.public_display_label) || "—";
     btn.appendChild(label);
     if (c.last_message_preview) {
       var prev = document.createElement("span");
@@ -152,19 +149,15 @@
     listEl.innerHTML = "";
     if (emptyEl) emptyEl.hidden = convs.length > 0;
     for (var i = 0; i < convs.length; i++) {
-      listEl.appendChild(
-        renderConvListItem(convs[i], activeConvId === Number(convs[i].id))
-      );
+      listEl.appendChild(renderConvListItem(convs[i], activeConvId === Number(convs[i].id)));
     }
     return convs;
   }
 
   function renderMessageBubble(m) {
-    var mine =
-      myUserId != null && Number(m.sender_user_id) === myUserId;
+    var mine = myUserId != null && Number(m.sender_user_id) === myUserId;
     var div = document.createElement("div");
-    div.className =
-      "messages-bubble" + (mine ? " messages-bubble--mine" : "");
+    div.className = "messages-bubble" + (mine ? " messages-bubble--mine" : "");
     div.setAttribute("data-message-id", String(m.id));
     var p = document.createElement("p");
     p.className = "messages-bubble__body";
@@ -218,8 +211,7 @@
       return;
     }
 
-    var maxSeen =
-      threadNewestId != null ? Number(threadNewestId) : null;
+    var maxSeen = threadNewestId != null ? Number(threadNewestId) : null;
 
     if (mode === "append") {
       for (var j = 0; j < list.length; j++) {
@@ -354,9 +346,7 @@
     if (placeholder) placeholder.hidden = true;
     if (form) form.hidden = false;
     if (peerLink && meta && meta.other_user) {
-      var un = meta.other_user.username
-        ? String(meta.other_user.username).trim()
-        : "";
+      var un = meta.other_user.username ? String(meta.other_user.username).trim() : "";
       peerLink.textContent = meta.other_user.public_display_label || un || "Peer";
       peerLink.href = un ? "user.html?u=" + encodeURIComponent(un) : "#";
     } else if (peerLink) {
@@ -383,9 +373,7 @@
           if (typeof form.requestSubmit === "function") {
             form.requestSubmit();
           } else {
-            form.dispatchEvent(
-              new Event("submit", { cancelable: true, bubbles: true })
-            );
+            form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
           }
         }
       });
@@ -401,10 +389,7 @@
   }
 
   async function init() {
-    token =
-      window.synodosAuth &&
-      window.synodosAuth.getToken &&
-      window.synodosAuth.getToken();
+    token = window.synodosAuth && window.synodosAuth.getToken && window.synodosAuth.getToken();
     if (!token) {
       window.location.href = "login.html";
       return;
@@ -438,9 +423,7 @@
         if (!body) return;
         showMsg("", false);
         var sendResult = await window.synodosAuth.apiFetch(
-          "/api/conversations/" +
-            encodeURIComponent(String(activeConvId)) +
-            "/messages",
+          "/api/conversations/" + encodeURIComponent(String(activeConvId)) + "/messages",
           {
             method: "POST",
             headers: window.synodosAuth.authHeaders({ json: true }),

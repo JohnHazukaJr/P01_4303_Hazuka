@@ -3,10 +3,7 @@
     var passwordVisible = input.type === "text";
     btn.classList.toggle("password-toggle--revealed", passwordVisible);
     btn.setAttribute("aria-pressed", passwordVisible ? "true" : "false");
-    btn.setAttribute(
-      "aria-label",
-      passwordVisible ? "Hide password" : "Show password"
-    );
+    btn.setAttribute("aria-label", passwordVisible ? "Hide password" : "Show password");
   }
 
   document.querySelectorAll("[data-password-toggle]").forEach(function (btn) {

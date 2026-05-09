@@ -11,11 +11,11 @@
 
 ## Next (suggested)
 
-| Area | Ideas |
-|------|--------|
+| Area        | Ideas                                                                     |
+| ----------- | ------------------------------------------------------------------------- |
 | **Hosting** | Deploy API (e.g. Railway, Render, Fly.io); set `JWT_SECRET`; tighten CORS |
-| **Product** | Team membership after accept, messaging, richer discovery |
-| **Quality** | Tests, rate limiting, input hardening |
+| **Product** | Team membership after accept, messaging, richer discovery                 |
+| **Quality** | Tests, rate limiting, input hardening                                     |
 
 ## Local development
 

@@ -1,7 +1,9 @@
 {
   "name": "synodos",
   "private": true,
-  "workspaces": ["server"],
+  "workspaces": [
+    "server"
+  ],
   "description": "synodos — peer-first collaborator matching; root scripts proxy to server/",
   "scripts": {
     "start": "npm --prefix server start",

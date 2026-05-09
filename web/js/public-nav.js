@@ -124,10 +124,7 @@
     if (!window.synodosAuth || !isAuthed()) return;
     if (!window.synodosAuth.getToken()) return;
     try {
-      var result = await window.synodosAuth.apiFetch(
-        "/api/me/notifications/unread-count",
-        {}
-      );
+      var result = await window.synodosAuth.apiFetch("/api/me/notifications/unread-count", {});
       if (!result || !result.res.ok) return;
       var n = Number(result.data.unread_count);
       applyBadgeCount(Number.isFinite(n) ? n : 0);
@@ -213,21 +210,16 @@
     who.className = "notify-menu__invite-who";
     who.textContent =
       "From " +
-      (inv.inviter && inv.inviter.public_display_label
-        ? inv.inviter.public_display_label
-        : "?");
+      (inv.inviter && inv.inviter.public_display_label ? inv.inviter.public_display_label : "?");
     row.appendChild(who);
     var actions = document.createElement("div");
     actions.className = "notify-menu__invite-actions";
     function patch(status) {
-      return window.synodosAuth.apiFetch(
-        "/api/me/project-invitations/" + inv.id,
-        {
-          method: "PATCH",
-          headers: window.synodosAuth.authHeaders({ json: true }),
-          body: JSON.stringify({ status: status }),
-        }
-      );
+      return window.synodosAuth.apiFetch("/api/me/project-invitations/" + inv.id, {
+        method: "PATCH",
+        headers: window.synodosAuth.authHeaders({ json: true }),
+        body: JSON.stringify({ status: status }),
+      });
     }
     var acc = document.createElement("button");
     acc.type = "button";
@@ -303,10 +295,7 @@
     var invFailed = false;
 
     try {
-      var nResult = await window.synodosAuth.apiFetch(
-        "/api/me/notifications?limit=50",
-        {}
-      );
+      var nResult = await window.synodosAuth.apiFetch("/api/me/notifications?limit=50", {});
       if (!nResult) {
         return;
       }
@@ -320,8 +309,14 @@
       } else {
         var data = nResult.data;
         var list = (data && data.notifications) || [];
-        var unread = list.filter(function (n) { return !n.read_at; });
-        var read = list.filter(function (n) { return !!n.read_at; }).slice(0, 20);
+        var unread = list.filter(function (n) {
+          return !n.read_at;
+        });
+        var read = list
+          .filter(function (n) {
+            return !!n.read_at;
+          })
+          .slice(0, 20);
 
         if (newRoot) {
           newRoot.innerHTML = "";
@@ -340,10 +335,7 @@
     }
 
     try {
-      var invFetch = await window.synodosAuth.apiFetch(
-        "/api/me/project-invitations",
-        {}
-      );
+      var invFetch = await window.synodosAuth.apiFetch("/api/me/project-invitations", {});
       if (!invFetch) {
         return;
       }
@@ -358,8 +350,7 @@
         if (invWrap && invRoot) {
           invRoot.innerHTML = "";
           invWrap.hidden = invs.length === 0;
-          for (var k = 0; k < invs.length; k++)
-            invRoot.appendChild(renderInviteItem(invs[k]));
+          for (var k = 0; k < invs.length; k++) invRoot.appendChild(renderInviteItem(invs[k]));
         }
       }
     } catch (e2) {
@@ -388,10 +379,18 @@
 
   function sync() {
     var authed = isAuthed();
-    document.querySelectorAll('[data-nav-group="guest"]').forEach(function (g) { setHidden(g, authed); });
-    document.querySelectorAll('[data-nav-group="user"]').forEach(function (g) { setHidden(g, !authed); });
-    document.querySelectorAll("[data-nav-guest]").forEach(function (el) { setHidden(el, authed); });
-    document.querySelectorAll("[data-nav-user]").forEach(function (el) { setHidden(el, !authed); });
+    document.querySelectorAll('[data-nav-group="guest"]').forEach(function (g) {
+      setHidden(g, authed);
+    });
+    document.querySelectorAll('[data-nav-group="user"]').forEach(function (g) {
+      setHidden(g, !authed);
+    });
+    document.querySelectorAll("[data-nav-guest]").forEach(function (el) {
+      setHidden(el, authed);
+    });
+    document.querySelectorAll("[data-nav-user]").forEach(function (el) {
+      setHidden(el, !authed);
+    });
 
     ensureNotifyMenu();
     if (authed) {

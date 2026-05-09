@@ -1,153 +1,297 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <script src="js/theme-init.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="synodos — your space">
-  <title>Dashboard — synodos</title>
-  <link rel="canonical" href="https://synodos.netlify.app/dashboard.html">
-  <meta name="robots" content="noindex">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="synodos">
-  <meta property="og:title" content="Dashboard — synodos">
-  <meta property="og:description" content="Browse projects, manage open roles, and find collaborators on synodos.">
-  <meta property="og:url" content="https://synodos.netlify.app/dashboard.html">
-  <meta property="og:image" content="https://synodos.netlify.app/images/og-card.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Dashboard — synodos">
-  <meta name="twitter:description" content="Browse projects, manage open roles, and find collaborators on synodos.">
-  <meta name="twitter:image" content="https://synodos.netlify.app/images/og-card.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body class="auth-page dashboard-page">
-  <a class="skip-link" href="#main-content">Skip to main content</a>
-  <header class="top">
-    <div class="wrap top-inner">
-      <a class="logo" href="home.html">synodos</a>
-      <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
-        <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-      </button>
-      <nav id="site-nav" class="top-nav" aria-label="Primary">
-        <div class="top-actions">
-          <a class="btn btn-ghost" href="home.html">Home</a>
-          <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
-            <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-          </button>
-          <a class="btn btn-ghost top-nav-icon-btn" href="messages.html" title="Messages" aria-label="Messages">
-            <svg class="top-nav-icon-btn__svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </a>
-          <div class="top-actions__user-menu" id="dashboard-user-menu">
-            <button type="button" class="btn btn-ghost user-menu__btn" id="dashboard-user-menu-btn"
-              aria-haspopup="menu" aria-expanded="false" aria-controls="dashboard-user-menu-dropdown" aria-label="Open account menu">
-              <span class="profile-avatar-preview profile-avatar-preview--xs">
-                <img class="profile-avatar-img" id="dashboard-menu-avatar-img" alt="" width="32" height="32" src="images/default-avatar.png">
-              </span>
+  <head>
+    <meta charset="utf-8" />
+    <script src="js/theme-init.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="synodos — your space" />
+    <title>Dashboard — synodos</title>
+    <link rel="canonical" href="https://synodos.netlify.app/dashboard.html" />
+    <meta name="robots" content="noindex" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="synodos" />
+    <meta property="og:title" content="Dashboard — synodos" />
+    <meta
+      property="og:description"
+      content="Browse projects, manage open roles, and find collaborators on synodos."
+    />
+    <meta property="og:url" content="https://synodos.netlify.app/dashboard.html" />
+    <meta property="og:image" content="https://synodos.netlify.app/images/og-card.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Dashboard — synodos" />
+    <meta
+      name="twitter:description"
+      content="Browse projects, manage open roles, and find collaborators on synodos."
+    />
+    <meta name="twitter:image" content="https://synodos.netlify.app/images/og-card.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="auth-page dashboard-page">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <header class="top">
+      <div class="wrap top-inner">
+        <a class="logo" href="home.html">synodos</a>
+        <button
+          type="button"
+          class="btn btn-ghost top-menu-toggle"
+          data-nav-toggle
+          aria-controls="site-nav"
+          aria-expanded="false"
+          aria-label="Open menu"
+          id="top-menu-toggle"
+        >
+          <svg
+            class="top-menu-toggle__bars"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
+        </button>
+        <nav id="site-nav" class="top-nav" aria-label="Primary">
+          <div class="top-actions">
+            <a class="btn btn-ghost" href="home.html">Home</a>
+            <button
+              type="button"
+              class="btn btn-ghost theme-toggle"
+              data-theme-toggle
+              aria-pressed="false"
+              aria-label="Switch to dark mode"
+            >
+              <svg
+                class="theme-toggle__icon theme-toggle__icon--moon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+              <svg
+                class="theme-toggle__icon theme-toggle__icon--sun"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="4" />
+                <path
+                  d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                />
+              </svg>
             </button>
-            <div class="user-menu__dropdown" id="dashboard-user-menu-dropdown" role="menu" hidden>
-              <a class="user-menu__item" href="home.html" role="menuitem">Home</a>
-              <a class="user-menu__item" href="profile.html" role="menuitem">Your space</a>
-              <button type="button" class="user-menu__item user-menu__item--danger" id="dashboard-sign-out" role="menuitem">Sign out</button>
+            <a
+              class="btn btn-ghost top-nav-icon-btn"
+              href="messages.html"
+              title="Messages"
+              aria-label="Messages"
+            >
+              <svg
+                class="top-nav-icon-btn__svg"
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+            </a>
+            <div class="top-actions__user-menu" id="dashboard-user-menu">
+              <button
+                type="button"
+                class="btn btn-ghost user-menu__btn"
+                id="dashboard-user-menu-btn"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                aria-controls="dashboard-user-menu-dropdown"
+                aria-label="Open account menu"
+              >
+                <span class="profile-avatar-preview profile-avatar-preview--xs">
+                  <img
+                    class="profile-avatar-img"
+                    id="dashboard-menu-avatar-img"
+                    alt=""
+                    width="32"
+                    height="32"
+                    src="images/default-avatar.png"
+                  />
+                </span>
+              </button>
+              <div class="user-menu__dropdown" id="dashboard-user-menu-dropdown" role="menu" hidden>
+                <a class="user-menu__item" href="home.html" role="menuitem">Home</a>
+                <a class="user-menu__item" href="profile.html" role="menuitem">Your space</a>
+                <button
+                  type="button"
+                  class="user-menu__item user-menu__item--danger"
+                  id="dashboard-sign-out"
+                  role="menuitem"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dashboard-main" id="main-content" tabindex="-1">
+      <div class="wrap dashboard-wrap">
+        <p id="dashboard-msg" class="dashboard-msg" hidden></p>
+
+        <div class="auth-card dashboard-intro">
+          <div class="dashboard-user-strip">
+            <div
+              class="profile-avatar-preview profile-avatar-preview--sm"
+              id="dashboard-avatar-wrap"
+            >
+              <img
+                class="profile-avatar-img"
+                id="dashboard-avatar-img"
+                alt=""
+                width="64"
+                height="64"
+                src="images/default-avatar.png"
+              />
+            </div>
+            <div class="dashboard-user-strip__text">
+              <h1 class="auth-title dashboard-user-strip__title" id="dashboard-display-name">
+                Welcome back
+              </h1>
             </div>
           </div>
         </div>
-      </nav>
-    </div>
-  </header>
 
-  <main class="dashboard-main" id="main-content" tabindex="-1">
-    <div class="wrap dashboard-wrap">
-      <p id="dashboard-msg" class="dashboard-msg" hidden></p>
+        <section
+          class="dashboard-section"
+          id="dash-requests-inbox-section"
+          aria-labelledby="dash-inbox-title"
+          hidden
+        >
+          <h2 id="dash-inbox-title" class="dashboard-heading">Requests on my projects</h2>
+          <p class="dashboard-lead">People asking to join your projects.</p>
+          <div id="dash-requests-inbox-root" class="requests-inbox-root"></div>
+        </section>
 
-      <div class="auth-card dashboard-intro">
-        <div class="dashboard-user-strip">
-          <div class="profile-avatar-preview profile-avatar-preview--sm" id="dashboard-avatar-wrap">
-            <img class="profile-avatar-img" id="dashboard-avatar-img" alt="" width="64" height="64" src="images/default-avatar.png">
+        <section class="dashboard-section" aria-labelledby="new-project-title">
+          <h2 id="new-project-title" class="dashboard-heading">Start a project</h2>
+          <form class="project-form" id="form-new-project" action="#" method="post" novalidate>
+            <div class="field">
+              <label for="np-title">Title</label>
+              <input
+                id="np-title"
+                name="title"
+                type="text"
+                required
+                maxlength="200"
+                placeholder="Short title for your project"
+              />
+            </div>
+            <div class="field">
+              <label for="np-desc">Description</label>
+              <textarea
+                id="np-desc"
+                name="description"
+                class="field-textarea"
+                rows="3"
+                maxlength="8000"
+                placeholder="What you are building, what you need, and how you work together"
+              ></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Publish project</button>
+          </form>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="projects-list-title">
+          <h2 id="projects-list-title" class="dashboard-heading">Browse and manage projects</h2>
+          <p class="dashboard-lead">
+            Search, filter yours, create new ones, and edit open roles.
+            <a href="people.html" class="dashboard-lead-link">Find people →</a>
+          </p>
+          <div class="projects-toolbar" role="search">
+            <label class="projects-toolbar__search">
+              <span class="visually-hidden">Search projects by title or description</span>
+              <input
+                type="search"
+                id="projects-filter"
+                class="projects-filter-input"
+                placeholder="Search projects"
+                autocomplete="off"
+                enterkeyhint="search"
+              />
+            </label>
+            <label class="projects-toolbar__mine">
+              <input type="checkbox" id="projects-filter-mine" />
+              My projects only
+            </label>
           </div>
-          <div class="dashboard-user-strip__text">
-            <h1 class="auth-title dashboard-user-strip__title" id="dashboard-display-name">Welcome back</h1>
-          </div>
-        </div>
+          <div id="projects-root" class="projects-grid"></div>
+          <p id="projects-empty" class="dashboard-empty" hidden>
+            No projects yet — create one above.
+          </p>
+        </section>
       </div>
+    </main>
 
-      <section class="dashboard-section" id="dash-requests-inbox-section" aria-labelledby="dash-inbox-title" hidden>
-        <h2 id="dash-inbox-title" class="dashboard-heading">Requests on my projects</h2>
-        <p class="dashboard-lead">People asking to join your projects.</p>
-        <div id="dash-requests-inbox-root" class="requests-inbox-root"></div>
-      </section>
+    <footer class="auth-footer-note">
+      <div class="wrap">
+        <nav class="footer-nav" aria-label="Site pages">
+          <a href="index.html">Home</a>
+          <span class="footer-nav__cluster" data-nav-group="guest">
+            <a href="login.html">Log in</a>
+            <a href="register.html">Get started</a>
+          </span>
+          <span class="footer-nav__cluster" data-nav-group="user" hidden>
+            <a href="home.html">Home</a>
+            <a href="dashboard.html">Projects</a>
+            <a href="messages.html">Messages</a>
+            <a href="profile.html">Your space</a>
+          </span>
+        </nav>
+        <p class="footer-credit">synodos</p>
+      </div>
+    </footer>
 
-      <section class="dashboard-section" aria-labelledby="new-project-title">
-        <h2 id="new-project-title" class="dashboard-heading">Start a project</h2>
-        <form class="project-form" id="form-new-project" action="#" method="post" novalidate>
-          <div class="field">
-            <label for="np-title">Title</label>
-            <input id="np-title" name="title" type="text" required maxlength="200" placeholder="Short title for your project">
-          </div>
-          <div class="field">
-            <label for="np-desc">Description</label>
-            <textarea id="np-desc" name="description" class="field-textarea" rows="3" maxlength="8000" placeholder="What you are building, what you need, and how you work together"></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Publish project</button>
-        </form>
-      </section>
-
-      <section class="dashboard-section" aria-labelledby="projects-list-title">
-        <h2 id="projects-list-title" class="dashboard-heading">Browse and manage projects</h2>
-        <p class="dashboard-lead">
-          Search, filter yours, create new ones, and edit open roles.
-          <a href="people.html" class="dashboard-lead-link">Find people →</a>
-        </p>
-        <div class="projects-toolbar" role="search">
-          <label class="projects-toolbar__search">
-            <span class="visually-hidden">Search projects by title or description</span>
-            <input type="search" id="projects-filter" class="projects-filter-input" placeholder="Search projects" autocomplete="off" enterkeyhint="search">
-          </label>
-          <label class="projects-toolbar__mine">
-            <input type="checkbox" id="projects-filter-mine">
-            My projects only
-          </label>
-        </div>
-        <div id="projects-root" class="projects-grid"></div>
-        <p id="projects-empty" class="dashboard-empty" hidden>No projects yet — create one above.</p>
-      </section>
-    </div>
-  </main>
-
-  <footer class="auth-footer-note">
-    <div class="wrap">
-      <nav class="footer-nav" aria-label="Site pages">
-        <a href="index.html">Home</a>
-        <span class="footer-nav__cluster" data-nav-group="guest">
-          <a href="login.html">Log in</a>
-          <a href="register.html">Get started</a>
-        </span>
-        <span class="footer-nav__cluster" data-nav-group="user" hidden>
-          <a href="home.html">Home</a>
-          <a href="dashboard.html">Projects</a>
-          <a href="messages.html">Messages</a>
-          <a href="profile.html">Your space</a>
-        </span>
-      </nav>
-      <p class="footer-credit">synodos</p>
-    </div>
-  </footer>
-
-  <script src="js/netlify-api-base.js" defer></script>
-  <script src="js/global-errors.js" defer></script>
-  <script src="js/config.js" defer></script>
-  <script src="js/auth.js" defer></script>
-  <script src="js/session-guard.js" defer></script>
-  <script src="js/notification-helpers.js" defer></script>
-  <script src="js/public-nav.js" defer></script>
-  <script src="js/theme.js" defer></script>
-  <script src="js/site-nav.js" defer></script>
-  <script src="js/ui-empty-state.js" defer></script>
-  <script src="js/user-badges.js" defer></script>
-  <script src="js/project-card.js" defer></script>
-  <script src="js/dashboard.js" defer></script>
-</body>
+    <script src="js/netlify-api-base.js" defer></script>
+    <script src="js/global-errors.js" defer></script>
+    <script src="js/config.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/session-guard.js" defer></script>
+    <script src="js/notification-helpers.js" defer></script>
+    <script src="js/public-nav.js" defer></script>
+    <script src="js/theme.js" defer></script>
+    <script src="js/site-nav.js" defer></script>
+    <script src="js/ui-empty-state.js" defer></script>
+    <script src="js/user-badges.js" defer></script>
+    <script src="js/project-card.js" defer></script>
+    <script src="js/dashboard.js" defer></script>
+  </body>
 </html>

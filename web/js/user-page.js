@@ -9,8 +9,7 @@
     if (!el) return;
     el.textContent = text || "";
     el.hidden = !text;
-    el.className =
-      "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    el.className = "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
   async function openOrGetConversation(username) {
@@ -58,9 +57,7 @@
 
     var meId = null;
     var existingToken =
-      window.synodosAuth &&
-      window.synodosAuth.getToken &&
-      window.synodosAuth.getToken();
+      window.synodosAuth && window.synodosAuth.getToken && window.synodosAuth.getToken();
     if (existingToken) {
       var cachedMe = window.synodosAuth.getCachedMe();
       if (cachedMe && cachedMe.id != null) {
@@ -103,7 +100,10 @@
     if (titleEl) {
       var label = user.public_display_label || user.username || "—";
       titleEl.textContent = label;
-      if (window.synodosUserBadges && typeof window.synodosUserBadges.appendToTitle === "function") {
+      if (
+        window.synodosUserBadges &&
+        typeof window.synodosUserBadges.appendToTitle === "function"
+      ) {
         window.synodosUserBadges.appendToTitle(titleEl, user);
       }
     }
@@ -129,9 +129,7 @@
           item.className = "work-tag-pill";
           item.textContent =
             (t.label || t.work_field || "") +
-            (t.sub_label || t.work_subfield
-              ? " · " + (t.sub_label || t.work_subfield)
-              : "");
+            (t.sub_label || t.work_subfield ? " · " + (t.sub_label || t.work_subfield) : "");
           tagsEl.appendChild(item);
         }
       }
@@ -201,8 +199,7 @@
         btnMsg.onclick = async function () {
           var cid = await openOrGetConversation(user.username);
           if (cid) {
-            window.location.href =
-              "messages.html?c=" + encodeURIComponent(String(cid));
+            window.location.href = "messages.html?c=" + encodeURIComponent(String(cid));
           } else {
             showMsg(msgEl, "Could not open conversation.", true);
           }

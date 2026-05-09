@@ -1,17 +1,17 @@
 # synodos
 
-Peer-first platform for finding collaborators: projects, open roles, and structured profiles. **synodos** (Greek *σύνοδος* — assembly) emphasizes intent and complementary skills over generic feeds.
+Peer-first platform for finding collaborators: projects, open roles, and structured profiles. **synodos** (Greek _σύνοδος_ — assembly) emphasizes intent and complementary skills over generic feeds.
 
 **Live site:** [synodos.netlify.app](https://synodos.netlify.app/)
 
 ## Stack
 
-| Layer | Technology |
-|--------|-------------|
-| **Frontend** | Static HTML/CSS/JS in [`web/`](web/) |
-| **Backend** | Node.js 22.5+, Express, JWT, bcrypt |
-| **Database** | PostgreSQL via [`pg`](https://node-postgres.com/) — hosted on [Supabase](https://supabase.com/) |
-| **Object storage** | Supabase Storage (avatars bucket, CDN-served) |
+| Layer              | Technology                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| **Frontend**       | Static HTML/CSS/JS in [`web/`](web/)                                                            |
+| **Backend**        | Node.js 22.5+, Express, JWT, bcrypt                                                             |
+| **Database**       | PostgreSQL via [`pg`](https://node-postgres.com/) — hosted on [Supabase](https://supabase.com/) |
+| **Object storage** | Supabase Storage (avatars bucket, CDN-served)                                                   |
 
 **Where application data lives:** everything the site persists goes to Supabase — not to SQLite or the API server’s disk. **PostgreSQL** (via `DATABASE_URL`) holds accounts, profiles and work tags, projects and roles, join requests and invitations, follows, feed events, direct messages, and notifications — see [`server/migrations/001_init.sql`](server/migrations/001_init.sql). **Supabase Storage** holds profile images (the only binary uploads today). The API is stateless: no local database file and no required persistent volume once you use this setup.
 
@@ -29,16 +29,16 @@ Peer-first platform for finding collaborators: projects, open roles, and structu
 └── index.html           # Redirect at repo root → web/index.html
 ```
 
-| Path | Role |
-|------|------|
-| [`web/index.html`](web/index.html) | Landing |
-| [`web/login.html`](web/login.html) / [`web/register.html`](web/register.html) | Auth |
-| [`web/profile-setup.html`](web/profile-setup.html) / [`web/profile.html`](web/profile.html) | Profile |
-| [`web/dashboard.html`](web/dashboard.html) | Projects feed |
-| [`web/project.html`](web/project.html) | Public project (`?id=`) |
-| [`web/user.html`](web/user.html) | Public profile (`?u=`) |
-| [`server/`](server/) | API, migrations, scripts |
-| [`docs/README.md`](docs/README.md) | Index of all docs |
+| Path                                                                                        | Role                     |
+| ------------------------------------------------------------------------------------------- | ------------------------ |
+| [`web/index.html`](web/index.html)                                                          | Landing                  |
+| [`web/login.html`](web/login.html) / [`web/register.html`](web/register.html)               | Auth                     |
+| [`web/profile-setup.html`](web/profile-setup.html) / [`web/profile.html`](web/profile.html) | Profile                  |
+| [`web/dashboard.html`](web/dashboard.html)                                                  | Projects feed            |
+| [`web/project.html`](web/project.html)                                                      | Public project (`?id=`)  |
+| [`web/user.html`](web/user.html)                                                            | Public profile (`?u=`)   |
+| [`server/`](server/)                                                                        | API, migrations, scripts |
+| [`docs/README.md`](docs/README.md)                                                          | Index of all docs        |
 
 ## Quick start
 
@@ -80,8 +80,8 @@ Full route list: [`server/README.md`](server/README.md).
 
 ## Documentation
 
-- [`docs/README.md`](docs/README.md) — index of docs (structure, roadmap, smoke tests)  
-- [`server/README.md`](server/README.md) — API routes and environment variables  
+- [`docs/README.md`](docs/README.md) — index of docs (structure, roadmap, smoke tests)
+- [`server/README.md`](server/README.md) — API routes and environment variables
 
 ## Deployment
 

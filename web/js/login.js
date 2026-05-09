@@ -2,9 +2,7 @@
 (function () {
   if (!window.synodosAuth) {
     if (typeof console !== "undefined" && console.error) {
-      console.error(
-        "synodosAuth not found. Load js/auth.js before js/login.js."
-      );
+      console.error("synodosAuth not found. Load js/auth.js before js/login.js.");
     }
     return;
   }
@@ -19,8 +17,7 @@
     if (!msgEl) return;
     msgEl.textContent = text || "";
     msgEl.hidden = !text;
-    msgEl.className =
-      "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    msgEl.className = "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
   (function showIdleLogoutReasonOnce() {

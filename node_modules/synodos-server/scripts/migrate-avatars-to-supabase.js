@@ -30,10 +30,7 @@ const EXT_TO_MIME = {
 async function main() {
   const pool = new Pool({
     connectionString: url,
-    ssl:
-      process.env.PGSSLMODE === "disable"
-        ? false
-        : { rejectUnauthorized: false },
+    ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
   });
 
   const localDir = path.join(__dirname, "..", "data", "uploads", "avatars");
@@ -41,22 +38,16 @@ async function main() {
   let skipped = 0;
 
   try {
-    const { rows } = await pool.query(
-      "SELECT id, avatar_url FROM users WHERE avatar_url LIKE $1",
-      ["/uploads/avatars/%"]
-    );
+    const { rows } = await pool.query("SELECT id, avatar_url FROM users WHERE avatar_url LIKE $1", [
+      "/uploads/avatars/%",
+    ]);
 
     for (const row of rows) {
       const rel = String(row.avatar_url || "");
       const base = path.basename(rel);
       const filepath = path.join(localDir, base);
       if (!fs.existsSync(filepath)) {
-        console.warn(
-          "[migrate-avatars] skip user",
-          row.id,
-          "(file missing):",
-          filepath
-        );
+        console.warn("[migrate-avatars] skip user", row.id, "(file missing):", filepath);
         skipped++;
         continue;
       }
@@ -70,19 +61,12 @@ async function main() {
       const buf = fs.readFileSync(filepath);
       const saved = await storage.uploadAvatar(row.id, buf, mime);
       if (!saved.ok) {
-        console.error(
-          "[migrate-avatars] upload failed user",
-          row.id,
-          saved.error
-        );
+        console.error("[migrate-avatars] upload failed user", row.id, saved.error);
         skipped++;
         continue;
       }
       const publicUrl = saved.url + "?v=" + Date.now();
-      await pool.query("UPDATE users SET avatar_url = $1 WHERE id = $2", [
-        publicUrl,
-        row.id,
-      ]);
+      await pool.query("UPDATE users SET avatar_url = $1 WHERE id = $2", [publicUrl, row.id]);
       updated++;
       console.log("[migrate-avatars] user", row.id, "→", publicUrl);
     }

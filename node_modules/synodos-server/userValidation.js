@@ -39,4 +39,3 @@ module.exports = {
   validateUsername,
   looksLikeEmail,
 };
-

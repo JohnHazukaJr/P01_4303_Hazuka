@@ -1,150 +1,224 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <script src="js/theme-init.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sign in to synodos — connect with collaborators and projects.">
-  <title>Sign in — synodos</title>
-  <link rel="canonical" href="https://synodos.netlify.app/login.html">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="synodos">
-  <meta property="og:title" content="Sign in — synodos">
-  <meta property="og:description" content="Sign in to synodos — connect with collaborators and projects.">
-  <meta property="og:url" content="https://synodos.netlify.app/login.html">
-  <meta property="og:image" content="https://synodos.netlify.app/images/og-card.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Sign in — synodos">
-  <meta name="twitter:description" content="Sign in to synodos — connect with collaborators and projects.">
-  <meta name="twitter:image" content="https://synodos.netlify.app/images/og-card.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body class="auth-page">
-  <a class="skip-link" href="#main-content">Skip to main content</a>
-  <header class="top auth-top">
-    <div class="wrap top-inner">
-      <a class="logo" href="index.html">synodos</a>
-      <button type="button" class="btn btn-ghost top-menu-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Open menu" id="top-menu-toggle">
-        <svg class="top-menu-toggle__bars" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-      </button>
-      <nav id="site-nav" class="top-nav" aria-label="Primary">
-        <div class="top-actions">
-          <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Switch to dark mode">
-            <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-          </button>
-          <a class="btn btn-ghost" href="index.html">Back to home</a>
-        </div>
-      </nav>
-    </div>
-  </header>
-
-  <main class="auth-main" id="main-content" tabindex="-1">
-    <div class="wrap auth-wrap">
-      <div class="auth-card">
-        <p class="auth-eyebrow">Welcome back</p>
-        <h1 class="auth-title">Sign in</h1>
-        <p class="auth-lead">
-          Sign in with the email or username and password you used to join.
-        </p>
-        <p id="login-msg" class="dashboard-msg" hidden></p>
-
-        <form class="auth-form" id="login-form" action="#" method="post" novalidate>
-          <div class="field">
-            <label for="identifier">Email or Username</label>
-            <input
-              id="identifier"
-              name="identifier"
-              type="text"
-              autocomplete="username"
-              required
-              placeholder="Email or Username"
+  <head>
+    <meta charset="utf-8" />
+    <script src="js/theme-init.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Sign in to synodos — connect with collaborators and projects."
+    />
+    <title>Sign in — synodos</title>
+    <link rel="canonical" href="https://synodos.netlify.app/login.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="synodos" />
+    <meta property="og:title" content="Sign in — synodos" />
+    <meta
+      property="og:description"
+      content="Sign in to synodos — connect with collaborators and projects."
+    />
+    <meta property="og:url" content="https://synodos.netlify.app/login.html" />
+    <meta property="og:image" content="https://synodos.netlify.app/images/og-card.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sign in — synodos" />
+    <meta
+      name="twitter:description"
+      content="Sign in to synodos — connect with collaborators and projects."
+    />
+    <meta name="twitter:image" content="https://synodos.netlify.app/images/og-card.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="auth-page">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <header class="top auth-top">
+      <div class="wrap top-inner">
+        <a class="logo" href="index.html">synodos</a>
+        <button
+          type="button"
+          class="btn btn-ghost top-menu-toggle"
+          data-nav-toggle
+          aria-controls="site-nav"
+          aria-expanded="false"
+          aria-label="Open menu"
+          id="top-menu-toggle"
+        >
+          <svg
+            class="top-menu-toggle__bars"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
+        </button>
+        <nav id="site-nav" class="top-nav" aria-label="Primary">
+          <div class="top-actions">
+            <button
+              type="button"
+              class="btn btn-ghost theme-toggle"
+              data-theme-toggle
+              aria-pressed="false"
+              aria-label="Switch to dark mode"
             >
-          </div>
-          <div class="field">
-            <label for="password">Password</label>
-            <div class="field-password-wrap">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autocomplete="current-password"
-                required
-                placeholder="••••••••"
-                minlength="8"
+              <svg
+                class="theme-toggle__icon theme-toggle__icon--moon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
               >
-              <button
-                type="button"
-                class="password-toggle"
-                data-password-toggle
-                aria-label="Show password"
-                aria-pressed="false"
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+              <svg
+                class="theme-toggle__icon theme-toggle__icon--sun"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
               >
-                <svg class="password-toggle__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <g class="password-toggle__glyph password-toggle__glyph--closed">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
-                  </g>
-                  <g class="password-toggle__glyph password-toggle__glyph--open">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </g>
-                </svg>
-              </button>
-            </div>
+                <circle cx="12" cy="12" r="4" />
+                <path
+                  d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                />
+              </svg>
+            </button>
+            <a class="btn btn-ghost" href="index.html">Back to home</a>
           </div>
-          <div class="field-row">
-            <label class="checkbox">
-              <input type="checkbox" name="remember" value="1">
-              <span>Keep me signed in</span>
-            </label>
-            <a class="auth-link" href="#">Forgot password?</a>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">Sign in</button>
-        </form>
-
-        <p class="auth-footer">
-          New to synodos?
-          <a href="register.html">Get started</a>
-          ·
-          <a href="index.html#join">Waitlist</a>
-        </p>
+        </nav>
       </div>
-    </div>
-  </main>
+    </header>
 
-  <footer class="auth-footer-note">
-    <div class="wrap">
-      <nav class="footer-nav" aria-label="Site pages">
-        <a href="index.html">Home</a>
-        <span class="footer-nav__cluster" data-nav-group="guest">
-          <a href="login.html">Log in</a>
-          <a href="register.html">Get started</a>
-        </span>
-        <span class="footer-nav__cluster" data-nav-group="user" hidden>
-          <a href="home.html">Home</a>
-          <a href="dashboard.html">Projects</a>
-          <a href="messages.html">Messages</a>
-          <a href="profile.html">Your space</a>
-        </span>
-      </nav>
-      <p class="footer-credit">synodos</p>
-    </div>
-  </footer>
+    <main class="auth-main" id="main-content" tabindex="-1">
+      <div class="wrap auth-wrap">
+        <div class="auth-card">
+          <p class="auth-eyebrow">Welcome back</p>
+          <h1 class="auth-title">Sign in</h1>
+          <p class="auth-lead">Sign in with the email or username and password you used to join.</p>
+          <p id="login-msg" class="dashboard-msg" hidden></p>
 
-  <script src="js/netlify-api-base.js" defer></script>
-  <script src="js/global-errors.js" defer></script>
-  <script src="js/config.js" defer></script>
-  <script src="js/auth.js" defer></script>
-  <script src="js/notification-helpers.js" defer></script>
-  <script src="js/public-nav.js" defer></script>
-  <script src="js/auth-feedback.js" defer></script>
-  <script src="js/theme.js" defer></script>
-  <script src="js/site-nav.js" defer></script>
-  <script src="js/password-toggle.js" defer></script>
-  <script src="js/login.js" defer></script>
-</body>
+          <form class="auth-form" id="login-form" action="#" method="post" novalidate>
+            <div class="field">
+              <label for="identifier">Email or Username</label>
+              <input
+                id="identifier"
+                name="identifier"
+                type="text"
+                autocomplete="username"
+                required
+                placeholder="Email or Username"
+              />
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <div class="field-password-wrap">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                  placeholder="••••••••"
+                  minlength="8"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  data-password-toggle
+                  aria-label="Show password"
+                  aria-pressed="false"
+                >
+                  <svg
+                    class="password-toggle__svg"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <g class="password-toggle__glyph password-toggle__glyph--closed">
+                      <path
+                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                      />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </g>
+                    <g class="password-toggle__glyph password-toggle__glyph--open">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </g>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="checkbox">
+                <input type="checkbox" name="remember" value="1" />
+                <span>Keep me signed in</span>
+              </label>
+              <a class="auth-link" href="#">Forgot password?</a>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+          </form>
+
+          <p class="auth-footer">
+            New to synodos?
+            <a href="register.html">Get started</a>
+            ·
+            <a href="index.html#join">Waitlist</a>
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="auth-footer-note">
+      <div class="wrap">
+        <nav class="footer-nav" aria-label="Site pages">
+          <a href="index.html">Home</a>
+          <span class="footer-nav__cluster" data-nav-group="guest">
+            <a href="login.html">Log in</a>
+            <a href="register.html">Get started</a>
+          </span>
+          <span class="footer-nav__cluster" data-nav-group="user" hidden>
+            <a href="home.html">Home</a>
+            <a href="dashboard.html">Projects</a>
+            <a href="messages.html">Messages</a>
+            <a href="profile.html">Your space</a>
+          </span>
+        </nav>
+        <p class="footer-credit">synodos</p>
+      </div>
+    </footer>
+
+    <script src="js/netlify-api-base.js" defer></script>
+    <script src="js/global-errors.js" defer></script>
+    <script src="js/config.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/notification-helpers.js" defer></script>
+    <script src="js/public-nav.js" defer></script>
+    <script src="js/auth-feedback.js" defer></script>
+    <script src="js/theme.js" defer></script>
+    <script src="js/site-nav.js" defer></script>
+    <script src="js/password-toggle.js" defer></script>
+    <script src="js/login.js" defer></script>
+  </body>
 </html>

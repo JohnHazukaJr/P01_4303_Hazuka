@@ -22,8 +22,7 @@
     if (!msgEl) return;
     msgEl.textContent = text || "";
     msgEl.hidden = !text;
-    msgEl.className =
-      "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
+    msgEl.className = "dashboard-msg" + (isError ? " dashboard-msg--error" : "");
   }
 
   function syncBackLink() {
@@ -77,8 +76,7 @@
     }
     var slots = document.createElement("span");
     slots.className = "role-row__slots";
-    slots.textContent =
-      "Openings: " + String(role.slots != null ? role.slots : 1);
+    slots.textContent = "Openings: " + String(role.slots != null ? role.slots : 1);
     main.appendChild(slots);
     row.appendChild(main);
     return row;
@@ -97,9 +95,7 @@
       metaEl.textContent = "";
       var posted = document.createTextNode("Posted by ");
       metaEl.appendChild(posted);
-      var un = proj.owner_username
-        ? String(proj.owner_username).trim()
-        : "";
+      var un = proj.owner_username ? String(proj.owner_username).trim() : "";
       if (un) {
         var a = document.createElement("a");
         a.href = "user.html?u=" + encodeURIComponent(un);
@@ -116,9 +112,7 @@
           });
         }
       } else {
-        metaEl.appendChild(
-          document.createTextNode(proj.owner_display || "—")
-        );
+        metaEl.appendChild(document.createTextNode(proj.owner_display || "—"));
       }
     }
     if (descEl) {
@@ -148,19 +142,14 @@
 
   async function loadMeForJoin() {
     token =
-      window.synodosAuth && window.synodosAuth.getToken
-        ? window.synodosAuth.getToken()
-        : null;
+      window.synodosAuth && window.synodosAuth.getToken ? window.synodosAuth.getToken() : null;
     userId = null;
     isOwner = false;
     if (!projectId || !cachedProject) {
       return;
     }
     if (!token) {
-      if (
-        window.synodosProjectPage &&
-        window.synodosProjectPage.onViewerReady
-      ) {
+      if (window.synodosProjectPage && window.synodosProjectPage.onViewerReady) {
         window.synodosProjectPage.onViewerReady();
       }
       return;
@@ -172,19 +161,13 @@
     var res = result.res;
     var data = result.data;
     if (!res.ok) {
-      if (
-        window.synodosProjectPage &&
-        window.synodosProjectPage.onViewerReady
-      ) {
+      if (window.synodosProjectPage && window.synodosProjectPage.onViewerReady) {
         window.synodosProjectPage.onViewerReady();
       }
       return;
     }
     if (data.user && !data.user.profile_complete) {
-      if (
-        window.synodosProjectPage &&
-        window.synodosProjectPage.onViewerReady
-      ) {
+      if (window.synodosProjectPage && window.synodosProjectPage.onViewerReady) {
         window.synodosProjectPage.onViewerReady();
       }
       return;
@@ -193,13 +176,8 @@
       window.synodosAuth.setCachedMe(data.user);
     }
     userId = data.user && data.user.id;
-    isOwner =
-      userId != null &&
-      Number(cachedProject.owner_user_id) === Number(userId);
-    if (
-      window.synodosProjectPage &&
-      window.synodosProjectPage.onViewerReady
-    ) {
+    isOwner = userId != null && Number(cachedProject.owner_user_id) === Number(userId);
+    if (window.synodosProjectPage && window.synodosProjectPage.onViewerReady) {
       window.synodosProjectPage.onViewerReady();
     }
   }
@@ -243,9 +221,7 @@
     try {
       await loadProject(projectId);
       token =
-        window.synodosAuth && window.synodosAuth.getToken
-          ? window.synodosAuth.getToken()
-          : null;
+        window.synodosAuth && window.synodosAuth.getToken ? window.synodosAuth.getToken() : null;
       await loadMeForJoin();
       syncBackLink();
     } catch (e) {

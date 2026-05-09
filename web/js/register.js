@@ -2,9 +2,7 @@
 (function () {
   if (!window.synodosAuth) {
     if (typeof console !== "undefined" && console.error) {
-      console.error(
-        "synodosAuth not found. Load js/auth.js before js/register.js."
-      );
+      console.error("synodosAuth not found. Load js/auth.js before js/register.js.");
     }
     return;
   }
@@ -35,10 +33,7 @@
         return {};
       });
       if (!res.ok) {
-        window.alert(
-          "Could not create account. " +
-            (data.error || res.statusText || "Try again.")
-        );
+        window.alert("Could not create account. " + (data.error || res.statusText || "Try again."));
         return;
       }
       if (data.token) {
@@ -53,10 +48,10 @@
             })
           : Promise.resolve();
       if (typeof window.synodosShowAuthSuccess === "function") {
-        await window.synodosShowAuthSuccess(
-          "Account created — welcome to synodos.",
-          { holdMs: 1650, fadeMs: 320 }
-        );
+        await window.synodosShowAuthSuccess("Account created — welcome to synodos.", {
+          holdMs: 1650,
+          fadeMs: 320,
+        });
       }
       await prefetchMe;
       window.location.replace("profile-setup.html");

@@ -1,10 +1,7 @@
 const NOTE_MAX = 500;
 const { publicDisplayLabel } = require("../displayLabel");
 const { insertFeedEvent, EVENT_TYPES } = require("../feedEvents");
-const {
-  insertNotification,
-  NOTIFICATION_TYPES: NTYPE,
-} = require("../userNotifications");
+const { insertNotification, NOTIFICATION_TYPES: NTYPE } = require("../userNotifications");
 
 function parseId(param) {
   const n = Number(param);
@@ -25,10 +22,7 @@ function requestRowToJSON(row, roleTitle) {
       row.requester_id != null
         ? {
             id: row.requester_id,
-            username:
-              row.requester_username != null
-                ? String(row.requester_username)
-                : null,
+            username: row.requester_username != null ? String(row.requester_username) : null,
             public_display_label: publicDisplayLabel({
               username: row.requester_username,
               display_name: row.requester_display_name,
@@ -58,9 +52,7 @@ function registerProjectJoinRoutes(router, deps) {
       return res.status(404).json({ error: "Not found" });
     }
     if (Number(project.owner_user_id) !== Number(req.user.id)) {
-      return res
-        .status(403)
-        .json({ error: "Only the project owner can view join requests" });
+      return res.status(403).json({ error: "Only the project owner can view join requests" });
     }
     const statusFilter = String(req.query.status || "pending").toLowerCase();
     let rows;
@@ -133,30 +125,24 @@ function registerProjectJoinRoutes(router, deps) {
       return res.status(404).json({ error: "Not found" });
     }
     if (Number(project.owner_user_id) === Number(req.user.id)) {
-      return res
-        .status(403)
-        .json({ error: "You cannot request to join your own project" });
+      return res.status(403).json({ error: "You cannot request to join your own project" });
     }
     let roleId = null;
-    if (
-      req.body &&
-      req.body.role_id != null &&
-      req.body.role_id !== ""
-    ) {
+    if (req.body && req.body.role_id != null && req.body.role_id !== "") {
       roleId = parseId(req.body.role_id);
       if (!roleId) {
         return res.status(400).json({ error: "Invalid role" });
       }
       const role = await db
-        .prepare(
-          "SELECT id FROM project_roles WHERE id = ? AND project_id = ?"
-        )
+        .prepare("SELECT id FROM project_roles WHERE id = ? AND project_id = ?")
         .get(roleId, projectId);
       if (!role) {
         return res.status(400).json({ error: "That role is not on this project" });
       }
     }
-    const note = String(req.body?.note || "").trim().slice(0, NOTE_MAX);
+    const note = String(req.body?.note || "")
+      .trim()
+      .slice(0, NOTE_MAX);
     const pending = await db
       .prepare(
         `SELECT id FROM project_join_requests
@@ -197,14 +183,11 @@ function registerProjectJoinRoutes(router, deps) {
       if (projRow) {
         await insertNotification(db, projRow.owner_user_id, NTYPE.JOIN_REQUEST_RECEIVED, {
           project_id: projectId,
-          project_title:
-            projRow.title != null ? String(projRow.title) : "",
+          project_title: projRow.title != null ? String(projRow.title) : "",
           join_request_id: id,
           requester_user_id: req.user.id,
           requester_username:
-            row.requester_username != null
-              ? String(row.requester_username)
-              : null,
+            row.requester_username != null ? String(row.requester_username) : null,
           requester_public_display_label: publicDisplayLabel({
             username: row.requester_username,
             display_name: row.requester_display_name,
@@ -236,42 +219,37 @@ function registerProjectJoinRoutes(router, deps) {
     }
   });
 
-  router.patch(
-    "/:id/join-requests/:requestId",
-    requireAuth,
-    async (req, res) => {
-      const projectId = parseId(req.params.id);
-      const requestId = parseId(req.params.requestId);
-      if (!projectId || !requestId) {
-        return res.status(404).json({ error: "Not found" });
-      }
-      const project = await db
-        .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
-        .get(projectId);
-      if (!project) {
-        return res.status(404).json({ error: "Not found" });
-      }
-      if (Number(project.owner_user_id) !== Number(req.user.id)) {
-        return res.status(403).json({ error: "Only the owner can update requests" });
-      }
-      const nextStatus = String(req.body?.status || "").toLowerCase();
-      if (nextStatus !== "accepted" && nextStatus !== "declined") {
-        return res
-          .status(400)
-          .json({ error: 'status must be "accepted" or "declined"' });
-      }
-      const row = await db
+  router.patch("/:id/join-requests/:requestId", requireAuth, async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const requestId = parseId(req.params.requestId);
+    if (!projectId || !requestId) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    const project = await db
+      .prepare("SELECT id, owner_user_id FROM projects WHERE id = ?")
+      .get(projectId);
+    if (!project) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    if (Number(project.owner_user_id) !== Number(req.user.id)) {
+      return res.status(403).json({ error: "Only the owner can update requests" });
+    }
+    const nextStatus = String(req.body?.status || "").toLowerCase();
+    if (nextStatus !== "accepted" && nextStatus !== "declined") {
+      return res.status(400).json({ error: 'status must be "accepted" or "declined"' });
+    }
+    const row = await db
+      .prepare(
+        `SELECT id, project_id, status, requester_user_id FROM project_join_requests WHERE id = ? AND project_id = ?`
+      )
+      .get(requestId, projectId);
+    if (!row) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    if (row.status !== "pending") {
+      const full = await db
         .prepare(
-          `SELECT id, project_id, status, requester_user_id FROM project_join_requests WHERE id = ? AND project_id = ?`
-        )
-        .get(requestId, projectId);
-      if (!row) {
-        return res.status(404).json({ error: "Not found" });
-      }
-      if (row.status !== "pending") {
-        const full = await db
-          .prepare(
-            `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
+          `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                     u.id AS requester_id, u.username AS requester_username, u.display_name AS requester_display_name,
                     u.public_display_as AS requester_public_display_as,
                     pr.title AS role_title
@@ -279,57 +257,54 @@ function registerProjectJoinRoutes(router, deps) {
              JOIN users u ON u.id = r.requester_user_id
              LEFT JOIN project_roles pr ON pr.id = r.project_role_id
              WHERE r.id = ?`
-          )
-          .get(requestId);
-        return res.json({
-          request: requestRowToJSON(
-            {
-              id: full.id,
-              project_id: full.project_id,
-              project_role_id: full.project_role_id,
-              note: full.note,
-              status: full.status,
-              created_at: full.created_at,
-              resolved_at: full.resolved_at,
-              requester_id: full.requester_id,
-              requester_username: full.requester_username,
-              requester_display_name: full.requester_display_name,
-              requester_public_display_as: full.requester_public_display_as,
-            },
-            full.role_title
-          ),
+        )
+        .get(requestId);
+      return res.json({
+        request: requestRowToJSON(
+          {
+            id: full.id,
+            project_id: full.project_id,
+            project_role_id: full.project_role_id,
+            note: full.note,
+            status: full.status,
+            created_at: full.created_at,
+            resolved_at: full.resolved_at,
+            requester_id: full.requester_id,
+            requester_username: full.requester_username,
+            requester_display_name: full.requester_display_name,
+            requester_public_display_as: full.requester_public_display_as,
+          },
+          full.role_title
+        ),
+      });
+    }
+    await db
+      .prepare(`UPDATE project_join_requests SET status = ?, resolved_at = now() WHERE id = ?`)
+      .run(nextStatus, requestId);
+    const proj = await db.prepare("SELECT id, title FROM projects WHERE id = ?").get(projectId);
+    const projTitle = proj && proj.title != null ? String(proj.title) : "";
+    if (nextStatus === "accepted") {
+      if (proj) {
+        await insertFeedEvent(db, row.requester_user_id, EVENT_TYPES.JOIN_ACCEPTED, {
+          project_id: proj.id,
+          project_title: projTitle,
         });
       }
-      await db.prepare(
-        `UPDATE project_join_requests SET status = ?, resolved_at = now() WHERE id = ?`
-      ).run(nextStatus, requestId);
-      const proj = await db
-        .prepare("SELECT id, title FROM projects WHERE id = ?")
-        .get(projectId);
-      const projTitle =
-        proj && proj.title != null ? String(proj.title) : "";
-      if (nextStatus === "accepted") {
-        if (proj) {
-          await insertFeedEvent(db, row.requester_user_id, EVENT_TYPES.JOIN_ACCEPTED, {
-            project_id: proj.id,
-            project_title: projTitle,
-          });
-        }
-        await insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_ACCEPTED, {
-          project_id: projectId,
-          project_title: projTitle,
-          join_request_id: requestId,
-        });
-      } else if (nextStatus === "declined") {
-        await insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_DECLINED, {
-          project_id: projectId,
-          project_title: projTitle,
-          join_request_id: requestId,
-        });
-      }
-      const updated = await db
-        .prepare(
-          `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
+      await insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_ACCEPTED, {
+        project_id: projectId,
+        project_title: projTitle,
+        join_request_id: requestId,
+      });
+    } else if (nextStatus === "declined") {
+      await insertNotification(db, row.requester_user_id, NTYPE.JOIN_REQUEST_DECLINED, {
+        project_id: projectId,
+        project_title: projTitle,
+        join_request_id: requestId,
+      });
+    }
+    const updated = await db
+      .prepare(
+        `SELECT r.id, r.project_id, r.requester_user_id, r.project_role_id, r.note, r.status, r.created_at, r.resolved_at,
                   u.id AS requester_id, u.username AS requester_username, u.display_name AS requester_display_name,
                   u.public_display_as AS requester_public_display_as,
                   pr.title AS role_title
@@ -337,58 +312,55 @@ function registerProjectJoinRoutes(router, deps) {
            JOIN users u ON u.id = r.requester_user_id
            LEFT JOIN project_roles pr ON pr.id = r.project_role_id
            WHERE r.id = ?`
-        )
-        .get(requestId);
-      res.json({
-        request: requestRowToJSON(
-          {
-            id: updated.id,
-            project_id: updated.project_id,
-            project_role_id: updated.project_role_id,
-            note: updated.note,
-            status: updated.status,
-            created_at: updated.created_at,
-            resolved_at: updated.resolved_at,
-            requester_id: updated.requester_id,
-            requester_username: updated.requester_username,
-            requester_display_name: updated.requester_display_name,
-            requester_public_display_as: updated.requester_public_display_as,
-          },
-          updated.role_title
-        ),
-      });
-    }
-  );
+      )
+      .get(requestId);
+    res.json({
+      request: requestRowToJSON(
+        {
+          id: updated.id,
+          project_id: updated.project_id,
+          project_role_id: updated.project_role_id,
+          note: updated.note,
+          status: updated.status,
+          created_at: updated.created_at,
+          resolved_at: updated.resolved_at,
+          requester_id: updated.requester_id,
+          requester_username: updated.requester_username,
+          requester_display_name: updated.requester_display_name,
+          requester_public_display_as: updated.requester_public_display_as,
+        },
+        updated.role_title
+      ),
+    });
+  });
 
-  router.delete(
-    "/:id/join-requests/:requestId",
-    requireAuth,
-    async (req, res) => {
-      const projectId = parseId(req.params.id);
-      const requestId = parseId(req.params.requestId);
-      if (!projectId || !requestId) {
-        return res.status(404).json({ error: "Not found" });
-      }
-      const row = await db
-        .prepare(
-          `SELECT id, requester_user_id, status FROM project_join_requests WHERE id = ? AND project_id = ?`
-        )
-        .get(requestId, projectId);
-      if (!row) {
-        return res.status(404).json({ error: "Not found" });
-      }
-      if (Number(row.requester_user_id) !== Number(req.user.id)) {
-        return res.status(403).json({ error: "Only you can withdraw your request" });
-      }
-      if (row.status !== "pending") {
-        return res.status(400).json({ error: "Only pending requests can be withdrawn" });
-      }
-      await db.prepare(
-        `UPDATE project_join_requests SET status = 'withdrawn', resolved_at = now() WHERE id = ?`
-      ).run(requestId);
-      res.status(204).end();
+  router.delete("/:id/join-requests/:requestId", requireAuth, async (req, res) => {
+    const projectId = parseId(req.params.id);
+    const requestId = parseId(req.params.requestId);
+    if (!projectId || !requestId) {
+      return res.status(404).json({ error: "Not found" });
     }
-  );
+    const row = await db
+      .prepare(
+        `SELECT id, requester_user_id, status FROM project_join_requests WHERE id = ? AND project_id = ?`
+      )
+      .get(requestId, projectId);
+    if (!row) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    if (Number(row.requester_user_id) !== Number(req.user.id)) {
+      return res.status(403).json({ error: "Only you can withdraw your request" });
+    }
+    if (row.status !== "pending") {
+      return res.status(400).json({ error: "Only pending requests can be withdrawn" });
+    }
+    await db
+      .prepare(
+        `UPDATE project_join_requests SET status = 'withdrawn', resolved_at = now() WHERE id = ?`
+      )
+      .run(requestId);
+    res.status(204).end();
+  });
 }
 
 /**

@@ -17,9 +17,7 @@ function registerFeedRoutes(app, deps) {
       const cursor = parseCursor(req.query.cursor);
 
       const followingRows = await db
-        .prepare(
-          `SELECT following_user_id FROM user_follows WHERE follower_user_id = ?`
-        )
+        .prepare(`SELECT following_user_id FROM user_follows WHERE follower_user_id = ?`)
         .all(req.user.id);
       const actorIds = new Set([Number(req.user.id)]);
       for (let i = 0; i < followingRows.length; i++) {
@@ -58,8 +56,7 @@ function registerFeedRoutes(app, deps) {
         return {
           id: row.id,
           actor_user_id: row.actor_user_id,
-          actor_username:
-            row.actor_username != null ? String(row.actor_username) : null,
+          actor_username: row.actor_username != null ? String(row.actor_username) : null,
           actor_public_display_label: publicDisplayLabel({
             username: row.actor_username,
             display_name: row.actor_display_name,
@@ -70,8 +67,7 @@ function registerFeedRoutes(app, deps) {
           created_at: row.created_at,
         };
       });
-      const nextCursor =
-        hasMore && slice.length > 0 ? slice[slice.length - 1].id : null;
+      const nextCursor = hasMore && slice.length > 0 ? slice[slice.length - 1].id : null;
       res.json({ events, next_cursor: nextCursor });
     } catch (e) {
       console.error(e);
