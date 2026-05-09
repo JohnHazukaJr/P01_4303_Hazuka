@@ -5,6 +5,21 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 
+/** @returns {string|null} JWT `role` claim for Supabase API keys (service_role vs anon). */
+function supabaseKeyRole(key) {
+  try {
+    const parts = String(key || "").split(".");
+    if (parts.length < 2) return null;
+    let b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const json = Buffer.from(b64, "base64").toString("utf8");
+    const obj = JSON.parse(json);
+    return obj && obj.role != null ? String(obj.role) : null;
+  } catch {
+    return null;
+  }
+}
+
 function ok(name, passed, detail) {
   console.log(passed ? "  OK " + name : "  !! " + name, detail || "");
   return passed;
@@ -35,6 +50,25 @@ function main() {
       key.length > 20,
       key ? "(set)" : "(missing)"
     ) && all;
+
+  if (key.length > 20) {
+    const role = supabaseKeyRole(key);
+    if (role === "anon") {
+      console.error(
+        "  !! This value is the ANON (publishable) key — avatar uploads will fail with Storage RLS.\n" +
+          "     Use **service_role** secret from Supabase → Settings → API (same page, different key).\n"
+      );
+      all = false;
+    } else if (role && role !== "service_role") {
+      console.log(
+        "  … JWT role on SUPABASE_SERVICE_ROLE_KEY is",
+        role,
+        "(expected service_role for Storage writes)\n"
+      );
+    } else if (role === "service_role") {
+      console.log("  … Key role: service_role (correct for Storage)\n");
+    }
+  }
 
   const jwt = String(process.env.JWT_SECRET || "").trim();
   if (jwt.length > 0) {
